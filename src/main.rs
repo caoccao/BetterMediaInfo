@@ -17,13 +17,14 @@
 
 mod media_info;
 
+use media_info::*;
+use std::path::Path;
+
 fn main() {
-  println!("Start");
-  unsafe {
-    println!("New");
-    let handle = media_info::MediaInfo_New();
-    println!("Close");
-    media_info::MediaInfo_Close(handle);
-  }
-  println!("Stop");
+  env_logger::init();
+  let media_info = MediaInfo::new();
+  let error_code = media_info
+    .open(Path::new("y:\\test.mkv"))
+    .expect("Failed to open video file.");
+  println!("Error code: {}", error_code);
 }
