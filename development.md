@@ -20,6 +20,8 @@ del zlib.zip
 
 ## Generate bindings.rs on Windows
 
+This step is optional because somehow the generated `bindings.rs` is broken.
+
 * Install `bindgen-cli`.
 
 ```sh
@@ -34,10 +36,4 @@ bindgen ^
   --allowlist-item "MediaInfo\w+" ^
   -o src\bindings.rs ^
   ..\MediaInfoLib\Source\MediaInfoDLL\MediaInfoDLL.h
-```
-
-* Add the following code to the top of `bindings.rs` to mute the warnings.
-
-```rust
-#![allow(non_camel_case_types, non_upper_case_globals, nonstandard_style, dead_code, unused_imports)]
 ```

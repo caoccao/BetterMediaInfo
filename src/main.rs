@@ -15,15 +15,15 @@
 * limitations under the License.
 */
 
-mod bindings;
+mod media_info;
 
 fn main() {
   println!("Start");
   unsafe {
     println!("New");
-    let handle = bindings::MediaInfo_New.expect("Cannot find MediaInfo_New.")();
+    let handle = media_info::MediaInfo_New();
     println!("Close");
-    bindings::MediaInfo_Close.expect("Cannot find MediaInfo_Close.")(handle);
+    media_info::MediaInfo_Close(handle);
   }
   println!("Stop");
 }
