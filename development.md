@@ -30,37 +30,10 @@ cargo install bindgen-cli
 
 ```sh
 set LIBCLANG_PATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin\libclang.dll
-bindgen ..\MediaInfoLib\Source\MediaInfoDLL\MediaInfoDLL.h ^
-  --allowlist-type "MEDIAINFOLIST_Close" ^
-  --allowlist-type "MEDIAINFOLIST_Count_Get" ^
-  --allowlist-type "MEDIAINFOLIST_Count_Get_Files" ^
-  --allowlist-type "MEDIAINFOLIST_Delete" ^
-  --allowlist-type "MEDIAINFOLIST_Get" ^
-  --allowlist-type "MEDIAINFOLIST_GetI" ^
-  --allowlist-type "MEDIAINFOLIST_Inform" ^
-  --allowlist-type "MEDIAINFOLIST_New" ^
-  --allowlist-type "MEDIAINFOLIST_Open" ^
-  --allowlist-type "MEDIAINFOLIST_Option" ^
-  --allowlist-type "MEDIAINFOLIST_State_Get" ^
-  --allowlist-type "MEDIAINFO_Close" ^
-  --allowlist-type "MEDIAINFO_Count_Get" ^
-  --allowlist-type "MEDIAINFO_Count_Get_Files" ^
-  --allowlist-type "MEDIAINFO_Delete" ^
-  --allowlist-type "MEDIAINFO_Get" ^
-  --allowlist-type "MEDIAINFO_GetI" ^
-  --allowlist-type "MEDIAINFO_Inform" ^
-  --allowlist-type "MEDIAINFO_New" ^
-  --allowlist-type "MEDIAINFO_Open" ^
-  --allowlist-type "MEDIAINFO_Open_Buffer_Continue" ^
-  --allowlist-type "MEDIAINFO_Open_Buffer_Continue_GoTo_Get" ^
-  --allowlist-type "MEDIAINFO_Open_Buffer_Finalize" ^
-  --allowlist-type "MEDIAINFO_Open_Buffer_Init" ^
-  --allowlist-type "MEDIAINFO_Open_NextPacket" ^
-  --allowlist-type "MEDIAINFO_Option" ^
-  --allowlist-type "MEDIAINFO_Output_Buffer_Get" ^
-  --allowlist-type "MEDIAINFO_Output_Buffer_GetI" ^
-  --allowlist-type "MEDIAINFO_State_Get" ^
-  -o src\bindings.rs 
+bindgen ^
+  --allowlist-item "MediaInfo\w+" ^
+  -o src\bindings.rs ^
+  ..\MediaInfoLib\Source\MediaInfoDLL\MediaInfoDLL.h
 ```
 
 * Add the following code to the top of `bindings.rs` to mute the warnings.

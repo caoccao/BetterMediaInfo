@@ -29,6 +29,15 @@ pub const MediaInfo_info_t_MediaInfo_Info_Max: MediaInfo_info_t = 8;
 pub type MediaInfo_info_t = ::std::os::raw::c_int;
 #[doc = " @brief Kinds of Info"]
 pub use self::MediaInfo_info_t as MediaInfo_info_C;
+pub const MediaInfo_infooptions_t_MediaInfo_InfoOption_ShowInInform: MediaInfo_infooptions_t = 0;
+pub const MediaInfo_infooptions_t_MediaInfo_InfoOption_Reserved: MediaInfo_infooptions_t = 1;
+pub const MediaInfo_infooptions_t_MediaInfo_InfoOption_ShowInSupported: MediaInfo_infooptions_t = 2;
+pub const MediaInfo_infooptions_t_MediaInfo_InfoOption_TypeOfValue: MediaInfo_infooptions_t = 3;
+pub const MediaInfo_infooptions_t_MediaInfo_InfoOption_Max: MediaInfo_infooptions_t = 4;
+#[doc = " @brief Option if InfoKind = Info_Options"]
+pub type MediaInfo_infooptions_t = ::std::os::raw::c_int;
+#[doc = " @brief Option if InfoKind = Info_Options"]
+pub use self::MediaInfo_infooptions_t as MediaInfo_infooptions_C;
 pub const MediaInfo_fileoptions_t_MediaInfo_FileOption_Nothing: MediaInfo_fileoptions_t = 0;
 pub const MediaInfo_fileoptions_t_MediaInfo_FileOption_NoRecursive: MediaInfo_fileoptions_t = 1;
 pub const MediaInfo_fileoptions_t_MediaInfo_FileOption_CloseAll: MediaInfo_fileoptions_t = 2;
@@ -37,12 +46,57 @@ pub const MediaInfo_fileoptions_t_MediaInfo_FileOption_Max: MediaInfo_fileoption
 pub type MediaInfo_fileoptions_t = ::std::os::raw::c_int;
 #[doc = " @brief File opening options"]
 pub use self::MediaInfo_fileoptions_t as MediaInfo_fileoptions_C;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct HINSTANCE__ {
+  pub unused: ::std::os::raw::c_int,
+}
+#[test]
+fn bindgen_test_layout_HINSTANCE__() {
+  const UNINIT: ::std::mem::MaybeUninit<HINSTANCE__> = ::std::mem::MaybeUninit::uninit();
+  let ptr = UNINIT.as_ptr();
+  assert_eq!(
+    ::std::mem::size_of::<HINSTANCE__>(),
+    4usize,
+    concat!("Size of: ", stringify!(HINSTANCE__))
+  );
+  assert_eq!(
+    ::std::mem::align_of::<HINSTANCE__>(),
+    4usize,
+    concat!("Alignment of ", stringify!(HINSTANCE__))
+  );
+  assert_eq!(
+    unsafe { ::std::ptr::addr_of!((*ptr).unused) as usize - ptr as usize },
+    0usize,
+    concat!("Offset of field: ", stringify!(HINSTANCE__), "::", stringify!(unused))
+  );
+}
+pub type HINSTANCE = *mut HINSTANCE__;
+pub type HMODULE = HINSTANCE;
+extern "C" {
+  pub static mut MediaInfo_Module: HMODULE;
+}
 pub type MEDIAINFO_New = ::std::option::Option<unsafe extern "C" fn() -> *mut ::std::os::raw::c_void>;
+extern "C" {
+  pub static mut MediaInfo_New: MEDIAINFO_New;
+}
 pub type MEDIAINFOLIST_New = ::std::option::Option<unsafe extern "C" fn() -> *mut ::std::os::raw::c_void>;
+extern "C" {
+  pub static mut MediaInfoList_New: MEDIAINFOLIST_New;
+}
 pub type MEDIAINFO_Delete = ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>;
+extern "C" {
+  pub static mut MediaInfo_Delete: MEDIAINFO_Delete;
+}
 pub type MEDIAINFOLIST_Delete = ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>;
+extern "C" {
+  pub static mut MediaInfoList_Delete: MEDIAINFOLIST_Delete;
+}
 pub type MEDIAINFO_Open =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: *const MediaInfo_Char) -> usize>;
+extern "C" {
+  pub static mut MediaInfo_Open: MEDIAINFO_Open;
+}
 pub type MEDIAINFOLIST_Open = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -50,6 +104,9 @@ pub type MEDIAINFOLIST_Open = ::std::option::Option<
     arg3: MediaInfo_fileoptions_C,
   ) -> usize,
 >;
+extern "C" {
+  pub static mut MediaInfoList_Open: MEDIAINFOLIST_Open;
+}
 pub type MEDIAINFO_Open_Buffer_Init = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -57,24 +114,51 @@ pub type MEDIAINFO_Open_Buffer_Init = ::std::option::Option<
     File_Offset: MediaInfo_int64u,
   ) -> usize,
 >;
+extern "C" {
+  pub static mut MediaInfo_Open_Buffer_Init: MEDIAINFO_Open_Buffer_Init;
+}
 pub type MEDIAINFO_Open_Buffer_Continue = ::std::option::Option<
   unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, Buffer: *mut MediaInfo_int8u, Buffer_Size: usize) -> usize,
 >;
+extern "C" {
+  pub static mut MediaInfo_Open_Buffer_Continue: MEDIAINFO_Open_Buffer_Continue;
+}
 pub type MEDIAINFO_Open_Buffer_Continue_GoTo_Get =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> MediaInfo_int64u>;
+extern "C" {
+  pub static mut MediaInfo_Open_Buffer_Continue_GoTo_Get: MEDIAINFO_Open_Buffer_Continue_GoTo_Get;
+}
 pub type MEDIAINFO_Open_Buffer_Finalize =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
+extern "C" {
+  pub static mut MediaInfo_Open_Buffer_Finalize: MEDIAINFO_Open_Buffer_Finalize;
+}
 pub type MEDIAINFO_Open_NextPacket =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
+extern "C" {
+  pub static mut MediaInfo_Open_NextPacket: MEDIAINFO_Open_NextPacket;
+}
 pub type MEDIAINFO_Close = ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>;
+extern "C" {
+  pub static mut MediaInfo_Close: MEDIAINFO_Close;
+}
 pub type MEDIAINFOLIST_Close =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: usize)>;
+extern "C" {
+  pub static mut MediaInfoList_Close: MEDIAINFOLIST_Close;
+}
 pub type MEDIAINFO_Inform = ::std::option::Option<
   unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, Reserved: usize) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfo_Inform: MEDIAINFO_Inform;
+}
 pub type MEDIAINFOLIST_Inform = ::std::option::Option<
   unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: usize, Reserved: usize) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfoList_Inform: MEDIAINFOLIST_Inform;
+}
 pub type MEDIAINFO_GetI = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -84,6 +168,9 @@ pub type MEDIAINFO_GetI = ::std::option::Option<
     KindOfInfo: MediaInfo_info_C,
   ) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfo_GetI: MEDIAINFO_GetI;
+}
 pub type MEDIAINFOLIST_GetI = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -94,6 +181,9 @@ pub type MEDIAINFOLIST_GetI = ::std::option::Option<
     KindOfInfo: MediaInfo_info_C,
   ) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfoList_GetI: MEDIAINFOLIST_GetI;
+}
 pub type MEDIAINFO_Get = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -104,6 +194,9 @@ pub type MEDIAINFO_Get = ::std::option::Option<
     KindOfSearch: MediaInfo_info_C,
   ) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfo_Get: MEDIAINFO_Get;
+}
 pub type MEDIAINFOLIST_Get = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -115,11 +208,20 @@ pub type MEDIAINFOLIST_Get = ::std::option::Option<
     KindOfSearch: MediaInfo_info_C,
   ) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfoList_Get: MEDIAINFOLIST_Get;
+}
 pub type MEDIAINFO_Output_Buffer_Get = ::std::option::Option<
   unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, Parameter: *const MediaInfo_Char) -> usize,
 >;
+extern "C" {
+  pub static mut MediaInfo_Output_Buffer_Get: MEDIAINFO_Output_Buffer_Get;
+}
 pub type MEDIAINFO_Output_Buffer_GetI =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, Pos: usize) -> usize>;
+extern "C" {
+  pub static mut MediaInfo_Output_Buffer_GetI: MEDIAINFO_Output_Buffer_GetI;
+}
 pub type MEDIAINFO_Option = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -127,6 +229,9 @@ pub type MEDIAINFO_Option = ::std::option::Option<
     Value: *const MediaInfo_Char,
   ) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfo_Option: MEDIAINFO_Option;
+}
 pub type MEDIAINFOLIST_Option = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -134,12 +239,24 @@ pub type MEDIAINFOLIST_Option = ::std::option::Option<
     Value: *const MediaInfo_Char,
   ) -> *const MediaInfo_Char,
 >;
+extern "C" {
+  pub static mut MediaInfoList_Option: MEDIAINFOLIST_Option;
+}
 pub type MEDIAINFO_State_Get = ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
+extern "C" {
+  pub static mut MediaInfo_State_Get: MEDIAINFO_State_Get;
+}
 pub type MEDIAINFOLIST_State_Get =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
+extern "C" {
+  pub static mut MediaInfoList_State_Get: MEDIAINFOLIST_State_Get;
+}
 pub type MEDIAINFO_Count_Get = ::std::option::Option<
   unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, StreamKind: MediaInfo_stream_C, StreamNumber: usize) -> usize,
 >;
+extern "C" {
+  pub static mut MediaInfo_Count_Get: MEDIAINFO_Count_Get;
+}
 pub type MEDIAINFOLIST_Count_Get = ::std::option::Option<
   unsafe extern "C" fn(
     arg1: *mut ::std::os::raw::c_void,
@@ -148,7 +265,16 @@ pub type MEDIAINFOLIST_Count_Get = ::std::option::Option<
     StreamNumber: usize,
   ) -> usize,
 >;
+extern "C" {
+  pub static mut MediaInfoList_Count_Get: MEDIAINFOLIST_Count_Get;
+}
 pub type MEDIAINFO_Count_Get_Files =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
+extern "C" {
+  pub static mut MediaInfo_Count_Get_Files: MEDIAINFO_Count_Get_Files;
+}
 pub type MEDIAINFOLIST_Count_Get_Files =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
+extern "C" {
+  pub static mut MediaInfoList_Count_Get_Files: MEDIAINFOLIST_Count_Get_Files;
+}
