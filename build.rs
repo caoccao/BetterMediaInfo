@@ -15,15 +15,16 @@
 * limitations under the License.
 */
 
-mod bindings;
+use std::env;
 
 fn main() {
-  println!("Start");
-  unsafe {
-    println!("New");
-    let handle = bindings::MediaInfo_New.expect("Cannot find MediaInfo_New.")();
-    println!("Close");
-    bindings::MediaInfo_Close.expect("Cannot find MediaInfo_Close.")(handle);
+  let project_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+  #[cfg(target_os = "windows")]
+  {
+    println!(
+      "cargo:rustc-link-search={}/../MediaInfoLib/Project/MSVC2022/x64/Release",
+      project_dir
+    );
+    println!("cargo:rustc-link-lib=MediaInfo");
   }
-  println!("Stop");
 }
