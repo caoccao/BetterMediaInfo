@@ -24,20 +24,66 @@
 )]
 
 use anyhow::{anyhow, Result};
-use std::ffi::{CStr, CString};
 use std::os::raw;
 use std::path::Path;
+use std::usize;
 
 use crate::media_info;
 
-type mi_char = raw::c_char;
+type mi_stream_kind = raw::c_int;
 type mi_void = raw::c_void;
+type mi_wchar = u16;
 
 extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
   fn MediaInfo_Close(handle: *mut mi_void);
-  fn MediaInfo_Open(handle: *mut mi_void, path: *const mi_char) -> usize;
-  fn MediaInfo_Option(handle: *mut mi_void, option: *const mi_char, value: *const mi_char) -> *const mi_char;
+  fn MediaInfo_Count_Get(handle: *mut mi_void, stream_kind: mi_stream_kind, stream_number: usize) -> usize;
+  fn MediaInfo_Open(handle: *mut mi_void, path: *const mi_wchar) -> usize;
+  fn MediaInfo_Option(handle: *mut mi_void, option: *const mi_wchar, value: *const mi_wchar) -> *const mi_wchar;
+}
+
+fn to_wchars(s: &str) -> Vec<u16> {
+  s.encode_utf16().collect()
+}
+
+fn from_wchars(pointer: *const mi_wchar) -> String {
+  let mut current_pointer = pointer;
+  let mut length = 0;
+  while (unsafe { *current_pointer } != 0) {
+    unsafe {
+      current_pointer = current_pointer.offset(1);
+    }
+    length += 1;
+  }
+  let wcstr = unsafe { std::slice::from_raw_parts(pointer, length) };
+  String::from_utf16_lossy(wcstr)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MediaInfoStream {
+  General = 0,
+  Video,
+  Audio,
+  Text,
+  Other,
+  Image,
+  Menu,
+  Max,
+}
+
+impl MediaInfoStream {
+  pub fn values() -> &'static [MediaInfoStream] {
+    &[
+      Self::General,
+      Self::Video,
+      Self::Audio,
+      Self::Text,
+      Self::Other,
+      Self::Image,
+      Self::Menu,
+      Self::Max,
+    ]
+  }
 }
 
 pub struct MediaInfo {
@@ -47,19 +93,20 @@ pub struct MediaInfo {
 impl MediaInfo {
   pub fn new() -> Self {
     log::debug!("MediaInfo::new()");
-    let media_info = Self {
+    Self {
       handle: unsafe { MediaInfo_New() },
-    };
-    media_info
-      .option("CharSet", "UTF-8")
-      .expect("Failed to set charset to UTF-8 in MediaInfo::new().");
-    media_info
+    }
+  }
+
+  pub fn getCountByStreamKind(&self, stream_kind: MediaInfoStream) -> usize {
+    log::debug!("MediaInfo::getCountByStreamKind({:?})", stream_kind);
+    unsafe { MediaInfo_Count_Get(self.handle, stream_kind as mi_stream_kind, usize::MAX) }
   }
 
   pub fn open(&self, path: &Path) -> Result<usize> {
     if let Some(path) = path.to_str() {
       log::debug!("MediaInfo::open(\"{}\")", path);
-      let path = CString::new(path)?;
+      let path = to_wchars(path);
       let error_code = unsafe { MediaInfo_Open(self.handle, path.as_ptr()) };
       Ok(error_code)
     } else {
@@ -71,13 +118,13 @@ impl MediaInfo {
   pub fn option(&self, option: &str, value: &str) -> Result<String> {
     log::debug!("MediaInfo::option(\"{}\", \"{}\")", option, value);
     unsafe {
-      let option = CString::new(option)?;
-      let value = CString::new(value)?;
-      Ok(
-        CStr::from_ptr(MediaInfo_Option(self.handle, option.as_ptr(), value.as_ptr()))
-          .to_str()
-          .map(|s| s.to_string())?,
-      )
+      let option = to_wchars(option);
+      let value = to_wchars(value);
+      Ok(from_wchars(MediaInfo_Option(
+        self.handle,
+        option.as_ptr(),
+        value.as_ptr(),
+      )))
     }
   }
 }

@@ -23,8 +23,11 @@ use std::path::Path;
 fn main() {
   env_logger::init();
   let media_info = MediaInfo::new();
-  let error_code = media_info
-    .open(Path::new("y:\\test.mkv"))
+  media_info
+    .open(Path::new("y:/test.mkv"))
     .expect("Failed to open video file.");
-  println!("Error code: {}", error_code);
+  MediaInfoStream::values().into_iter().for_each(|stream| {
+    let count = media_info.getCountByStreamKind(*stream);
+    println!("Stream: {:?}, Count: {}", stream, count);
+  });
 }
