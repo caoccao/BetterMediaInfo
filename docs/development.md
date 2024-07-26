@@ -2,13 +2,19 @@
 
 ## Build MediaInfoLib
 
-### Build MediaInfoLib for Windows
-
-* Clone MediaInfoLib, ZenLib, and zlib.
+* Clone the following projects.
 
 ```sh
+git clone https://github.com/caoccao/BetterMediaInfo.git
 git clone https://github.com/MediaArea/MediaInfoLib.git
 git clone https://github.com/MediaArea/ZenLib.git
+```
+
+### Build MediaInfoLib for Windows
+
+* Download zlib.
+
+```sh
 curl -o zlib.zip https://www.zlib.net/zlib131.zip
 7z x zlib.zip
 move zlib-1.3.1 ZLib
@@ -20,7 +26,7 @@ del zlib.zip
 
 ## Generate bindings.rs on Windows
 
-This step is optional because somehow the generated `bindings.rs` is broken. `bindings.rs` is for reference only.
+This step is optional because the generated `bindings.rs` is broken. `bindings.rs` is for reference only.
 
 * Install `bindgen-cli`.
 
@@ -31,6 +37,7 @@ cargo install bindgen-cli
 * Generate `bindings.rs`.
 
 ```sh
+cd BetterMediaInfo
 set LIBCLANG_PATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin\libclang.dll
 bindgen ^
   --allowlist-item "MediaInfo\w+" ^
