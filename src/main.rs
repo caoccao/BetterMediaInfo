@@ -30,5 +30,11 @@ fn main() {
     let count = media_info.getCountByStreamKind(*stream);
     println!("Stream: {:?}, Count: {}", stream, count);
   });
+  println!("{}", media_info.getOption(MediaInfoOption::InfoVersion).unwrap());
+  println!("{}", media_info.getOption(MediaInfoOption::CompleteGet).unwrap());
+  println!(
+    "{}",
+    media_info.setOption(MediaInfoOption::Complete("1".to_owned())).unwrap()
+  );
   println!("{}", media_info.getInformation());
 }

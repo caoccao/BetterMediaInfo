@@ -49,7 +49,7 @@ fn to_wchars(s: &str) -> Vec<u16> {
   if s.is_empty() {
     vec![0]
   } else {
-    s.encode_utf16().collect()
+    s.encode_utf16().chain(Some(0).into_iter()).collect()
   }
 }
 
@@ -93,8 +93,10 @@ impl MediaInfoStream {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MediaInfoOption {
+  Complete(String),
+  CompleteGet,
   InfoCodecs,
   InfoParameters,
   InfoVersion,
@@ -103,6 +105,8 @@ pub enum MediaInfoOption {
 impl MediaInfoOption {
   pub fn as_str(&self) -> &'static str {
     match self {
+      Self::Complete(_) => "Complete",
+      Self::CompleteGet => "Complete_Get",
       Self::InfoCodecs => "Info_Codecs",
       Self::InfoParameters => "Info_Parameters",
       Self::InfoVersion => "Info_Version",
@@ -153,11 +157,15 @@ impl MediaInfo {
     }
   }
 
-  pub fn setOption(&self, option: MediaInfoOption, value: &str) -> Result<String> {
-    let option = option.as_str();
-    log::debug!("MediaInfo::setOption(\"{}\", \"{}\")", option, value);
-    let option = to_wchars(option);
-    let value = to_wchars(value);
+  pub fn setOption(&self, option: MediaInfoOption) -> Result<String> {
+    let option_string = option.as_str();
+    let value = match option {
+      MediaInfoOption::Complete(value) => value,
+      _ => DEFAULT_OPTION_VALUE.to_owned(),
+    };
+    log::debug!("MediaInfo::setOption(\"{}\", \"{}\")", option_string, value);
+    let option = to_wchars(option_string);
+    let value = to_wchars(value.as_str());
     let result = unsafe { MediaInfo_Option(self.handle, option.as_ptr(), value.as_ptr()) };
     Ok(from_wchars(result))
   }
