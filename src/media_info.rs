@@ -34,6 +34,8 @@ type mi_stream_kind = raw::c_int;
 type mi_void = raw::c_void;
 type mi_wchar = u16;
 
+const DEFAULT_OPTION_VALUE: &str = "";
+
 extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
   fn MediaInfo_Close(handle: *mut mi_void);
@@ -44,7 +46,11 @@ extern "C" {
 }
 
 fn to_wchars(s: &str) -> Vec<u16> {
-  s.encode_utf16().collect()
+  if s.is_empty() {
+    vec![0]
+  } else {
+    s.encode_utf16().collect()
+  }
 }
 
 fn from_wchars(pointer: *const mi_wchar) -> String {
@@ -87,6 +93,23 @@ impl MediaInfoStream {
   }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MediaInfoOption {
+  InfoCodecs,
+  InfoParameters,
+  InfoVersion,
+}
+
+impl MediaInfoOption {
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::InfoCodecs => "Info_Codecs",
+      Self::InfoParameters => "Info_Parameters",
+      Self::InfoVersion => "Info_Version",
+    }
+  }
+}
+
 pub struct MediaInfo {
   handle: *mut mi_void,
 }
@@ -109,6 +132,15 @@ impl MediaInfo {
     unsafe { from_wchars(MediaInfo_Inform(self.handle, 0)) }
   }
 
+  pub fn getOption(&self, option: MediaInfoOption) -> Result<String> {
+    let option = option.as_str();
+    log::debug!("MediaInfo::getOption(\"{}\")", option);
+    let option = to_wchars(option);
+    let value = to_wchars(DEFAULT_OPTION_VALUE);
+    let result = unsafe { MediaInfo_Option(self.handle, option.as_ptr(), value.as_ptr()) };
+    Ok(from_wchars(result))
+  }
+
   pub fn open(&self, path: &Path) -> Result<usize> {
     if let Some(path) = path.to_str() {
       log::debug!("MediaInfo::open(\"{}\")", path);
@@ -121,17 +153,13 @@ impl MediaInfo {
     }
   }
 
-  pub fn option(&self, option: &str, value: &str) -> Result<String> {
-    log::debug!("MediaInfo::option(\"{}\", \"{}\")", option, value);
+  pub fn setOption(&self, option: MediaInfoOption, value: &str) -> Result<String> {
+    let option = option.as_str();
+    log::debug!("MediaInfo::setOption(\"{}\", \"{}\")", option, value);
     let option = to_wchars(option);
     let value = to_wchars(value);
-    unsafe {
-      Ok(from_wchars(MediaInfo_Option(
-        self.handle,
-        option.as_ptr(),
-        value.as_ptr(),
-      )))
-    }
+    let result = unsafe { MediaInfo_Option(self.handle, option.as_ptr(), value.as_ptr()) };
+    Ok(from_wchars(result))
   }
 }
 
