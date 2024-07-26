@@ -46,11 +46,7 @@ extern "C" {
 }
 
 fn to_wchars(s: &str) -> Vec<u16> {
-  if s.is_empty() {
-    vec![0]
-  } else {
-    s.encode_utf16().chain(Some(0).into_iter()).collect()
-  }
+  s.encode_utf16().chain(Some(0).into_iter()).collect()
 }
 
 fn from_wchars(pointer: *const mi_wchar) -> String {
@@ -94,22 +90,37 @@ impl MediaInfoStream {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MediaInfoOption {
-  Complete(String),
+pub enum MediaInfoGetOption {
   CompleteGet,
   InfoCodecs,
   InfoParameters,
   InfoVersion,
 }
 
-impl MediaInfoOption {
+impl MediaInfoGetOption {
   pub fn as_str(&self) -> &'static str {
     match self {
-      Self::Complete(_) => "Complete",
       Self::CompleteGet => "Complete_Get",
       Self::InfoCodecs => "Info_Codecs",
       Self::InfoParameters => "Info_Parameters",
       Self::InfoVersion => "Info_Version",
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MediaInfoSetOption {
+  CharSet(String),
+  Complete(String),
+  Locale(String),
+}
+
+impl MediaInfoSetOption {
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::CharSet(_) => "CharSet",
+      Self::Complete(_) => "Complete",
+      Self::Locale(_) => "setlocale_LC_CTYPE",
     }
   }
 }
@@ -136,7 +147,7 @@ impl MediaInfo {
     unsafe { from_wchars(MediaInfo_Inform(self.handle, 0)) }
   }
 
-  pub fn getOption(&self, option: MediaInfoOption) -> Result<String> {
+  pub fn getOption(&self, option: MediaInfoGetOption) -> Result<String> {
     let option = option.as_str();
     log::debug!("MediaInfo::getOption(\"{}\")", option);
     let option = to_wchars(option);
@@ -157,11 +168,12 @@ impl MediaInfo {
     }
   }
 
-  pub fn setOption(&self, option: MediaInfoOption) -> Result<String> {
+  pub fn setOption(&self, option: MediaInfoSetOption) -> Result<String> {
     let option_string = option.as_str();
     let value = match option {
-      MediaInfoOption::Complete(value) => value,
-      _ => DEFAULT_OPTION_VALUE.to_owned(),
+      MediaInfoSetOption::CharSet(value) => value,
+      MediaInfoSetOption::Complete(value) => value,
+      MediaInfoSetOption::Locale(value) => value,
     };
     log::debug!("MediaInfo::setOption(\"{}\", \"{}\")", option_string, value);
     let option = to_wchars(option_string);

@@ -24,17 +24,18 @@ fn main() {
   env_logger::init();
   let media_info = MediaInfo::new();
   media_info
+    .setOption(MediaInfoSetOption::CharSet("UTF-8".to_owned()))
+    .expect("Failed to set charset to utf-8.");
+  media_info
+    .setOption(MediaInfoSetOption::Locale("zh-CN".to_owned()))
+    .expect("Failed to set locale.");
+  media_info
     .open(Path::new("y:/test.mkv"))
     .expect("Failed to open video file.");
   MediaInfoStream::values().into_iter().for_each(|stream| {
     let count = media_info.getCountByStreamKind(*stream);
     println!("Stream: {:?}, Count: {}", stream, count);
   });
-  println!("{}", media_info.getOption(MediaInfoOption::InfoVersion).unwrap());
-  println!("{}", media_info.getOption(MediaInfoOption::CompleteGet).unwrap());
-  println!(
-    "{}",
-    media_info.setOption(MediaInfoOption::Complete("1".to_owned())).unwrap()
-  );
+  println!("{}", media_info.getOption(MediaInfoGetOption::InfoVersion).unwrap());
   println!("{}", media_info.getInformation());
 }
