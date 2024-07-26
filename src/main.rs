@@ -17,6 +17,7 @@
 
 mod media_info;
 
+use media_info::streams::*;
 use media_info::*;
 use std::path::Path;
 
@@ -24,10 +25,10 @@ fn main() {
   env_logger::init();
   let media_info = MediaInfo::new();
   media_info
-    .setOption(MediaInfoSetOption::CharSet("UTF-8".to_owned()))
+    .setOption(MediaInfoSetOption::CharSet, "UTF-8")
     .expect("Failed to set charset to utf-8.");
   media_info
-    .setOption(MediaInfoSetOption::Locale("zh-CN".to_owned()))
+    .setOption(MediaInfoSetOption::Locale, "zh-CN")
     .expect("Failed to set locale.");
   media_info
     .open(Path::new("y:/test.mkv"))
@@ -36,6 +37,8 @@ fn main() {
     let count = media_info.getCountByStreamKind(*stream);
     println!("Stream: {:?}, Count: {}", stream, count);
   });
-  println!("{}", media_info.getOption(MediaInfoGetOption::InfoVersion).unwrap());
-  println!("{}", media_info.getInformation());
+  println!("{}", media_info.getOption(MediaInfoGetOption::InfoParameters).unwrap());
+  GeneralStream::values().into_iter().for_each(|value| {
+    println!("General.{:?}: {}", value, value.get(&media_info, 0).unwrap_or_default());
+  });
 }

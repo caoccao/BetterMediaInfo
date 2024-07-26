@@ -30,7 +30,7 @@ use std::usize;
 
 use crate::media_info;
 
-type mi_stream_kind = raw::c_int;
+type mi_kind = raw::c_int;
 type mi_void = raw::c_void;
 type mi_wchar = u16;
 
@@ -39,7 +39,15 @@ const DEFAULT_OPTION_VALUE: &str = "";
 extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
   fn MediaInfo_Close(handle: *mut mi_void);
-  fn MediaInfo_Count_Get(handle: *mut mi_void, stream_kind: mi_stream_kind, stream_number: usize) -> usize;
+  fn MediaInfo_Count_Get(handle: *mut mi_void, stream_kind: mi_kind, stream_number: usize) -> usize;
+  fn MediaInfo_Get(
+    handle: *mut mi_void,
+    stream_kind: mi_kind,
+    stream_number: usize,
+    parameter: *const mi_wchar,
+    info_kind: mi_kind,
+    search_kind: mi_kind,
+  ) -> *const mi_wchar;
   fn MediaInfo_Inform(handle: *mut mi_void, reserved: usize) -> *const mi_wchar;
   fn MediaInfo_Open(handle: *mut mi_void, path: *const mi_wchar) -> usize;
   fn MediaInfo_Option(handle: *mut mi_void, option: *const mi_wchar, value: *const mi_wchar) -> *const mi_wchar;
@@ -60,6 +68,42 @@ fn from_wchars(pointer: *const mi_wchar) -> String {
   }
   let wcstr = unsafe { std::slice::from_raw_parts(pointer, length) };
   String::from_utf16_lossy(wcstr)
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum MediaInfoGetOption {
+  CompleteGet,
+  InfoCodecs,
+  InfoParameters,
+  InfoVersion,
+}
+
+impl MediaInfoGetOption {
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::CompleteGet => "Complete_Get",
+      Self::InfoCodecs => "Info_Codecs",
+      Self::InfoParameters => "Info_Parameters",
+      Self::InfoVersion => "Info_Version",
+    }
+  }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum MediaInfoSetOption {
+  CharSet,
+  Complete,
+  Locale,
+}
+
+impl MediaInfoSetOption {
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      Self::CharSet => "CharSet",
+      Self::Complete => "Complete",
+      Self::Locale => "setlocale_LC_CTYPE",
+    }
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -89,39 +133,32 @@ impl MediaInfoStream {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MediaInfoGetOption {
-  CompleteGet,
-  InfoCodecs,
-  InfoParameters,
-  InfoVersion,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MediaInfoKind {
+  Name = 0,
+  Text,
+  Measure,
+  Options,
+  NameText,
+  MeasureText,
+  Info,
+  HowTo,
+  Max,
 }
 
-impl MediaInfoGetOption {
-  pub fn as_str(&self) -> &'static str {
-    match self {
-      Self::CompleteGet => "Complete_Get",
-      Self::InfoCodecs => "Info_Codecs",
-      Self::InfoParameters => "Info_Parameters",
-      Self::InfoVersion => "Info_Version",
-    }
-  }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum MediaInfoSetOption {
-  CharSet(String),
-  Complete(String),
-  Locale(String),
-}
-
-impl MediaInfoSetOption {
-  pub fn as_str(&self) -> &'static str {
-    match self {
-      Self::CharSet(_) => "CharSet",
-      Self::Complete(_) => "Complete",
-      Self::Locale(_) => "setlocale_LC_CTYPE",
-    }
+impl MediaInfoKind {
+  pub fn values() -> &'static [MediaInfoKind] {
+    &[
+      Self::Name,
+      Self::Text,
+      Self::Measure,
+      Self::Options,
+      Self::NameText,
+      Self::MeasureText,
+      Self::Info,
+      Self::HowTo,
+      Self::Max,
+    ]
   }
 }
 
@@ -137,9 +174,39 @@ impl MediaInfo {
     }
   }
 
+  pub fn get(
+    &self,
+    stream_kind: MediaInfoStream,
+    stream_number: usize,
+    parameter: &str,
+    info_kind: MediaInfoKind,
+    search_kind: MediaInfoKind,
+  ) -> Result<String> {
+    log::debug!(
+      "MediaInfo::get({:?}, {}, \"{}\", {:?}, {:?})",
+      stream_kind,
+      stream_number,
+      parameter,
+      info_kind,
+      search_kind
+    );
+    let parameter = to_wchars(parameter);
+    let result = unsafe {
+      MediaInfo_Get(
+        self.handle,
+        stream_kind as mi_kind,
+        stream_number,
+        parameter.as_ptr(),
+        info_kind as mi_kind,
+        search_kind as mi_kind,
+      )
+    };
+    Ok(from_wchars(result))
+  }
+
   pub fn getCountByStreamKind(&self, stream_kind: MediaInfoStream) -> usize {
     log::debug!("MediaInfo::getCountByStreamKind({:?})", stream_kind);
-    unsafe { MediaInfo_Count_Get(self.handle, stream_kind as mi_stream_kind, usize::MAX) }
+    unsafe { MediaInfo_Count_Get(self.handle, stream_kind as mi_kind, usize::MAX) }
   }
 
   pub fn getInformation(&self) -> String {
@@ -168,16 +235,11 @@ impl MediaInfo {
     }
   }
 
-  pub fn setOption(&self, option: MediaInfoSetOption) -> Result<String> {
+  pub fn setOption(&self, option: MediaInfoSetOption, value: &str) -> Result<String> {
     let option_string = option.as_str();
-    let value = match option {
-      MediaInfoSetOption::CharSet(value) => value,
-      MediaInfoSetOption::Complete(value) => value,
-      MediaInfoSetOption::Locale(value) => value,
-    };
     log::debug!("MediaInfo::setOption(\"{}\", \"{}\")", option_string, value);
     let option = to_wchars(option_string);
-    let value = to_wchars(value.as_str());
+    let value = to_wchars(value);
     let result = unsafe { MediaInfo_Option(self.handle, option.as_ptr(), value.as_ptr()) };
     Ok(from_wchars(result))
   }
@@ -196,4 +258,72 @@ impl Drop for MediaInfo {
       MediaInfo_Close(self.handle);
     }
   }
+}
+
+pub mod streams {
+  use crate::media_info::*;
+  use anyhow::{anyhow, Result};
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum GeneralStream {
+    CompleteName,
+    Duration,
+    Encoded_Application,
+    Encoded_Date,
+    Encoded_Library,
+    FileSize,
+    Format,
+    FrameRate,
+    Movie,
+    OverallBitRate,
+    Title,
+    UniqueID,
+  }
+
+  impl GeneralStream {
+    pub fn get(&self, media_info: &MediaInfo, stream_number: usize) -> Result<String> {
+      media_info.get(
+        MediaInfoStream::General,
+        stream_number,
+        format!("{:?}", self).as_str(),
+        MediaInfoKind::Text,
+        MediaInfoKind::Name,
+      )
+    }
+
+    pub fn values() -> &'static [GeneralStream] {
+      &[
+        Self::CompleteName,
+        Self::Duration,
+        Self::Encoded_Application,
+        Self::Encoded_Date,
+        Self::Encoded_Library,
+        Self::FileSize,
+        Self::Format,
+        Self::FrameRate,
+        Self::Movie,
+        Self::OverallBitRate,
+        Self::Title,
+        Self::UniqueID,
+      ]
+    }
+  }
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum VideoStream {}
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum AudioStream {}
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum TextStream {}
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum OtherStream {}
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum ImageStream {}
+
+  #[derive(Debug, Clone, Copy)]
+  pub enum MenuStream {}
 }
