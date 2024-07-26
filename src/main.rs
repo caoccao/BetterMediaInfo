@@ -30,4 +30,5 @@ fn main() {
     let count = media_info.getCountByStreamKind(*stream);
     println!("Stream: {:?}, Count: {}", stream, count);
   });
+  println!("{}", media_info.getInformation());
 }

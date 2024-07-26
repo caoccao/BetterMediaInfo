@@ -38,6 +38,7 @@ extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
   fn MediaInfo_Close(handle: *mut mi_void);
   fn MediaInfo_Count_Get(handle: *mut mi_void, stream_kind: mi_stream_kind, stream_number: usize) -> usize;
+  fn MediaInfo_Inform(handle: *mut mi_void, reserved: usize) -> *const mi_wchar;
   fn MediaInfo_Open(handle: *mut mi_void, path: *const mi_wchar) -> usize;
   fn MediaInfo_Option(handle: *mut mi_void, option: *const mi_wchar, value: *const mi_wchar) -> *const mi_wchar;
 }
@@ -103,6 +104,11 @@ impl MediaInfo {
     unsafe { MediaInfo_Count_Get(self.handle, stream_kind as mi_stream_kind, usize::MAX) }
   }
 
+  pub fn getInformation(&self) -> String {
+    log::debug!("MediaInfo::getInformation()");
+    unsafe { from_wchars(MediaInfo_Inform(self.handle, 0)) }
+  }
+
   pub fn open(&self, path: &Path) -> Result<usize> {
     if let Some(path) = path.to_str() {
       log::debug!("MediaInfo::open(\"{}\")", path);
@@ -117,9 +123,9 @@ impl MediaInfo {
 
   pub fn option(&self, option: &str, value: &str) -> Result<String> {
     log::debug!("MediaInfo::option(\"{}\", \"{}\")", option, value);
+    let option = to_wchars(option);
+    let value = to_wchars(value);
     unsafe {
-      let option = to_wchars(option);
-      let value = to_wchars(value);
       Ok(from_wchars(MediaInfo_Option(
         self.handle,
         option.as_ptr(),
