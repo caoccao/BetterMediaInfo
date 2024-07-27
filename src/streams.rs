@@ -28,6 +28,7 @@ use std::{borrow::BorrowMut, collections::BTreeMap};
 use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 
+use crate::config::*;
 use crate::media_info::*;
 
 static mut BUILT_IN_STREAM_MAP: Lazy<BTreeMap<String, Stream>> = Lazy::new(|| {
@@ -39,20 +40,12 @@ static mut BUILT_IN_STREAM_MAP: Lazy<BTreeMap<String, Stream>> = Lazy::new(|| {
 });
 
 static BUILT_IN_GENERAL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
-  vec![
-    Stream::new_built_in(MediaInfoStreamKind::General, "CompleteName".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Duration".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Encoded_Application".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Encoded_Date".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Encoded_Library".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "FileSize".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Format".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "FrameRate".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Movie".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "OverallBitRate".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "Title".to_owned()),
-    Stream::new_built_in(MediaInfoStreamKind::General, "UniqueID".to_owned()),
-  ]
+  get_config()
+    .streams
+    .general
+    .iter()
+    .map(|parameter| Stream::new_built_in(MediaInfoStreamKind::General, parameter.to_owned()))
+    .collect()
 });
 
 #[derive(Debug, Clone, Copy, PartialEq)]

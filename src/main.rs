@@ -15,6 +15,7 @@
 * limitations under the License.
 */
 
+mod config;
 mod media_info;
 mod streams;
 
