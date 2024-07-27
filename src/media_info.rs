@@ -119,6 +119,19 @@ pub enum MediaInfoStreamKind {
 }
 
 impl MediaInfoStreamKind {
+  pub fn parse(text: &str) -> Self {
+    match text {
+      "General" => Self::General,
+      "Video" => Self::Video,
+      "Audio" => Self::Audio,
+      "Text" => Self::Text,
+      "Other" => Self::Other,
+      "Image" => Self::Image,
+      "Menu" => Self::Menu,
+      _ => Self::Max,
+    }
+  }
+
   pub fn values() -> &'static [MediaInfoStreamKind] {
     &[
       Self::General,

@@ -30,7 +30,13 @@ use once_cell::sync::Lazy;
 
 use crate::media_info::*;
 
-static mut BUILT_IN_STREAM_MAP: Lazy<BTreeMap<String, Stream>> = Lazy::new(|| BTreeMap::new());
+static mut BUILT_IN_STREAM_MAP: Lazy<BTreeMap<String, Stream>> = Lazy::new(|| {
+  let mut map: BTreeMap<String, Stream> = BTreeMap::new();
+  BUILT_IN_GENERAL_STREAMS.iter().for_each(|stream| {
+    map.insert(stream.get_identifier(), stream.clone());
+  });
+  map
+});
 
 static BUILT_IN_GENERAL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
   vec![
@@ -49,10 +55,26 @@ static BUILT_IN_GENERAL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
   ]
 });
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StreamType {
-  BuiltIn,
   External,
+  Internal,
+}
+
+impl StreamType {
+  pub fn is_external(&self) -> bool {
+    match self {
+      Self::External => true,
+      Self::Internal => false,
+    }
+  }
+
+  pub fn is_internal(&self) -> bool {
+    match self {
+      Self::External => false,
+      Self::Internal => true,
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -65,16 +87,28 @@ pub struct Stream {
 }
 
 impl Stream {
-  pub fn new_built_in(stream_kind: MediaInfoStreamKind, parameter: String) -> Self {
-    let stream = Self {
+  pub fn new(stream_kind: MediaInfoStreamKind, parameter: String) -> Self {
+    let mut stream = Self {
       info_kind: MediaInfoPropertyKind::Text,
       parameter,
       search_kind: MediaInfoPropertyKind::Name,
       stream_kind,
-      stream_type: StreamType::BuiltIn,
+      stream_type: StreamType::External,
     };
-    unsafe { BUILT_IN_STREAM_MAP.insert(stream.get_identifier(), stream.clone()) };
+    if unsafe { BUILT_IN_STREAM_MAP.contains_key(&stream.get_identifier()) } {
+      stream.stream_type = StreamType::Internal;
+    }
     stream
+  }
+
+  pub fn new_built_in(stream_kind: MediaInfoStreamKind, parameter: String) -> Self {
+    Self {
+      info_kind: MediaInfoPropertyKind::Text,
+      parameter,
+      search_kind: MediaInfoPropertyKind::Name,
+      stream_kind,
+      stream_type: StreamType::Internal,
+    }
   }
 
   pub fn get(&self, media_info: &MediaInfo, stream_number: usize) -> Result<String> {
@@ -100,8 +134,30 @@ impl Stream {
 
   pub fn parse(info_parameters: String) -> Vec<Stream> {
     let mut streams = Vec::new();
+    let mut stream_kind = MediaInfoStreamKind::General;
+    let mut parse_stream_kind = true;
     for line in info_parameters.split("\n").into_iter() {
-      println!("{}", line);
+      let line = line.trim();
+      if parse_stream_kind {
+        if line.is_empty() {
+          log::error!("Unexpected empty line.");
+          break;
+        }
+        stream_kind = MediaInfoStreamKind::parse(line);
+        if stream_kind == MediaInfoStreamKind::Max {
+          log::error!("Unexpected stream {}.", line);
+          break;
+        }
+        log::debug!("Parsing stream {}.", line);
+        parse_stream_kind = false;
+      } else {
+        if line.is_empty() {
+          parse_stream_kind = true;
+        } else {
+          let stream = Stream::new(stream_kind, line.to_owned());
+          streams.push(stream);
+        }
+      }
     }
     streams
   }

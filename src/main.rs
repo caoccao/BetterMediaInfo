@@ -21,13 +21,14 @@ mod streams;
 use std::path::Path;
 
 use media_info::*;
-use streams::*;
 
 fn main() {
   env_logger::init();
   let media_info_file = MediaInfoFile::new(Path::new("y:/test.mkv"));
-  Stream::get_built_in_streams(MediaInfoStreamKind::General)
+  media_info_file
+    .streams
     .into_iter()
+    .filter(|stream| stream.stream_type.is_internal())
     .for_each(|stream| {
       println!(
         "{}: {}",
