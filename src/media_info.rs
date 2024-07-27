@@ -25,10 +25,10 @@
 
 use anyhow::{anyhow, Result};
 use std::os::raw;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::usize;
 
-use crate::media_info;
+use crate::streams::*;
 
 type mi_kind = raw::c_int;
 type mi_void = raw::c_void;
@@ -107,7 +107,7 @@ impl MediaInfoSetOption {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum MediaInfoStream {
+pub enum MediaInfoStreamKind {
   General = 0,
   Video,
   Audio,
@@ -118,8 +118,8 @@ pub enum MediaInfoStream {
   Max,
 }
 
-impl MediaInfoStream {
-  pub fn values() -> &'static [MediaInfoStream] {
+impl MediaInfoStreamKind {
+  pub fn values() -> &'static [MediaInfoStreamKind] {
     &[
       Self::General,
       Self::Video,
@@ -134,7 +134,7 @@ impl MediaInfoStream {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum MediaInfoKind {
+pub enum MediaInfoPropertyKind {
   Name = 0,
   Text,
   Measure,
@@ -146,8 +146,8 @@ pub enum MediaInfoKind {
   Max,
 }
 
-impl MediaInfoKind {
-  pub fn values() -> &'static [MediaInfoKind] {
+impl MediaInfoPropertyKind {
+  pub fn values() -> &'static [MediaInfoPropertyKind] {
     &[
       Self::Name,
       Self::Text,
@@ -162,6 +162,7 @@ impl MediaInfoKind {
   }
 }
 
+#[derive(Debug)]
 pub struct MediaInfo {
   handle: *mut mi_void,
 }
@@ -176,11 +177,11 @@ impl MediaInfo {
 
   pub fn get(
     &self,
-    stream_kind: MediaInfoStream,
+    stream_kind: MediaInfoStreamKind,
     stream_number: usize,
     parameter: &str,
-    info_kind: MediaInfoKind,
-    search_kind: MediaInfoKind,
+    info_kind: MediaInfoPropertyKind,
+    search_kind: MediaInfoPropertyKind,
   ) -> Result<String> {
     log::debug!(
       "MediaInfo::get({:?}, {}, \"{}\", {:?}, {:?})",
@@ -204,7 +205,7 @@ impl MediaInfo {
     Ok(from_wchars(result))
   }
 
-  pub fn getCountByStreamKind(&self, stream_kind: MediaInfoStream) -> usize {
+  pub fn getCountByStreamKind(&self, stream_kind: MediaInfoStreamKind) -> usize {
     log::debug!("MediaInfo::getCountByStreamKind({:?})", stream_kind);
     unsafe { MediaInfo_Count_Get(self.handle, stream_kind as mi_kind, usize::MAX) }
   }
@@ -260,70 +261,33 @@ impl Drop for MediaInfo {
   }
 }
 
-pub mod streams {
-  use crate::media_info::*;
-  use anyhow::{anyhow, Result};
+#[derive(Debug)]
+pub struct MediaInfoFile {
+  pub media_info: MediaInfo,
+  pub path: PathBuf,
+  pub streams: Vec<Stream>,
+}
 
-  #[derive(Debug, Clone, Copy)]
-  pub enum GeneralStream {
-    CompleteName,
-    Duration,
-    Encoded_Application,
-    Encoded_Date,
-    Encoded_Library,
-    FileSize,
-    Format,
-    FrameRate,
-    Movie,
-    OverallBitRate,
-    Title,
-    UniqueID,
-  }
-
-  impl GeneralStream {
-    pub fn get(&self, media_info: &MediaInfo, stream_number: usize) -> Result<String> {
-      media_info.get(
-        MediaInfoStream::General,
-        stream_number,
-        format!("{:?}", self).as_str(),
-        MediaInfoKind::Text,
-        MediaInfoKind::Name,
-      )
-    }
-
-    pub fn values() -> &'static [GeneralStream] {
-      &[
-        Self::CompleteName,
-        Self::Duration,
-        Self::Encoded_Application,
-        Self::Encoded_Date,
-        Self::Encoded_Library,
-        Self::FileSize,
-        Self::Format,
-        Self::FrameRate,
-        Self::Movie,
-        Self::OverallBitRate,
-        Self::Title,
-        Self::UniqueID,
-      ]
+impl MediaInfoFile {
+  pub fn new(path: &Path) -> Self {
+    let media_info = MediaInfo::new();
+    media_info
+      .setOption(MediaInfoSetOption::CharSet, "UTF-8")
+      .expect("Failed to set charset to utf-8.");
+    media_info
+      .setOption(MediaInfoSetOption::Locale, "zh-CN")
+      .expect("Failed to set locale.");
+    media_info.open(&path).expect("Failed to open video file.");
+    let streams = Stream::parse(
+      media_info
+        .getOption(MediaInfoGetOption::InfoParameters)
+        .expect(format!("Failed to get {:?}.", MediaInfoGetOption::InfoParameters).as_str()),
+    );
+    let path = path.to_path_buf();
+    Self {
+      media_info,
+      path,
+      streams,
     }
   }
-
-  #[derive(Debug, Clone, Copy)]
-  pub enum VideoStream {}
-
-  #[derive(Debug, Clone, Copy)]
-  pub enum AudioStream {}
-
-  #[derive(Debug, Clone, Copy)]
-  pub enum TextStream {}
-
-  #[derive(Debug, Clone, Copy)]
-  pub enum OtherStream {}
-
-  #[derive(Debug, Clone, Copy)]
-  pub enum ImageStream {}
-
-  #[derive(Debug, Clone, Copy)]
-  pub enum MenuStream {}
 }
