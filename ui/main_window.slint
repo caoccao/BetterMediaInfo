@@ -1,6 +1,17 @@
+import { Palette } from "std-widgets.slint";
+
 export component MainWindow inherits Window {
-  Text {
-      text: "Better Media Info";
-      color: red;
-  }
+    preferred-width: 1200px;
+    preferred-height: 900px;
+    min-width: 640px;
+    min-height: 480px;
+    title: @tr("Better Media Info");
+    icon: @image-url("logo_96x96.png");
+    init => {
+        Palette.color-scheme = ColorScheme.light;
+    }
+    Text {
+        text: "Better Media Info";
+        color: red;
+    }
 }
