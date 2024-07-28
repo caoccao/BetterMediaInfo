@@ -23,18 +23,22 @@ use std::path::Path;
 
 use media_info::*;
 
-fn main() {
+slint::include_modules!();
+
+fn main() -> Result<(), slint::PlatformError> {
   env_logger::init();
-  let media_info_file = MediaInfoFile::new(Path::new("y:/test.mkv"));
-  media_info_file
-    .streams
-    .into_iter()
-    .filter(|stream| stream.stream_type.is_internal())
-    .for_each(|stream| {
-      println!(
-        "{}: {}",
-        stream.get_identifier(),
-        stream.get(&media_info_file.media_info, 0).unwrap_or_default()
-      );
-    });
+  let main_window = MainWindow::new()?;
+  main_window.run()
+  // let media_info_file = MediaInfoFile::new(Path::new("y:/test.mkv"));
+  // media_info_file
+  //   .streams
+  //   .into_iter()
+  //   .filter(|stream| stream.stream_type.is_internal())
+  //   .for_each(|stream| {
+  //     println!(
+  //       "{}: {}",
+  //       stream.get_identifier(),
+  //       stream.get(&media_info_file.media_info, 0).unwrap_or_default()
+  //     );
+  //   });
 }

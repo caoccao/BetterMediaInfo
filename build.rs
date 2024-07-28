@@ -77,4 +77,5 @@ fn main() {
   println!("cargo:rustc-link-search={media_info_dir}");
   println!("cargo:rustc-link-lib=MediaInfo");
   copy_lib(&media_info_path_buf);
+  slint_build::compile("ui/main_window.slint").unwrap();
 }
