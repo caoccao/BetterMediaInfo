@@ -20,9 +20,11 @@ mod media_info;
 mod streams;
 
 use std::path::Path;
+use std::rc::Rc;
 
 use config::*;
 use media_info::*;
+use streams::*;
 
 slint::include_modules!();
 
@@ -33,9 +35,24 @@ fn main() -> Result<(), slint::PlatformError> {
   let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion).unwrap();
   let app_version = env!("CARGO_PKG_VERSION");
   let text_about = format!("Better Media Info v{app_version} ({media_info_version})");
+  let stream_properties: Rc<slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>> =
+    Rc::new(slint::VecModel::default());
+  Stream::parse(
+    media_info
+      .getOption(MediaInfoGetOption::InfoParameters)
+      .expect(format!("Failed to get {:?}.", MediaInfoGetOption::InfoParameters).as_str()),
+  ).into_iter().for_each(|stream| {
+    let columns = Rc::new(slint::VecModel::default());
+    columns.push(slint::format!("{:?}", stream.stream_kind).into());
+    columns.push(slint::format!("{}", stream.parameter).into());
+    stream_properties.push(columns.into());
+  });
+
   let main_window = MainWindow::new()?;
-  main_window.global::<MainWindowProperties>().set_about(text_about.into());
-  main_window.global::<MainWindowProperties>().set_font_size(config.settings.font_size);
+  let main_window_properties = main_window.global::<MainWindowProperties>();
+  main_window_properties.set_about(text_about.into());
+  main_window_properties.set_font_size(config.settings.font_size);
+  main_window_properties.set_stream_properties(stream_properties.into());
   main_window.run()
   // let media_info_file = MediaInfoFile::new(Path::new("y:/test.mkv"));
   // media_info_file

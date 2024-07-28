@@ -1,8 +1,9 @@
-import { HorizontalBox, Palette, TabWidget, VerticalBox } from "std-widgets.slint";
+import { GroupBox, HorizontalBox, Palette, StandardTableView, TabWidget, VerticalBox } from "std-widgets.slint";
 
 export global MainWindowProperties {
     in property <string> about;
     in property <length> font_size;
+    in property <[[StandardListViewItem]]> stream_properties: [];
 }
 
 export component MainWindow inherits Window {
@@ -22,12 +23,24 @@ export component MainWindow inherits Window {
             Tab {
                 title: @tr("About");
                 VerticalBox {
-                    alignment: start;
-                    HorizontalBox {
-                        alignment: start;
+                    GroupBox {
+                        title: @tr("Version");
+                        vertical-stretch: 0;
                         Text {
                             text: MainWindowProperties.about;
                             color: Palette.control-foreground;
+                        }
+                    }
+
+                    GroupBox {
+                        title: @tr("Properties");
+                        vertical-stretch: 1;
+                        StandardTableView {
+                            columns: [
+                                { title: @tr("Stream") },
+                                { title: @tr("Property") },
+                            ];
+                            rows: MainWindowProperties.stream_properties;
                         }
                     }
                 }
