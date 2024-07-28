@@ -21,13 +21,21 @@ mod streams;
 
 use std::path::Path;
 
+use config::*;
 use media_info::*;
 
 slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
   env_logger::init();
+  let config = get_config();
+  let media_info = MediaInfo::new();
+  let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion).unwrap();
+  let app_version = env!("CARGO_PKG_VERSION");
+  let text_about = format!("Better Media Info v{app_version} ({media_info_version})");
   let main_window = MainWindow::new()?;
+  main_window.global::<MainWindowProperties>().set_about(text_about.into());
+  main_window.global::<MainWindowProperties>().set_font_size(config.settings.font_size);
   main_window.run()
   // let media_info_file = MediaInfoFile::new(Path::new("y:/test.mkv"));
   // media_info_file

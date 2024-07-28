@@ -1,4 +1,9 @@
-import { Palette } from "std-widgets.slint";
+import { HorizontalBox, Palette, TabWidget, VerticalBox } from "std-widgets.slint";
+
+export global MainWindowProperties {
+    in property <string> about;
+    in property <length> font_size;
+}
 
 export component MainWindow inherits Window {
     preferred-width: 1200px;
@@ -7,11 +12,26 @@ export component MainWindow inherits Window {
     min-height: 480px;
     title: @tr("Better Media Info");
     icon: @image-url("logo_96x96.png");
+    default-font-family: "Arial";
+    default-font-size: MainWindowProperties.font_size;
     init => {
         Palette.color-scheme = ColorScheme.light;
     }
-    Text {
-        text: "Better Media Info";
-        color: red;
+    VerticalLayout {
+        TabWidget {
+            Tab {
+                title: @tr("About");
+                VerticalBox {
+                    alignment: start;
+                    HorizontalBox {
+                        alignment: start;
+                        Text {
+                            text: MainWindowProperties.about;
+                            color: Palette.control-foreground;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

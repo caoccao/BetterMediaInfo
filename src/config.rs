@@ -23,17 +23,10 @@ use std::path::PathBuf;
 
 static mut CONFIG: Lazy<Config> = Lazy::new(|| Config::new());
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct Config {
+  pub settings: ConfigSettings,
   pub streams: ConfigStreams,
-}
-
-impl Default for Config {
-  fn default() -> Self {
-    Self {
-      streams: ConfigStreams::default(),
-    }
-  }
 }
 
 impl Config {
@@ -93,6 +86,17 @@ impl Default for ConfigStreams {
         "UniqueID".to_owned(),
       ],
     }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigSettings {
+  pub font_size: f32,
+}
+
+impl Default for ConfigSettings {
+  fn default() -> Self {
+    Self { font_size: 16.0 }
   }
 }
 
