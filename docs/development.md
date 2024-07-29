@@ -41,7 +41,7 @@ cd BetterMediaInfo
 set LIBCLANG_PATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin\libclang.dll
 bindgen ^
   --allowlist-item "MediaInfo\w+" ^
-  -o src\bindings.rs ^
+  -o src-tauri\src\bindings.rs ^
   ..\MediaInfoLib\Source\MediaInfoDLL\MediaInfoDLL.h
 ```
 
@@ -57,4 +57,12 @@ bindgen ^
 
 ```sh
 set RUST_LOG=debug
+```
+
+## Build Tauri
+
+```sh
+pnpm install
+pnpm run tauri dev
+pnpm run tauri build
 ```
