@@ -2,7 +2,7 @@
 
 ## Build MediaInfoLib
 
-* Clone the following projects.
+* Clone the following projects to the same directory.
 
 ```sh
 git clone https://github.com/caoccao/BetterMediaInfo.git
