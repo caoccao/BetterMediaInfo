@@ -15,11 +15,8 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
-  import { Stack, Title } from "@svelteuidev/core";
 </script>
 
-<header>
-  <Stack align="stretch" justify="flex-start">
-    <Title order={3}>Toolbar - TODO</Title>
-  </Stack>
-</header>
+<div>
+  <div>Toolbar - TODO</div>
+</div>

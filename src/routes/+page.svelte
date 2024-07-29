@@ -15,10 +15,15 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
-  import { Tabs } from '@svelteuidev/core';
-  import About from './about.svelte';
+  import { Tab, Tabs } from "svelte-ux";
+  import About from "./about.svelte";
+
+  let tabIndex = 0;
 </script>
 
 <Tabs>
-  <Tabs.Tab label="About"><About /></Tabs.Tab>
+  <Tab bind:value={tabIndex}>About</Tab>
+  <svelte:fragment slot="content" let:value={tabIndex}>
+    <About />
+  </svelte:fragment>
 </Tabs>

@@ -17,36 +17,35 @@
  	 */
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
-  import { Stack, Text, Title, theme } from "@svelteuidev/core";
 
-  let aboutColor = theme.colors.primary;
+  // let aboutColor = theme.colors.primary;
   let aboutText = "Better Media Info";
-  let parametersColor = theme.colors.primary;
+  // let parametersColor = theme.colors.primary;
   let parametersText = "";
 
   onMount(async () => {
     invoke<string>("get_about")
       .then((text) => {
         aboutText = text;
-        aboutColor = theme.colors.primary;
+        // aboutColor = theme.colors.primary;
       })
       .catch((error) => {
         aboutText = error;
-        aboutColor = theme.colors.error;
+        // aboutColor = theme.colors.error;
       });
     invoke<string>("get_parameters")
       .then((text) => {
         parametersText = text;
-        parametersColor = theme.colors.primary;
+        // parametersColor = theme.colors.primary;
       })
       .catch((error) => {
         parametersText = error;
-        parametersColor = theme.colors.error;
+        // parametersColor = theme.colors.error;
       });
   });
 </script>
 
-<Stack align="stretch" justify="flex-start">
-  <Title order={3} color={aboutColor}>{aboutText}</Title>
-  <Text color={parametersColor}>{parametersText}</Text>
-</Stack>
+<div class="grid justify-start">
+  <div>{aboutText}</div>
+  <div>{parametersText}</div>
+</div>

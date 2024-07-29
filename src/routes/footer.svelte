@@ -15,15 +15,8 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
-  import { Center, Divider, Text } from "@svelteuidev/core";
 </script>
 
-<footer>
-  <Divider size="sm" />
-  <Center>
-    <Text size="sm">
-      © Copyright 2024 Sam Cao
-      <a href="https://www.caoccao.com/">caoccao.com</a>
-    </Text>
-  </Center>
-</footer>
+<div>
+  © Copyright 2024 Sam Cao <a href="https://www.caoccao.com/">caoccao.com</a>
+</div>
