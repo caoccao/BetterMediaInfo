@@ -17,6 +17,8 @@
  	 */
 </script>
 
-<div>
-  © Copyright 2024 Sam Cao <a href="https://www.caoccao.com/">caoccao.com</a>
+<div class="my-3 place-content-center grid">
+  <div class="text-zinc-400">
+    © Copyright 2024 Sam Cao <a href="https://www.caoccao.com/">caoccao.com</a>
+  </div>
 </div>

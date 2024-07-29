@@ -17,35 +17,73 @@
  	 */
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
+  import { table, Table } from "svelte-ux";
 
-  // let aboutColor = theme.colors.primary;
-  let aboutText = "Better Media Info";
-  // let parametersColor = theme.colors.primary;
-  let parametersText = "";
+  const DEFAULT_ABOUT_TEXT = "Better Media Info";
+  let aboutText = DEFAULT_ABOUT_TEXT;
+  let aboutErrorText = "";
+  let propertiesErrorText = "";
+  let properties: Array<{ id: number; Stream: string; Property: string }> = [];
 
   onMount(async () => {
     invoke<string>("get_about")
       .then((text) => {
         aboutText = text;
-        // aboutColor = theme.colors.primary;
+        aboutErrorText = "";
       })
       .catch((error) => {
-        aboutText = error;
-        // aboutColor = theme.colors.error;
+        aboutText = "";
+        aboutErrorText = error;
       });
-    invoke<string>("get_parameters")
-      .then((text) => {
-        parametersText = text;
-        // parametersColor = theme.colors.primary;
+    invoke<Array<Array<string>>>("get_parameters")
+      .then((parameters) => {
+        properties = parameters.map(
+          (parameter: Array<string>, index: number) => {
+            return {
+              id: index,
+              Stream: parameter[0],
+              Property: parameter[1],
+            };
+          }
+        );
+        propertiesErrorText = "";
       })
       .catch((error) => {
-        parametersText = error;
-        // parametersColor = theme.colors.error;
+        properties = [];
+        propertiesErrorText = error;
       });
   });
 </script>
 
-<div class="grid justify-start">
-  <div>{aboutText}</div>
-  <div>{parametersText}</div>
+<div class="grid">
+  <div class="my-3">{aboutText}</div>
+  {#if aboutErrorText !== ""}
+    <div class="text-red-600 my-3">{aboutErrorText}</div>
+  {/if}
+  {#if propertiesErrorText !== ""}
+    <div class="text-red-600 my-3">{propertiesErrorText}</div>
+  {/if}
+  <Table
+    data={properties}
+    classes={{
+      table: "border-collapse border border-slate-500",
+      th: "border border-slate-600 p-2 bg-lime-50",
+      td: "border border-slate-700 p-2",
+    }}
+    columns={[
+      {
+        name: "id",
+        align: "left",
+        format: "integer",
+      },
+      {
+        name: "Stream",
+        align: "left",
+      },
+      {
+        name: "Property",
+        align: "left",
+      },
+    ]}
+  />
 </div>

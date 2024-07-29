@@ -16,13 +16,12 @@
    *   limitations under the License.
    */
   import "../app.css";
-  import { AppLayout } from "svelte-ux";
   import Footer from "./footer.svelte";
   import Toolbar from "./toolbar.svelte";
 </script>
 
-<div class="grid">
-  <nav class="sticky top-0 bg-white"><Toolbar /></nav>
+<div class="grid px-2">
+  <nav><Toolbar /></nav>
   <main><slot></slot></main>
   <footer><Footer /></footer>
 </div>

@@ -17,6 +17,6 @@
  	 */
 </script>
 
-<div>
+<div class="my-3">
   <div>Toolbar - TODO</div>
 </div>

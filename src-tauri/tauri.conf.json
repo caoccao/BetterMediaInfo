@@ -33,7 +33,9 @@
         "title": "Better Media Info",
         "theme": "Light",
         "width": 1200,
-        "height": 900
+        "height": 900,
+        "minWidth": 600,
+        "minHeight": 450
       }
     ],
     "security": {

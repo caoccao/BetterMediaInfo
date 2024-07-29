@@ -21,9 +21,32 @@
   let tabIndex = 0;
 </script>
 
-<Tabs>
-  <Tab bind:value={tabIndex}>About</Tab>
+<Tabs
+  bind:value={tabIndex}
+  classes={{
+    content: "border p-2 rounded-b rounded-tr",
+    tab: { root: "rounded-t" },
+  }}
+>
+  <Tab
+    classes={{
+      root: "rounded-t",
+    }}
+    on:click={() => (tabIndex = 0)}
+    selected={tabIndex === 0}>About</Tab
+  >
+  <Tab
+    classes={{
+      root: "rounded-t",
+    }}
+    on:click={() => (tabIndex = 1)}
+    selected={tabIndex === 1}>TODO</Tab
+  >
   <svelte:fragment slot="content" let:value={tabIndex}>
-    <About />
+    {#if tabIndex === 0}
+      <About />
+    {:else if tabIndex === 1}
+      <div>TODO</div>
+    {/if}
   </svelte:fragment>
 </Tabs>

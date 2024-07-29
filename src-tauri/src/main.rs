@@ -34,7 +34,7 @@ async fn get_about() -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn get_parameters() -> Result<String, String> {
+async fn get_parameters() -> Result<Vec<Vec<String>>, String> {
   log::debug!("get_parameters");
   controller::get_parameters().await.map_err(convert_error)
 }

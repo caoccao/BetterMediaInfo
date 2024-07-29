@@ -27,14 +27,13 @@ pub async fn get_about() -> Result<String> {
   Ok(format!("Better Media Info v{app_version} ({media_info_version})"))
 }
 
-pub async fn get_parameters() -> Result<String> {
+pub async fn get_parameters() -> Result<Vec<Vec<String>>> {
   let media_info = MediaInfo::new();
   let info_parameters = media_info.getOption(MediaInfoGetOption::InfoParameters)?;
   Ok(
     Stream::parse(info_parameters)
       .into_iter()
-      .map(|stream| format!("{:?}: {}", stream.stream_kind, stream.parameter).to_owned())
-      .collect::<Vec<String>>()
-      .join(", "),
+      .map(|stream| vec![format!("{:?}", stream.stream_kind).to_owned(), stream.parameter])
+      .collect::<Vec<Vec<String>>>(),
   )
 }
