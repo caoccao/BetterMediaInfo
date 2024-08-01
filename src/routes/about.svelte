@@ -19,52 +19,67 @@
   import { onMount } from "svelte";
   import { table, Table } from "svelte-ux";
 
-  const DEFAULT_ABOUT_TEXT = "Better Media Info";
-  let aboutText = DEFAULT_ABOUT_TEXT;
+  interface About {
+    appVersion: string;
+    mediaInfoVersion: string;
+  }
+
+  interface Parameter {
+    id: number;
+    stream: string;
+    property: string;
+  }
+
+  const APP_NAME = "Better Media Info";
+  let about = { appVersion: "", mediaInfoVersion: "" };
   let aboutErrorText = "";
-  let propertiesErrorText = "";
-  let properties: Array<{ id: number; Stream: string; Property: string }> = [];
+  let parameters: Array<Parameter> = [];
+  let parametersErrorText = "";
 
   onMount(async () => {
-    invoke<string>("get_about")
-      .then((text) => {
-        aboutText = text;
+    invoke<About>("get_about")
+      .then((result) => {
+        about = result;
         aboutErrorText = "";
       })
       .catch((error) => {
-        aboutText = "";
+        about = { appVersion: "", mediaInfoVersion: "" };
         aboutErrorText = error;
       });
-    invoke<Array<Array<string>>>("get_parameters")
-      .then((parameters) => {
-        properties = parameters.map(
-          (parameter: Array<string>, index: number) => {
-            return {
-              id: index,
-              Stream: parameter[0],
-              Property: parameter[1],
-            };
-          }
-        );
-        propertiesErrorText = "";
+    invoke<Array<Parameter>>("get_parameters")
+      .then((result) => {
+        parameters = result;
+        parametersErrorText = "";
       })
       .catch((error) => {
-        properties = [];
-        propertiesErrorText = error;
+        parameters = [];
+        parametersErrorText = error;
       });
   });
 </script>
 
 <div class="grid">
-  <div class="my-3">{aboutText}</div>
+  <div class="my-3">
+    <p>{APP_NAME} - v{about.appVersion}</p>
+    <p>{about.mediaInfoVersion}</p>
+    <p>
+      Author -
+      <a
+        href="https://github.com/caoccao"
+        target="_blank"
+        class="text-blue-600 visited:text-purple-600 underline underline-offset-auto"
+        >Sam Cao</a
+      >
+    </p>
+  </div>
   {#if aboutErrorText !== ""}
     <div class="text-red-600 my-3">{aboutErrorText}</div>
   {/if}
-  {#if propertiesErrorText !== ""}
-    <div class="text-red-600 my-3">{propertiesErrorText}</div>
+  {#if parametersErrorText !== ""}
+    <div class="text-red-600 my-3">{parametersErrorText}</div>
   {/if}
   <Table
-    data={properties}
+    data={parameters}
     classes={{
       table: "border-collapse border border-slate-500",
       th: "border border-slate-600 p-2 bg-lime-50",
@@ -73,15 +88,18 @@
     columns={[
       {
         name: "id",
+        header: "ID",
         align: "left",
         format: "integer",
       },
       {
-        name: "Stream",
+        name: "stream",
+        header: "Stream",
         align: "left",
       },
       {
-        name: "Property",
+        name: "property",
+        header: "Property",
         align: "left",
       },
     ]}

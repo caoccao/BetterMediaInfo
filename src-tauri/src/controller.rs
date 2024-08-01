@@ -17,23 +17,36 @@
 
 use anyhow::Result;
 
+use crate::interface::*;
 use crate::media_info::*;
 use crate::streams::*;
 
-pub async fn get_about() -> Result<String> {
+pub async fn get_about() -> Result<About> {
   let media_info = MediaInfo::new();
   let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion).unwrap();
-  let app_version = env!("CARGO_PKG_VERSION");
-  Ok(format!("Better Media Info v{app_version} ({media_info_version})"))
+  let app_version = env!("CARGO_PKG_VERSION").to_owned();
+  Ok(About {
+    app_version,
+    media_info_version,
+  })
 }
 
-pub async fn get_parameters() -> Result<Vec<Vec<String>>> {
+pub async fn get_parameters() -> Result<Vec<Parameter>> {
   let media_info = MediaInfo::new();
   let info_parameters = media_info.getOption(MediaInfoGetOption::InfoParameters)?;
+  let mut id = 0;
   Ok(
     Stream::parse(info_parameters)
       .into_iter()
-      .map(|stream| vec![format!("{:?}", stream.stream_kind).to_owned(), stream.parameter])
-      .collect::<Vec<Vec<String>>>(),
+      .map(|stream| {
+        let parameter = Parameter {
+          id,
+          stream: format!("{:?}", stream.stream_kind),
+          property: stream.parameter,
+        };
+        id += 1;
+        parameter
+      })
+      .collect::<Vec<Parameter>>(),
   )
 }

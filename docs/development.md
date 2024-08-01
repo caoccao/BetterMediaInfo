@@ -66,3 +66,8 @@ pnpm install
 pnpm run tauri dev
 pnpm run tauri build
 ```
+
+## UI
+
+* [Svelte UX](https://svelte-ux.techniq.dev/)
+* [tailwindcss](https://tailwindcss.com/)

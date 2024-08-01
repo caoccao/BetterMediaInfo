@@ -20,6 +20,7 @@
 
 mod config;
 mod controller;
+mod interface;
 mod media_info;
 mod streams;
 
@@ -28,13 +29,13 @@ fn convert_error(error: anyhow::Error) -> String {
 }
 
 #[tauri::command]
-async fn get_about() -> Result<String, String> {
+async fn get_about() -> Result<interface::About, String> {
   log::debug!("get_about");
   controller::get_about().await.map_err(convert_error)
 }
 
 #[tauri::command]
-async fn get_parameters() -> Result<Vec<Vec<String>>, String> {
+async fn get_parameters() -> Result<Vec<interface::Parameter>, String> {
   log::debug!("get_parameters");
   controller::get_parameters().await.map_err(convert_error)
 }
