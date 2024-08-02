@@ -15,36 +15,22 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
-  import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
   import { Paginate, Pagination, Table } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
+  import { mediaInfoAbout, mediaInfoParameters } from "../lib/store";
 
   const APP_NAME = "Better Media Info";
   let about = { appVersion: "", mediaInfoVersion: "" };
-  let aboutErrorText = "";
   let parameters: Array<Protocol.Parameter> = [];
-  let parametersErrorText = "";
 
   onMount(async () => {
-    invoke<Protocol.About>("get_about")
-      .then((result) => {
-        about = result;
-        aboutErrorText = "";
-      })
-      .catch((error) => {
-        about = { appVersion: "", mediaInfoVersion: "" };
-        aboutErrorText = error;
-      });
-    invoke<Array<Protocol.Parameter>>("get_parameters")
-      .then((result) => {
-        parameters = result;
-        parametersErrorText = "";
-      })
-      .catch((error) => {
-        parameters = [];
-        parametersErrorText = error;
-      });
+    mediaInfoAbout.subscribe((value) => {
+      about = value;
+    });
+    mediaInfoParameters.subscribe((value) => {
+      parameters = value;
+    });
   });
 </script>
 
@@ -62,12 +48,6 @@
       >
     </p>
   </div>
-  {#if aboutErrorText !== ""}
-    <div class="text-red-600 my-3">{aboutErrorText}</div>
-  {/if}
-  {#if parametersErrorText !== ""}
-    <div class="text-red-600 my-3">{parametersErrorText}</div>
-  {/if}
   <Paginate
     data={parameters}
     perPage={10}
