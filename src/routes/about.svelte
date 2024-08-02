@@ -58,16 +58,6 @@
       parameters = value;
     });
   });
-
-  function onChangePropertyFilter(event: CustomEvent<{ value: string }>) {
-    propertyFilter = event.detail.value;
-  }
-
-  function onChangeStreamFilter(
-    event: CustomEvent<{ value: string | null; option: MenuOption }>
-  ) {
-    streamFilter = event.detail.value;
-  }
 </script>
 
 <div class="grid">
@@ -91,9 +81,9 @@
           root: "min-w-32 max-w-32",
         }}
         options={[{ label: "All Streams", value: null }, ...streams]}
-        on:change={onChangeStreamFilter}
+        bind:value={streamFilter}
       />
-      <TextField placeholder="Property" on:change={onChangePropertyFilter} />
+      <TextField placeholder="Property" bind:value={propertyFilter} />
     </div>
   </div>
   <Paginate
