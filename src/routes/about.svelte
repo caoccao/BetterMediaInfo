@@ -16,13 +16,39 @@
  	 *   limitations under the License.
  	 */
   import { onMount } from "svelte";
-  import { Paginate, Pagination, Table } from "svelte-ux";
+  import { MenuField, Paginate, Pagination, Table, TextField } from "svelte-ux";
+  import type { MenuOption } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
   import { mediaInfoAbout, mediaInfoParameters } from "../lib/store";
 
   const APP_NAME = "Better Media Info";
   let about = { appVersion: "", mediaInfoVersion: "" };
+  let filteredParameters: Array<Protocol.Parameter> = [];
   let parameters: Array<Protocol.Parameter> = [];
+  let propertyFilter: string | null = null;
+  let streamFilter: string | null = null;
+  let streams: Array<MenuOption> = [];
+
+  $: {
+    const propertyFilterLowerCased = propertyFilter
+      ? propertyFilter.toLowerCase()
+      : null;
+    filteredParameters = parameters.filter((parameter) => {
+      let hit = true;
+      if (streamFilter !== null) {
+        hit = parameter.stream === streamFilter;
+      }
+      if (hit && propertyFilter) {
+        hit = parameter.property
+          .toLocaleLowerCase()
+          .includes(propertyFilterLowerCased as string);
+      }
+      return hit;
+    });
+    streams = [
+      ...new Set(parameters.map((parameter) => parameter.stream)).values(),
+    ].map((stream) => ({ label: stream, value: stream }));
+  }
 
   onMount(async () => {
     mediaInfoAbout.subscribe((value) => {
@@ -32,6 +58,16 @@
       parameters = value;
     });
   });
+
+  function onChangePropertyFilter(event: CustomEvent<{ value: string }>) {
+    propertyFilter = event.detail.value;
+  }
+
+  function onChangeStreamFilter(
+    event: CustomEvent<{ value: string | null; option: MenuOption }>
+  ) {
+    streamFilter = event.detail.value;
+  }
 </script>
 
 <div class="grid">
@@ -48,11 +84,23 @@
       >
     </p>
   </div>
+  <div class="my-3">
+    <div class="grid grid-flow-col grid-cols-[auto,1fr] gap-2">
+      <MenuField
+        classes={{
+          root: "min-w-32 max-w-32",
+        }}
+        options={[{ label: "All Streams", value: null }, ...streams]}
+        on:change={onChangeStreamFilter}
+      />
+      <TextField placeholder="Property" on:change={onChangePropertyFilter} />
+    </div>
+  </div>
   <Paginate
-    data={parameters}
+    data={filteredParameters}
     perPage={10}
     let:pageData={pagedParameters}
-    let:pagination
+    let:pagination={paginator}
   >
     <Table
       data={pagedParameters}
@@ -81,7 +129,7 @@
       ]}
     />
     <Pagination
-      {pagination}
+      pagination={paginator}
       perPageOptions={[10, 15, 20]}
       show={[
         "perPage",
