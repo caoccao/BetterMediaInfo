@@ -17,7 +17,7 @@
  	 */
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
-  import { table, Table } from "svelte-ux";
+  import { Paginate, Pagination, Table } from "svelte-ux";
 
   interface About {
     appVersion: string;
@@ -78,30 +78,54 @@
   {#if parametersErrorText !== ""}
     <div class="text-red-600 my-3">{parametersErrorText}</div>
   {/if}
-  <Table
+  <Paginate
     data={parameters}
-    classes={{
-      table: "border-collapse border border-slate-500",
-      th: "border border-slate-600 p-2 bg-lime-50",
-      td: "border border-slate-700 p-2",
-    }}
-    columns={[
-      {
-        name: "id",
-        header: "ID",
-        align: "left",
-        format: "integer",
-      },
-      {
-        name: "stream",
-        header: "Stream",
-        align: "left",
-      },
-      {
-        name: "property",
-        header: "Property",
-        align: "left",
-      },
-    ]}
-  />
+    perPage={10}
+    let:pageData={pagedParameters}
+    let:pagination
+  >
+    <Table
+      data={pagedParameters}
+      classes={{
+        table: "border-collapse border border-slate-500",
+        th: "border border-slate-600 p-2 bg-lime-50",
+        td: "border border-slate-700 p-2",
+      }}
+      columns={[
+        {
+          name: "id",
+          header: "ID",
+          align: "left",
+          format: "integer",
+        },
+        {
+          name: "stream",
+          header: "Stream",
+          align: "left",
+        },
+        {
+          name: "property",
+          header: "Property",
+          align: "left",
+        },
+      ]}
+    />
+    <Pagination
+      {pagination}
+      perPageOptions={[10, 15, 20]}
+      show={[
+        "perPage",
+        "pagination",
+        "firstPage",
+        "prevPage",
+        "nextPage",
+        "lastPage",
+      ]}
+      classes={{
+        root: "border-t py-1 mt-2",
+        perPage: "flex-1 text-right",
+        pagination: "px-8",
+      }}
+    />
+  </Paginate>
 </div>
