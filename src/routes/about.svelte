@@ -18,26 +18,16 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
   import { Paginate, Pagination, Table } from "svelte-ux";
-
-  interface About {
-    appVersion: string;
-    mediaInfoVersion: string;
-  }
-
-  interface Parameter {
-    id: number;
-    stream: string;
-    property: string;
-  }
+  import * as Protocol from "../lib/protocol";
 
   const APP_NAME = "Better Media Info";
   let about = { appVersion: "", mediaInfoVersion: "" };
   let aboutErrorText = "";
-  let parameters: Array<Parameter> = [];
+  let parameters: Array<Protocol.Parameter> = [];
   let parametersErrorText = "";
 
   onMount(async () => {
-    invoke<About>("get_about")
+    invoke<Protocol.About>("get_about")
       .then((result) => {
         about = result;
         aboutErrorText = "";
@@ -46,7 +36,7 @@
         about = { appVersion: "", mediaInfoVersion: "" };
         aboutErrorText = error;
       });
-    invoke<Array<Parameter>>("get_parameters")
+    invoke<Array<Protocol.Parameter>>("get_parameters")
       .then((result) => {
         parameters = result;
         parametersErrorText = "";

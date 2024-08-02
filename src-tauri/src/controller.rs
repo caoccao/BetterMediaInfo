@@ -17,8 +17,8 @@
 
 use anyhow::Result;
 
-use crate::interface::*;
 use crate::media_info::*;
+use crate::protocol::*;
 use crate::streams::*;
 
 pub async fn get_about() -> Result<About> {
