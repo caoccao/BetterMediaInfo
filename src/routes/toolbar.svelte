@@ -15,8 +15,19 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
+
+  import { Button, ButtonGroup } from "svelte-ux";
+  const BUTTON_CLASSES = "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white";
+  const MATERIAL_SYMBOLS_OUTLINED = "material-symbols-outlined";
 </script>
 
-<div class="my-3">
-  <div>Toolbar - TODO</div>
+<div class="my-3 grid grid-flow-col justify-start gap-2">
+  <ButtonGroup variant="outline" color="default">
+    <Button classes={{ root: BUTTON_CLASSES }}>
+      <span class={MATERIAL_SYMBOLS_OUTLINED}>settings</span>
+    </Button>
+    <Button classes={{ root: BUTTON_CLASSES }}>
+      <span class={MATERIAL_SYMBOLS_OUTLINED}>info</span>
+    </Button>
+  </ButtonGroup>
 </div>

@@ -61,7 +61,7 @@
 </script>
 
 <div class="grid">
-  <div class="my-3">
+  <div>
     <p>{APP_NAME} - v{about.appVersion}</p>
     <p>{about.mediaInfoVersion}</p>
     <p>
@@ -74,17 +74,15 @@
       >
     </p>
   </div>
-  <div class="my-3">
-    <div class="grid grid-flow-col grid-cols-[auto,1fr] gap-2">
-      <MenuField
-        classes={{
-          root: "min-w-32 max-w-32",
-        }}
-        options={[{ label: "All Streams", value: null }, ...streams]}
-        bind:value={streamFilter}
-      />
-      <TextField placeholder="Property" bind:value={propertyFilter} />
-    </div>
+  <div class="my-3 grid grid-flow-col grid-cols-[auto,1fr] gap-2">
+    <MenuField
+      classes={{
+        root: "min-w-32 max-w-32",
+      }}
+      options={[{ label: "All Streams", value: null }, ...streams]}
+      bind:value={streamFilter}
+    />
+    <TextField placeholder="Property" bind:value={propertyFilter} />
   </div>
   <Paginate
     data={filteredParameters}

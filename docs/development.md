@@ -71,3 +71,4 @@ pnpm run tauri build
 
 * [Svelte UX](https://svelte-ux.techniq.dev/)
 * [tailwindcss](https://tailwindcss.com/)
+* [Google Fonts](https://fonts.google.com/icons)
