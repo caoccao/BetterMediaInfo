@@ -18,6 +18,7 @@
   import { afterUpdate } from "svelte";
   import { Tab, Tabs } from "svelte-ux";
   import About from "./about.svelte";
+  import List from "./list.svelte";
   import * as Protocol from "../lib/protocol";
   import { tabAbout } from "../lib/store";
 
@@ -40,7 +41,7 @@
     tabIndex: number,
     tabAboutVisible: boolean
   ): Array<Protocol.TabControl> {
-    let controls = [{ type: Protocol.TabType.TODO, index: 0, selected: false }];
+    let controls = [{ type: Protocol.TabType.List, index: 0, selected: false }];
     if (tabAboutVisible) {
       controls.push({
         type: Protocol.TabType.About,
@@ -90,13 +91,13 @@
         on:click={() => (tabIndex = tabControl.index)}
         selected={tabIndex === tabControl.index}>About</Tab
       >
-    {:else if tabControl.type === Protocol.TabType.TODO}
+    {:else if tabControl.type === Protocol.TabType.List}
       <Tab
         classes={{
           root: "rounded-t",
         }}
         on:click={() => (tabIndex = tabControl.index)}
-        selected={tabIndex === tabControl.index}>TODO</Tab
+        selected={tabIndex === tabControl.index}>List</Tab
       >
     {/if}
   {/each}
@@ -105,8 +106,8 @@
       {#if tabControl.index === tabIndex}
         {#if tabControl.type === Protocol.TabType.About}
           <About />
-        {:else if tabControl.type === Protocol.TabType.TODO}
-          <div>TODO</div>
+        {:else if tabControl.type === Protocol.TabType.List}
+          <List />
         {/if}
       {/if}
     {/each}

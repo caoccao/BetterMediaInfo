@@ -28,7 +28,7 @@ export interface Parameter {
 
 export enum TabType {
   About,
-  TODO,
+  List,
 }
 
 export interface TabControl {

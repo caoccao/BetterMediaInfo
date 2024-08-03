@@ -17,6 +17,7 @@
  	 */
 
   import { Button, ButtonGroup } from "svelte-ux";
+  import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import { tabAbout } from "../lib/store";
 
   const BUTTON_CLASSES = "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white";
@@ -28,6 +29,14 @@
 </script>
 
 <div class="my-3 grid grid-flow-col justify-start gap-2">
+  <ButtonGroup variant="outline" color="default">
+    <Button classes={{ root: BUTTON_CLASSES }} on:click={openFileDialog}>
+      <span class={MATERIAL_SYMBOLS_OUTLINED}>movie</span>
+    </Button>
+    <Button classes={{ root: BUTTON_CLASSES }} on:click={openDirectoryDialog}>
+      <span class={MATERIAL_SYMBOLS_OUTLINED}>folder_open</span>
+    </Button>
+  </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
     <Button classes={{ root: BUTTON_CLASSES }}>
       <span class={MATERIAL_SYMBOLS_OUTLINED}>settings</span>
