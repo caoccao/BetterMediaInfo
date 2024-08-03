@@ -17,8 +17,14 @@
  	 */
 
   import { Button, ButtonGroup } from "svelte-ux";
+  import { tabAbout } from "../lib/store";
+
   const BUTTON_CLASSES = "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white";
   const MATERIAL_SYMBOLS_OUTLINED = "material-symbols-outlined";
+
+  function toggleTabAbout() {
+    tabAbout.update((value) => !value);
+  }
 </script>
 
 <div class="my-3 grid grid-flow-col justify-start gap-2">
@@ -26,7 +32,7 @@
     <Button classes={{ root: BUTTON_CLASSES }}>
       <span class={MATERIAL_SYMBOLS_OUTLINED}>settings</span>
     </Button>
-    <Button classes={{ root: BUTTON_CLASSES }}>
+    <Button classes={{ root: BUTTON_CLASSES }} on:click={toggleTabAbout}>
       <span class={MATERIAL_SYMBOLS_OUTLINED}>info</span>
     </Button>
   </ButtonGroup>

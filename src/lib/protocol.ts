@@ -25,3 +25,14 @@ export interface Parameter {
   stream: string;
   property: string;
 }
+
+export enum TabType {
+  About,
+  TODO,
+}
+
+export interface TabControl {
+  type: TabType;
+  index: number;
+  selected: boolean;
+}

@@ -45,3 +45,13 @@ export const mediaInfoParameters: Store.Readable<Array<Protocol.Parameter>> =
       });
     return () => {};
   });
+
+export const tabAbout: Store.Writable<boolean> = Store.writable<boolean>(
+  false,
+  (set) => {
+    set(false);
+    return () => {
+      set(false);
+    };
+  }
+);
