@@ -16,7 +16,7 @@
  	 *   limitations under the License.
  	 */
   import { afterUpdate } from "svelte";
-  import { Tab, Tabs } from "svelte-ux";
+  import { Button, Tab, Tabs } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import * as Protocol from "../lib/protocol";
@@ -73,6 +73,11 @@
       }
     }
   }
+
+  function onClickCloseTabAbout(event: MouseEvent) {
+    event.stopPropagation();
+    tabAbout.set(false);
+  }
 </script>
 
 <Tabs
@@ -89,8 +94,16 @@
           root: "rounded-t",
         }}
         on:click={() => (tabIndex = tabControl.index)}
-        selected={tabIndex === tabControl.index}>About</Tab
+        selected={tabIndex === tabControl.index}
       >
+        About
+        <Button
+          classes={{ root: "w-2 h-4 m-0 p-2" }}
+          on:click={onClickCloseTabAbout}
+        >
+          <span class="material-symbols-outlined text-xs">close</span>
+        </Button>
+      </Tab>
     {:else if tabControl.type === Protocol.TabType.List}
       <Tab
         classes={{

@@ -21,27 +21,19 @@
 </script>
 
 <div class="grid">
-  <div class="my-3">Please select some files or a directory.</div>
-  <div class="grid grid-flow-col justify-start gap-2">
+  <div class="my-3 text-center">Please select some files or a directory.</div>
+  <div class="my-3 grid grid-flow-col justify-center gap-2">
     <Button
       classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
       on:click={openFileDialog}
     >
-      <span class="material-symbols-outlined icon-folder-open">movie</span
-      >
+      <span class="material-symbols-outlined text-3xl">movie</span>
     </Button>
     <Button
       classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
       on:click={openDirectoryDialog}
     >
-      <span class="material-symbols-outlined icon-folder-open">folder_open</span
-      >
+      <span class="material-symbols-outlined text-3xl">folder_open</span>
     </Button>
   </div>
 </div>
-
-<style>
-  .icon-folder-open {
-    font-size: 36px;
-  }
-</style>

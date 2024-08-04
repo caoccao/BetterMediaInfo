@@ -20,29 +20,42 @@
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import { tabAbout } from "../lib/store";
 
-  const BUTTON_CLASSES = "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white";
-  const MATERIAL_SYMBOLS_OUTLINED = "material-symbols-outlined";
+  const BUTTON_CLASSES_NORMAL =
+    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white";
+  const BUTTON_CLASSES_SELECTED =
+    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white";
+
+  let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
 
   function toggleTabAbout() {
     tabAbout.update((value) => !value);
   }
+
+  tabAbout.subscribe((value) => {
+    buttonAboutClasses = value
+      ? BUTTON_CLASSES_SELECTED
+      : BUTTON_CLASSES_NORMAL;
+  });
 </script>
 
-<div class="my-3 grid grid-flow-col justify-start gap-2">
+<div class="mt-1 mb-3 grid grid-flow-col justify-start gap-2">
   <ButtonGroup variant="outline" color="default">
-    <Button classes={{ root: BUTTON_CLASSES }} on:click={openFileDialog}>
-      <span class={MATERIAL_SYMBOLS_OUTLINED}>movie</span>
+    <Button classes={{ root: BUTTON_CLASSES_NORMAL }} on:click={openFileDialog}>
+      <span class="material-symbols-outlined">movie</span>
     </Button>
-    <Button classes={{ root: BUTTON_CLASSES }} on:click={openDirectoryDialog}>
-      <span class={MATERIAL_SYMBOLS_OUTLINED}>folder_open</span>
+    <Button
+      classes={{ root: BUTTON_CLASSES_NORMAL }}
+      on:click={openDirectoryDialog}
+    >
+      <span class="material-symbols-outlined">folder_open</span>
     </Button>
   </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
-    <Button classes={{ root: BUTTON_CLASSES }}>
-      <span class={MATERIAL_SYMBOLS_OUTLINED}>settings</span>
+    <Button classes={{ root: BUTTON_CLASSES_NORMAL }}>
+      <span class="material-symbols-outlined">settings</span>
     </Button>
-    <Button classes={{ root: BUTTON_CLASSES }} on:click={toggleTabAbout}>
-      <span class={MATERIAL_SYMBOLS_OUTLINED}>info</span>
+    <Button classes={{ root: buttonAboutClasses }} on:click={toggleTabAbout}>
+      <span class="material-symbols-outlined">info</span>
     </Button>
   </ButtonGroup>
 </div>
