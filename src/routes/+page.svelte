@@ -15,12 +15,15 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
-  import { afterUpdate } from "svelte";
+  import { appWindow } from "@tauri-apps/api/window";
+  import type { Event, UnlistenFn } from "@tauri-apps/api/event";
+  import type { FileDropEvent } from "@tauri-apps/api/window";
+  import { afterUpdate, onMount } from "svelte";
   import { Button, Tab, Tabs } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import * as Protocol from "../lib/protocol";
-  import { tabAbout } from "../lib/store";
+  import { mediaFiles, tabAbout } from "../lib/store";
 
   let tabIndex = 0;
   let enableTabAbout = false;
@@ -33,6 +36,25 @@
 
   afterUpdate(() => {
     selectTab();
+  });
+
+  onMount(() => {
+    let cancelFileDrop: UnlistenFn | null = null;
+    appWindow
+      .onFileDropEvent((event: Event<FileDropEvent>) => {
+        if (event.payload.type === "drop") {
+          mediaFiles.set(event.payload.paths);
+        }
+      })
+      .then((value) => {
+        cancelFileDrop = value;
+      });
+
+    return () => {
+      if (cancelFileDrop) {
+        cancelFileDrop();
+      }
+    };
   });
 
   $: tabControls = getTabControls(tabIndex, enableTabAbout);

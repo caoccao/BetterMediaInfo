@@ -16,9 +16,6 @@
  	 *   limitations under the License.
  	 */
 
-  import { appWindow } from "@tauri-apps/api/window";
-  import type { Event } from "@tauri-apps/api/event";
-  import type { FileDropEvent } from "@tauri-apps/api/window";
   import { onMount } from "svelte";
   import { Button } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
@@ -26,13 +23,7 @@
 
   let files: string[] = [];
 
-  onMount(async () => {
-    appWindow.onFileDropEvent((event: Event<FileDropEvent>) => {
-      if (event.payload.type === "drop") {
-        mediaFiles.set(event.payload.paths);
-      }
-    });
-
+  onMount(() => {
     mediaFiles.subscribe((value) => {
       files = value;
     });
