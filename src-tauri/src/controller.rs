@@ -41,7 +41,7 @@ pub async fn get_parameters() -> Result<Vec<Parameter>> {
       .map(|stream| {
         let parameter = Parameter {
           id,
-          stream: format!("{:?}", stream.stream_kind),
+          stream: stream.stream_kind.get_name().to_owned(),
           property: stream.parameter,
         };
         id += 1;

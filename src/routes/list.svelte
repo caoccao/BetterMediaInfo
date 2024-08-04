@@ -16,24 +16,49 @@
  	 *   limitations under the License.
  	 */
 
+  import { appWindow } from "@tauri-apps/api/window";
+  import type { Event } from "@tauri-apps/api/event";
+  import type { FileDropEvent } from "@tauri-apps/api/window";
+  import { onMount } from "svelte";
   import { Button } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
+  import { mediaFiles } from "../lib/store";
+
+  let files: string[] = [];
+
+  onMount(async () => {
+    appWindow.onFileDropEvent((event: Event<FileDropEvent>) => {
+      if (event.payload.type === "drop") {
+        mediaFiles.set(event.payload.paths);
+      }
+    });
+
+    mediaFiles.subscribe((value) => {
+      files = value;
+    });
+  });
 </script>
 
 <div class="grid">
-  <div class="my-3 text-center">Please select some files or a directory.</div>
-  <div class="my-3 grid grid-flow-col justify-center gap-2">
-    <Button
-      classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
-      on:click={openFileDialog}
-    >
-      <span class="material-symbols-outlined text-3xl">movie</span>
-    </Button>
-    <Button
-      classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
-      on:click={openDirectoryDialog}
-    >
-      <span class="material-symbols-outlined text-3xl">folder_open</span>
-    </Button>
-  </div>
+  {#if files.length == 0}
+    <div class="my-3 text-center">Please select some files or a directory.</div>
+    <div class="my-3 grid grid-flow-col justify-center gap-2">
+      <Button
+        classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
+        on:click={openFileDialog}
+      >
+        <span class="material-symbols-outlined text-3xl">movie</span>
+      </Button>
+      <Button
+        classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
+        on:click={openDirectoryDialog}
+      >
+        <span class="material-symbols-outlined text-3xl">folder_open</span>
+      </Button>
+    </div>
+  {:else}
+    {#each files as file}
+      <div>{file}</div>
+    {/each}
+  {/if}
 </div>

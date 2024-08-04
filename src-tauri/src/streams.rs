@@ -122,7 +122,7 @@ impl Stream {
   }
 
   pub fn get_identifier(&self) -> String {
-    format!("{:?}/{}", self.stream_kind, self.parameter)
+    format!("{}/{}", self.stream_kind.get_name(), self.parameter)
   }
 
   pub fn parse(info_parameters: String) -> Vec<Stream> {

@@ -16,11 +16,13 @@
  */
 
 import { open } from "@tauri-apps/api/dialog";
+import { mediaFiles } from "./store";
 
 export async function openDirectoryDialog() {
   const selectedDirectory = await open({
     directory: true,
   });
+  // TODO
   return selectedDirectory;
 }
 
@@ -52,5 +54,11 @@ export async function openFileDialog() {
       },
     ],
   });
-  return selectedFiles;
+  if (selectedFiles === null) {
+    mediaFiles.set([]);
+  } else if (selectedFiles instanceof String) {
+    mediaFiles.set([selectedFiles as string]);
+  } else {
+    mediaFiles.set(selectedFiles as string[]);
+  }
 }

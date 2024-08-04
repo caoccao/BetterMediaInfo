@@ -19,23 +19,30 @@ import { invoke } from "@tauri-apps/api/tauri";
 import * as Store from "svelte/store";
 import * as Protocol from "./protocol";
 
-export const mediaInfoAbout: Store.Readable<Protocol.About> =
-  Store.readable<Protocol.About>(
-    { appVersion: "", mediaInfoVersion: "" },
-    (set) => {
-      invoke<Protocol.About>("get_about")
-        .then((result) => {
-          set(result);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-      return () => {};
-    }
-  );
+export const mediaFiles = Store.writable<string[]>([], (set) => {
+  set([]);
+  return () => {
+    set([]);
+  };
+});
 
-export const mediaInfoParameters: Store.Readable<Array<Protocol.Parameter>> =
-  Store.readable<Array<Protocol.Parameter>>([], (set) => {
+export const mediaInfoAbout = Store.readable<Protocol.About>(
+  { appVersion: "", mediaInfoVersion: "" },
+  (set) => {
+    invoke<Protocol.About>("get_about")
+      .then((result) => {
+        set(result);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+    return () => {};
+  }
+);
+
+export const mediaInfoParameters = Store.readable<Array<Protocol.Parameter>>(
+  [],
+  (set) => {
     invoke<Array<Protocol.Parameter>>("get_parameters")
       .then((result) => {
         set(result);
@@ -44,14 +51,12 @@ export const mediaInfoParameters: Store.Readable<Array<Protocol.Parameter>> =
         console.error(error);
       });
     return () => {};
-  });
-
-export const tabAbout: Store.Writable<boolean> = Store.writable<boolean>(
-  false,
-  (set) => {
-    set(false);
-    return () => {
-      set(false);
-    };
   }
 );
+
+export const tabAbout = Store.writable<boolean>(false, (set) => {
+  set(false);
+  return () => {
+    set(false);
+  };
+});

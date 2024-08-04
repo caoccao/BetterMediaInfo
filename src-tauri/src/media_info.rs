@@ -119,6 +119,19 @@ pub enum MediaInfoStreamKind {
 }
 
 impl MediaInfoStreamKind {
+  pub fn get_name(&self) -> &str {
+    match self {
+      Self::General => "General",
+      Self::Video => "Video",
+      Self::Audio => "Audio",
+      Self::Text => "Text",
+      Self::Other => "Other",
+      Self::Image => "Image",
+      Self::Menu => "Menu",
+      Self::Max => "Max",
+    }
+  }
+
   pub fn parse(text: &str) -> Self {
     match text {
       "General" => Self::General,
@@ -160,6 +173,20 @@ pub enum MediaInfoPropertyKind {
 }
 
 impl MediaInfoPropertyKind {
+  pub fn get_name(&self) -> &str {
+    match self {
+      Self::Name => "Name",
+      Self::Text => "Text",
+      Self::Measure => "Measure",
+      Self::Options => "Options",
+      Self::NameText => "NameText",
+      Self::MeasureText => "MeasureText",
+      Self::Info => "Info",
+      Self::HowTo => "HowTo",
+      Self::Max => "Max",
+    }
+  }
+
   pub fn values() -> &'static [MediaInfoPropertyKind] {
     &[
       Self::Name,
@@ -197,12 +224,12 @@ impl MediaInfo {
     search_kind: MediaInfoPropertyKind,
   ) -> Result<String> {
     log::debug!(
-      "MediaInfo::get({:?}, {}, \"{}\", {:?}, {:?})",
-      stream_kind,
+      "MediaInfo::get({}, {}, \"{}\", {}, {})",
+      stream_kind.get_name(),
       stream_number,
       parameter,
-      info_kind,
-      search_kind
+      info_kind.get_name(),
+      search_kind.get_name(),
     );
     let parameter = to_wchars(parameter);
     let result = unsafe {
@@ -219,7 +246,7 @@ impl MediaInfo {
   }
 
   pub fn getCountByStreamKind(&self, stream_kind: MediaInfoStreamKind) -> usize {
-    log::debug!("MediaInfo::getCountByStreamKind({:?})", stream_kind);
+    log::debug!("MediaInfo::getCountByStreamKind({})", stream_kind.get_name());
     unsafe { MediaInfo_Count_Get(self.handle, stream_kind as mi_kind, usize::MAX) }
   }
 

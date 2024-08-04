@@ -21,9 +21,9 @@
   import { tabAbout } from "../lib/store";
 
   const BUTTON_CLASSES_NORMAL =
-    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white";
+    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white hover:text-lime-100";
   const BUTTON_CLASSES_SELECTED =
-    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white";
+    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white hover:text-lime-100";
 
   let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
 
