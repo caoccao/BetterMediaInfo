@@ -32,7 +32,7 @@ pub struct Config {
 impl Config {
   fn new() -> Config {
     let mut config_path_buf = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
-    config_path_buf.push("bettermi.json");
+    config_path_buf.push("Better Media Info.json");
     if config_path_buf.exists() {
       Self::load(config_path_buf)
     } else {
@@ -91,12 +91,42 @@ impl Default for ConfigStreams {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigSettings {
-  pub font_size: f32,
+  pub audio_file_extensions: Vec<String>,
+  pub image_file_extensions: Vec<String>,
+  pub video_file_extensions: Vec<String>,
 }
 
 impl Default for ConfigSettings {
   fn default() -> Self {
-    Self { font_size: 16.0 }
+    Self {
+      audio_file_extensions: vec![
+        "mkv".to_owned(),
+        "mp4".to_owned(),
+        "avi".to_owned(),
+        "mov".to_owned(),
+        "wmv".to_owned(),
+        "flv".to_owned(),
+        "webm".to_owned(),
+      ],
+      image_file_extensions: vec![
+        "jpg".to_owned(),
+        "jpeg".to_owned(),
+        "png".to_owned(),
+        "bmp".to_owned(),
+        "gif".to_owned(),
+      ],
+      video_file_extensions: vec![
+        "mp3".to_owned(),
+        "aac".to_owned(),
+        "flac".to_owned(),
+        "wav".to_owned(),
+        "ogg".to_owned(),
+        "m4a".to_owned(),
+        "mka".to_owned(),
+        "webm".to_owned(),
+        "ape".to_owned(),
+      ],
+    }
   }
 }
 

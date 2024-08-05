@@ -17,6 +17,7 @@
 
 use anyhow::Result;
 
+use crate::config;
 use crate::media_info::*;
 use crate::protocol::*;
 use crate::streams::*;
@@ -29,6 +30,10 @@ pub async fn get_about() -> Result<About> {
     app_version,
     media_info_version,
   })
+}
+
+pub async fn get_config() -> Result<config::Config> {
+  Ok(config::get_config())
 }
 
 pub async fn get_parameters() -> Result<Vec<Parameter>> {

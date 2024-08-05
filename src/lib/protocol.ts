@@ -20,6 +20,24 @@ export interface About {
   mediaInfoVersion: string;
 }
 
+export enum ControlStatus {
+  Hidden,
+  Selected,
+  Visible,
+}
+
+export interface Config {}
+
+export interface ConfigSettings {
+  audio_file_extensions: Array<String>;
+  image_file_extensions: Array<String>;
+  video_file_extensions: Array<String>;
+}
+
+export interface ConfigStreams {
+  general: Array<string>;
+}
+
 export interface Parameter {
   id: number;
   stream: string;
@@ -29,10 +47,10 @@ export interface Parameter {
 export enum TabType {
   About,
   List,
+  Settings,
 }
 
 export interface TabControl {
   type: TabType;
   index: number;
-  selected: boolean;
 }

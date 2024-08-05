@@ -22,20 +22,24 @@
   import { Button, Tab, Tabs } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
+  import Settings from "./settings.svelte";
   import * as Protocol from "../lib/protocol";
-  import { mediaFiles, tabAbout } from "../lib/store";
+  import { mediaFiles, tabAboutStatus, tabSettingsStatus } from "../lib/store";
 
+  let statusTabAbout: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
+  let statusTabSettings: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
   let tabIndex = 0;
-  let enableTabAbout = false;
-  let selectTabAbout = false;
-
-  tabAbout.subscribe((value) => {
-    enableTabAbout = value;
-    selectTabAbout = value;
-  });
 
   afterUpdate(() => {
-    selectTab();
+    if (tabControls && tabIndex >= tabControls.length) {
+      tabIndex = tabControls.length - 1;
+    }
+    if (statusTabAbout === Protocol.ControlStatus.Selected) {
+      tabAboutStatus.update((_value) => Protocol.ControlStatus.Visible);
+    }
+    if (statusTabSettings === Protocol.ControlStatus.Selected) {
+      tabSettingsStatus.update((_value) => Protocol.ControlStatus.Visible);
+    }
   });
 
   onMount(() => {
@@ -50,6 +54,14 @@
         cancelFileDrop = value;
       });
 
+    tabAboutStatus.subscribe((value) => {
+      statusTabAbout = value;
+    });
+
+    tabSettingsStatus.subscribe((value) => {
+      statusTabSettings = value;
+    });
+
     return () => {
       if (cancelFileDrop) {
         cancelFileDrop();
@@ -57,48 +69,80 @@
     };
   });
 
-  $: tabControls = getTabControls(tabIndex, enableTabAbout);
+  $: tabControls = getTabControls(statusTabAbout, statusTabSettings);
 
   function getTabControls(
-    tabIndex: number,
-    tabAboutVisible: boolean
+    statusOfTabAbout: Protocol.ControlStatus,
+    statusOfTabSettings: Protocol.ControlStatus
   ): Array<Protocol.TabControl> {
-    let controls = [{ type: Protocol.TabType.List, index: 0, selected: false }];
-    if (tabAboutVisible) {
+    let controls = tabControls
+      ? [...tabControls]
+      : [{ type: Protocol.TabType.List, index: 0 }];
+    const controlTabAbout = controls.find(
+      (control) => control.type === Protocol.TabType.About
+    );
+    if (
+      statusOfTabAbout !== Protocol.ControlStatus.Hidden &&
+      !controlTabAbout
+    ) {
       controls.push({
         type: Protocol.TabType.About,
         index: 0,
-        selected: false,
       });
+    } else if (
+      statusOfTabAbout === Protocol.ControlStatus.Hidden &&
+      controlTabAbout
+    ) {
+      controls = controls.filter(
+        (control) => control.type !== Protocol.TabType.About
+      );
     }
-    controls.map((control, index) => (control.index = index));
-    let control = controls.find((control) => control.index === tabIndex);
-    if (control) {
-      control.selected = true;
+    const controlTabSettings = controls.find(
+      (control) => control.type === Protocol.TabType.Settings
+    );
+    if (
+      statusOfTabSettings !== Protocol.ControlStatus.Hidden &&
+      !controlTabSettings
+    ) {
+      controls.push({
+        type: Protocol.TabType.Settings,
+        index: 0,
+      });
+    } else if (
+      statusOfTabSettings === Protocol.ControlStatus.Hidden &&
+      controlTabSettings
+    ) {
+      controls = controls.filter(
+        (control) => control.type !== Protocol.TabType.Settings
+      );
+    }
+    controls.forEach((control, index) => {
+      control.index = index;
+    });
+    if (statusOfTabAbout === Protocol.ControlStatus.Selected) {
+      controls
+        .filter((control) => control.type === Protocol.TabType.About)
+        .forEach((control) => {
+          tabIndex = control.index;
+        });
+    } else if (statusOfTabSettings === Protocol.ControlStatus.Selected) {
+      controls
+        .filter((control) => control.type === Protocol.TabType.Settings)
+        .forEach((control) => {
+          tabIndex = control.index;
+        });
     }
     return controls;
   }
 
-  function selectTab() {
-    if (tabControls) {
-      if (selectTabAbout) {
-        let control = tabControls.find(
-          (control) => control.type === Protocol.TabType.About
-        );
-        if (control) {
-          tabIndex = control.index;
-        }
-        selectTabAbout = false;
-      }
-      if (tabIndex >= tabControls.length) {
-        tabIndex = tabControls.length - 1;
-      }
-    }
-  }
-
   function onClickCloseTabAbout(event: MouseEvent) {
     event.stopPropagation();
-    tabAbout.set(false);
+    tabAboutStatus.set(Protocol.ControlStatus.Hidden);
+  }
+
+  function onClickCloseTabSettings(event: MouseEvent) {
+    event.stopPropagation();
+    tabSettingsStatus.set(Protocol.ControlStatus.Hidden);
   }
 </script>
 
@@ -126,6 +170,22 @@
           <span class="material-symbols-outlined text-xs">close</span>
         </Button>
       </Tab>
+    {:else if tabControl.type === Protocol.TabType.Settings}
+      <Tab
+        classes={{
+          root: "rounded-t",
+        }}
+        on:click={() => (tabIndex = tabControl.index)}
+        selected={tabIndex === tabControl.index}
+      >
+        Settings
+        <Button
+          classes={{ root: "w-2 h-4 m-0 p-2" }}
+          on:click={onClickCloseTabSettings}
+        >
+          <span class="material-symbols-outlined text-xs">close</span>
+        </Button>
+      </Tab>
     {:else if tabControl.type === Protocol.TabType.List}
       <Tab
         classes={{
@@ -141,6 +201,8 @@
       {#if tabControl.index === tabIndex}
         {#if tabControl.type === Protocol.TabType.About}
           <About />
+        {:else if tabControl.type === Protocol.TabType.Settings}
+          <Settings />
         {:else if tabControl.type === Protocol.TabType.List}
           <List />
         {/if}

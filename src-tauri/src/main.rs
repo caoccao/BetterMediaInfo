@@ -35,6 +35,12 @@ async fn get_about() -> Result<protocol::About, String> {
 }
 
 #[tauri::command]
+async fn get_config() -> Result<config::Config, String> {
+  log::debug!("get_config");
+  controller::get_config().await.map_err(convert_error)
+}
+
+#[tauri::command]
 async fn get_parameters() -> Result<Vec<protocol::Parameter>, String> {
   log::debug!("get_parameters");
   controller::get_parameters().await.map_err(convert_error)
@@ -42,7 +48,7 @@ async fn get_parameters() -> Result<Vec<protocol::Parameter>, String> {
 
 fn main() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![get_about, get_parameters])
+    .invoke_handler(tauri::generate_handler![get_about, get_config, get_parameters])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
