@@ -16,22 +16,45 @@
  	 *   limitations under the License.
  	 */
   import { onMount } from "svelte";
-  import { MenuField, Paginate, Pagination, Table, TextField } from "svelte-ux";
-  import type { MenuOption } from "svelte-ux";
+  import { Card, Collapse, TextField } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
   import { config } from "../lib/store";
+
+  let audio_file_extensions: string = "";
+  let image_file_extensions: string = "";
+  let video_file_extensions: string = "";
 
   onMount(async () => {
     config.subscribe((value) => {
       if (value) {
-        console.log(value);
+        audio_file_extensions = value.settings.audio_file_extensions.join(", ");
+        image_file_extensions = value.settings.image_file_extensions.join(", ");
+        video_file_extensions = value.settings.video_file_extensions.join(", ");
       }
     });
   });
 </script>
 
 <div class="grid">
-  <div>
-    <p>Settings</p>
-  </div>
+  <div class="p-2 text-lg font-bold">File Extensions</div>
+  <Card classes={{ root: "divide-y" }}>
+    <Collapse classes={{ root: "p-2" }}>
+      <div slot="trigger" class="flex-1">Video File Extensions</div>
+      <div>
+        <TextField classes={{ root: "pt-2" }} bind:value={video_file_extensions} />
+      </div>
+    </Collapse>
+    <Collapse classes={{ root: "p-2" }}>
+      <div slot="trigger" class="flex-1">Image File Extensions</div>
+      <div>
+        <TextField classes={{ root: "pt-2" }} bind:value={image_file_extensions} />
+      </div>
+    </Collapse>
+    <Collapse classes={{ root: "p-2" }}>
+      <div slot="trigger" class="flex-1">Audio File Extensions</div>
+      <div>
+        <TextField classes={{ root: "pt-2" }} bind:value={audio_file_extensions} />
+      </div>
+    </Collapse>
+  </Card>
 </div>
