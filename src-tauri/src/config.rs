@@ -100,22 +100,6 @@ impl Default for ConfigSettings {
   fn default() -> Self {
     Self {
       audio_file_extensions: vec![
-        "mkv".to_owned(),
-        "mp4".to_owned(),
-        "avi".to_owned(),
-        "mov".to_owned(),
-        "wmv".to_owned(),
-        "flv".to_owned(),
-        "webm".to_owned(),
-      ],
-      image_file_extensions: vec![
-        "jpg".to_owned(),
-        "jpeg".to_owned(),
-        "png".to_owned(),
-        "bmp".to_owned(),
-        "gif".to_owned(),
-      ],
-      video_file_extensions: vec![
         "mp3".to_owned(),
         "aac".to_owned(),
         "flac".to_owned(),
@@ -125,6 +109,25 @@ impl Default for ConfigSettings {
         "mka".to_owned(),
         "webm".to_owned(),
         "ape".to_owned(),
+        "ac3".to_owned(),
+        "dts".to_owned(),
+      ],
+      image_file_extensions: vec![
+        "jpg".to_owned(),
+        "jpeg".to_owned(),
+        "png".to_owned(),
+        "gif".to_owned(),
+        "bmp".to_owned(),
+        "tif".to_owned(),
+      ],
+      video_file_extensions: vec![
+        "mkv".to_owned(),
+        "mp4".to_owned(),
+        "avi".to_owned(),
+        "mov".to_owned(),
+        "wmv".to_owned(),
+        "flv".to_owned(),
+        "webm".to_owned(),
       ],
     }
   }

@@ -16,7 +16,28 @@
  */
 
 import { open } from "@tauri-apps/api/dialog";
-import { mediaFiles } from "./store";
+import type { DialogFilter } from "@tauri-apps/api/dialog";
+import { config, mediaFiles } from "./store";
+
+const filters: Array<DialogFilter> = [];
+
+config.subscribe((value) => {
+  if (value !== null) {
+    filters.length = 0;
+    filters.push({
+      name: "Video",
+      extensions: value.settings.video_file_extensions as string[],
+    });
+    filters.push({
+      name: "Image",
+      extensions: value.settings.image_file_extensions as string[],
+    });
+    filters.push({
+      name: "Audio",
+      extensions: value.settings.audio_file_extensions as string[],
+    });
+  }
+});
 
 export async function openDirectoryDialog() {
   const selectedDirectory = await open({
@@ -29,30 +50,7 @@ export async function openDirectoryDialog() {
 export async function openFileDialog() {
   const selectedFiles = await open({
     multiple: true,
-    filters: [
-      {
-        name: "Video",
-        extensions: ["mkv", "mp4", "avi", "mov", "wmv", "flv", "webm"],
-      },
-      {
-        name: "Image",
-        extensions: ["jpg", "jpeg", "png", "bmp", "gif"],
-      },
-      {
-        name: "Audio",
-        extensions: [
-          "mp3",
-          "aac",
-          "flac",
-          "wav",
-          "ogg",
-          "m4a",
-          "mka",
-          "webm",
-          "ape",
-        ],
-      },
-    ],
+    filters: filters,
   });
   if (selectedFiles === null) {
     mediaFiles.set([]);

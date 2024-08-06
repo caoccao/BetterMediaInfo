@@ -19,18 +19,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import * as Store from "svelte/store";
 import * as Protocol from "./protocol";
 
-const defaultAbout: Protocol.About = { appVersion: "", mediaInfoVersion: "" };
-
-const defaultConfig: Protocol.Config = {
-  audio_file_extensions: [],
-  image_file_extensions: [],
-  video_file_extensions: [],
-  streams: {
-    general: [],
-  },
-};
-
-export const config = Store.writable<Protocol.Config>(defaultConfig, (set) => {
+export const config = Store.writable<Protocol.Config | null>(null, (set) => {
   invoke<Protocol.Config>("get_config")
     .then((result) => {
       set(result);
@@ -39,7 +28,7 @@ export const config = Store.writable<Protocol.Config>(defaultConfig, (set) => {
       console.error(error);
     });
   return () => {
-    set(defaultConfig);
+    set(null);
   };
 });
 
@@ -50,8 +39,8 @@ export const mediaFiles = Store.writable<string[]>([], (set) => {
   };
 });
 
-export const mediaInfoAbout = Store.readable<Protocol.About>(
-  defaultAbout,
+export const mediaInfoAbout = Store.readable<Protocol.About | null>(
+  null,
   (set) => {
     invoke<Protocol.About>("get_about")
       .then((result) => {
@@ -61,7 +50,7 @@ export const mediaInfoAbout = Store.readable<Protocol.About>(
         console.error(error);
       });
     return () => {
-      set(defaultAbout);
+      set(null);
     };
   }
 );

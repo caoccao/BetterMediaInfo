@@ -52,7 +52,9 @@
 
   onMount(async () => {
     mediaInfoAbout.subscribe((value) => {
-      about = value;
+      if (value) {
+        about = value;
+      }
     });
     mediaInfoParameters.subscribe((value) => {
       parameters = value;

@@ -26,7 +26,10 @@ export enum ControlStatus {
   Visible,
 }
 
-export interface Config {}
+export interface Config {
+  settings: ConfigSettings;
+  streams: ConfigStreams;
+}
 
 export interface ConfigSettings {
   audio_file_extensions: Array<String>;

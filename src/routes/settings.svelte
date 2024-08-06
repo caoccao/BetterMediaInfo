@@ -23,6 +23,9 @@
 
   onMount(async () => {
     config.subscribe((value) => {
+      if (value) {
+        console.log(value);
+      }
     });
   });
 </script>
