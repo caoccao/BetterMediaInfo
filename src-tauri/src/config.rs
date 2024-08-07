@@ -91,8 +91,11 @@ impl Default for ConfigStreams {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigSettings {
+  #[serde(rename = "audioFileExtensions")]
   pub audio_file_extensions: Vec<String>,
+  #[serde(rename = "imageFileExtensions")]
   pub image_file_extensions: Vec<String>,
+  #[serde(rename = "videoFileExtensions")]
   pub video_file_extensions: Vec<String>,
 }
 

@@ -20,25 +20,25 @@ export interface About {
   mediaInfoVersion: string;
 }
 
-export enum ControlStatus {
-  Hidden,
-  Selected,
-  Visible,
-}
-
 export interface Config {
   settings: ConfigSettings;
   streams: ConfigStreams;
 }
 
 export interface ConfigSettings {
-  audio_file_extensions: Array<String>;
-  image_file_extensions: Array<String>;
-  video_file_extensions: Array<String>;
+  audioFileExtensions: Array<String>;
+  imageFileExtensions: Array<String>;
+  videoFileExtensions: Array<String>;
 }
 
 export interface ConfigStreams {
   general: Array<string>;
+}
+
+export enum ControlStatus {
+  Hidden,
+  Selected,
+  Visible,
 }
 
 export interface Parameter {

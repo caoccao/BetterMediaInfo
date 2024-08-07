@@ -16,45 +16,46 @@
  	 *   limitations under the License.
  	 */
   import { onMount } from "svelte";
-  import { Card, Collapse, TextField } from "svelte-ux";
-  import * as Protocol from "../lib/protocol";
+  import { TableOfContents, TextField } from "svelte-ux";
   import { config } from "../lib/store";
 
-  let audio_file_extensions: string = "";
-  let image_file_extensions: string = "";
-  let video_file_extensions: string = "";
+  let settingsAudioFileExtensions: string = "";
+  let settingsImageFileExtensions: string = "";
+  let settingsVideoFileExtensions: string = "";
 
   onMount(async () => {
     config.subscribe((value) => {
       if (value) {
-        audio_file_extensions = value.settings.audio_file_extensions.join(", ");
-        image_file_extensions = value.settings.image_file_extensions.join(", ");
-        video_file_extensions = value.settings.video_file_extensions.join(", ");
+        settingsAudioFileExtensions =
+          value.settings.audioFileExtensions.join(", ");
+        settingsImageFileExtensions =
+          value.settings.imageFileExtensions.join(", ");
+        settingsVideoFileExtensions =
+          value.settings.videoFileExtensions.join(", ");
       }
     });
   });
 </script>
 
-<div class="grid">
-  <div class="p-2 text-lg font-bold">File Extensions</div>
-  <Card classes={{ root: "divide-y" }}>
-    <Collapse classes={{ root: "p-2" }}>
-      <div slot="trigger" class="flex-1">Video File Extensions</div>
-      <div>
-        <TextField classes={{ root: "pt-2" }} bind:value={video_file_extensions} />
-      </div>
-    </Collapse>
-    <Collapse classes={{ root: "p-2" }}>
-      <div slot="trigger" class="flex-1">Image File Extensions</div>
-      <div>
-        <TextField classes={{ root: "pt-2" }} bind:value={image_file_extensions} />
-      </div>
-    </Collapse>
-    <Collapse classes={{ root: "p-2" }}>
-      <div slot="trigger" class="flex-1">Audio File Extensions</div>
-      <div>
-        <TextField classes={{ root: "pt-2" }} bind:value={audio_file_extensions} />
-      </div>
-    </Collapse>
-  </Card>
+<div class="grid grid-flow-col grid-cols-[auto,1fr] gap-2">
+  <TableOfContents element="#config" />
+  <div id="config">
+    <h1 class="text-lg font-bold py-2">Settings</h1>
+    <h2 class="text-base font-medium py-1">File Extensions</h2>
+    <h3 class="text-sm py-1">Audio File Extensions</h3>
+    <TextField
+      classes={{ root: "pt-2" }}
+      bind:value={settingsAudioFileExtensions}
+    />
+    <h3 class="text-sm py-1">Image File Extensions</h3>
+    <TextField
+      classes={{ root: "pt-2" }}
+      bind:value={settingsImageFileExtensions}
+    />
+    <h3 class="text-sm py-1">Video File Extensions</h3>
+    <TextField
+      classes={{ root: "pt-2" }}
+      bind:value={settingsVideoFileExtensions}
+    />
+  </div>
 </div>
