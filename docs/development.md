@@ -10,6 +10,33 @@ git clone https://github.com/MediaArea/MediaInfoLib.git
 git clone https://github.com/MediaArea/ZenLib.git
 ```
 
+### Build MediaInfoLib for MacOS
+
+* Install XCode.
+* Install autoconf automake libtool pkg-config zlib wxwidgets.
+
+```sh
+brew install autoconf automake libtool pkg-config zlib wxwidgets
+```
+
+* Build ZenLib.
+
+```sh
+cd ZenLib/Project/GNU/Library
+./autogen.sh
+./configure --enable-static
+make
+```
+
+* Build MediaInfoLib.
+
+```sh
+cd MediaInfoLib/Project/GNU/Library
+./autogen.sh
+./configure --enable-static
+make
+```
+
 ### Build MediaInfoLib for Windows
 
 * Download zlib.
