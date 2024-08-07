@@ -32,6 +32,13 @@ export const config = Store.writable<Protocol.Config | null>(null, (set) => {
   };
 });
 
+export const isConfigDirty = Store.writable<boolean>(false, (set) => {
+  set(false);
+  return () => {
+    set(false);
+  };
+});
+
 export const mediaFiles = Store.writable<string[]>([], (set) => {
   set([]);
   return () => {

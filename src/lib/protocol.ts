@@ -21,18 +21,18 @@ export interface About {
 }
 
 export interface Config {
-  settings: ConfigSettings;
+  fileExtensions: ConfigFileExtensions;
   streams: ConfigStreams;
 }
 
-export interface ConfigSettings {
-  audioFileExtensions: Array<String>;
-  imageFileExtensions: Array<String>;
-  videoFileExtensions: Array<String>;
+export interface ConfigFileExtensions {
+  audio: string[];
+  image: string[];
+  video: string[];
 }
 
 export interface ConfigStreams {
-  general: Array<string>;
+  general: string[];
 }
 
 export enum ControlStatus {
@@ -50,7 +50,7 @@ export interface Parameter {
 export enum TabType {
   About,
   List,
-  Settings,
+  Config,
 }
 
 export interface TabControl {

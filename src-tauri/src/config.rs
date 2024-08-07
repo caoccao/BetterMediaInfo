@@ -15,32 +15,41 @@
 * limitations under the License.
 */
 
+use anyhow::{Error, Result};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 static mut CONFIG: Lazy<Config> = Lazy::new(|| Config::new());
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct Config {
-  pub settings: ConfigSettings,
+  #[serde(rename = "fileExtensions")]
+  pub file_extensions: ConfigFileExtensions,
   pub streams: ConfigStreams,
 }
 
 impl Config {
-  fn new() -> Config {
-    let mut config_path_buf = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
-    config_path_buf.push("Better Media Info.json");
+  fn new() -> Self {
+    let config_path_buf = Self::get_path_buf();
     if config_path_buf.exists() {
       Self::load(config_path_buf)
     } else {
       log::debug!("Loading default config.");
       let config = Self::default();
-      config.save(config_path_buf);
+      if let Err(err) = config.save(config_path_buf) {
+        log::error!("Couldn't save the default config because {}", err);
+      }
       config
     }
+  }
+
+  fn get_path_buf() -> PathBuf {
+    let mut config_path_buf = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
+    config_path_buf.push("Better Media Info.json");
+    config_path_buf
   }
 
   fn load(path: PathBuf) -> Self {
@@ -52,14 +61,13 @@ impl Config {
     serde_json::from_reader(buf_reader).expect(format!("Couldn't parse config file {}.", path_string).as_str())
   }
 
-  fn save(&self, path: PathBuf) {
+  fn save(&self, path: PathBuf) -> Result<()> {
     let cloned_path = path.clone();
     let path_string = cloned_path.to_str().unwrap();
     log::debug!("Saving config to {}.", path_string);
     let file = File::create(path).expect(format!("Couldn't create config file {}.", path_string).as_str());
     let buf_writer = BufWriter::new(file);
-    serde_json::to_writer_pretty(buf_writer, &self)
-      .expect(format!("Couldn't write config file {}.", path_string).as_str());
+    serde_json::to_writer_pretty(buf_writer, &self).map_err(Error::msg)
   }
 }
 
@@ -90,19 +98,16 @@ impl Default for ConfigStreams {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ConfigSettings {
-  #[serde(rename = "audioFileExtensions")]
-  pub audio_file_extensions: Vec<String>,
-  #[serde(rename = "imageFileExtensions")]
-  pub image_file_extensions: Vec<String>,
-  #[serde(rename = "videoFileExtensions")]
-  pub video_file_extensions: Vec<String>,
+pub struct ConfigFileExtensions {
+  pub audio: Vec<String>,
+  pub image: Vec<String>,
+  pub video: Vec<String>,
 }
 
-impl Default for ConfigSettings {
+impl Default for ConfigFileExtensions {
   fn default() -> Self {
     Self {
-      audio_file_extensions: vec![
+      audio: vec![
         "mp3".to_owned(),
         "aac".to_owned(),
         "flac".to_owned(),
@@ -115,7 +120,7 @@ impl Default for ConfigSettings {
         "ac3".to_owned(),
         "dts".to_owned(),
       ],
-      image_file_extensions: vec![
+      image: vec![
         "jpg".to_owned(),
         "jpeg".to_owned(),
         "png".to_owned(),
@@ -123,7 +128,7 @@ impl Default for ConfigSettings {
         "bmp".to_owned(),
         "tif".to_owned(),
       ],
-      video_file_extensions: vec![
+      video: vec![
         "mkv".to_owned(),
         "mp4".to_owned(),
         "avi".to_owned(),
@@ -138,4 +143,11 @@ impl Default for ConfigSettings {
 
 pub fn get_config() -> Config {
   unsafe { CONFIG.to_owned() }
+}
+
+pub fn set_config(config: Config) -> Result<()> {
+  let config_path_buf = Config::get_path_buf();
+  let result = config.save(config_path_buf);
+  unsafe { CONFIG.clone_from(&config) };
+  result
 }

@@ -26,15 +26,15 @@ config.subscribe((value) => {
     filters.length = 0;
     filters.push({
       name: "Video",
-      extensions: value.settings.video_file_extensions as string[],
+      extensions: value.fileExtensions.video,
     });
     filters.push({
       name: "Image",
-      extensions: value.settings.image_file_extensions as string[],
+      extensions: value.fileExtensions.image,
     });
     filters.push({
       name: "Audio",
-      extensions: value.settings.audio_file_extensions as string[],
+      extensions: value.fileExtensions.audio,
     });
   }
 });

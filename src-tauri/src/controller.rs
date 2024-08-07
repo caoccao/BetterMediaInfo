@@ -55,3 +55,7 @@ pub async fn get_parameters() -> Result<Vec<Parameter>> {
       .collect::<Vec<Parameter>>(),
   )
 }
+
+pub async fn set_config(config: config::Config) -> Result<()> {
+  config::set_config(config)
+}

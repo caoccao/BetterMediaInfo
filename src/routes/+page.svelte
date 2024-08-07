@@ -22,7 +22,7 @@
   import { Button, Tab, Tabs } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
-  import Settings from "./settings.svelte";
+  import Config from "./config.svelte";
   import * as Protocol from "../lib/protocol";
   import { mediaFiles, tabAboutStatus, tabSettingsStatus } from "../lib/store";
 
@@ -98,14 +98,14 @@
       );
     }
     const controlTabSettings = controls.find(
-      (control) => control.type === Protocol.TabType.Settings
+      (control) => control.type === Protocol.TabType.Config
     );
     if (
       statusOfTabSettings !== Protocol.ControlStatus.Hidden &&
       !controlTabSettings
     ) {
       controls.push({
-        type: Protocol.TabType.Settings,
+        type: Protocol.TabType.Config,
         index: 0,
       });
     } else if (
@@ -113,7 +113,7 @@
       controlTabSettings
     ) {
       controls = controls.filter(
-        (control) => control.type !== Protocol.TabType.Settings
+        (control) => control.type !== Protocol.TabType.Config
       );
     }
     controls.forEach((control, index) => {
@@ -127,7 +127,7 @@
         });
     } else if (statusOfTabSettings === Protocol.ControlStatus.Selected) {
       controls
-        .filter((control) => control.type === Protocol.TabType.Settings)
+        .filter((control) => control.type === Protocol.TabType.Config)
         .forEach((control) => {
           tabIndex = control.index;
         });
@@ -170,7 +170,7 @@
           <span class="material-symbols-outlined text-xs">close</span>
         </Button>
       </Tab>
-    {:else if tabControl.type === Protocol.TabType.Settings}
+    {:else if tabControl.type === Protocol.TabType.Config}
       <Tab
         classes={{
           root: "rounded-t",
@@ -201,8 +201,8 @@
       {#if tabControl.index === tabIndex}
         {#if tabControl.type === Protocol.TabType.About}
           <About />
-        {:else if tabControl.type === Protocol.TabType.Settings}
-          <Settings />
+        {:else if tabControl.type === Protocol.TabType.Config}
+          <Config />
         {:else if tabControl.type === Protocol.TabType.List}
           <List />
         {/if}
