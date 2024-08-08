@@ -42,7 +42,7 @@ async fn get_config() -> Result<config::Config, String> {
 
 #[tauri::command]
 async fn get_file_infos(files: Vec<String>) -> Result<(), String> {
-  log::debug!("get_file_infos");
+  log::debug!("get_file_infos({:?})", files);
   // TODO
   Ok(())
 }
@@ -55,11 +55,12 @@ async fn get_parameters() -> Result<Vec<protocol::Parameter>, String> {
 
 #[tauri::command]
 async fn set_config(config: config::Config) -> Result<(), String> {
-  log::debug!("set_config");
+  log::debug!("set_config({:?})", config);
   controller::set_config(config).await.map_err(convert_error)
 }
 
 fn main() {
+  env_logger::init();
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       get_about,
