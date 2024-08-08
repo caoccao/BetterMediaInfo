@@ -39,24 +39,29 @@ config.subscribe((value) => {
   }
 });
 
+function setMediaFiles(files: string[] | string | null) {
+  if (files === null) {
+    mediaFiles.set([]);
+  } else if (files instanceof String) {
+    mediaFiles.set([files as string]);
+  } else {
+    mediaFiles.set([]);
+  }
+}
+
 export async function openDirectoryDialog() {
-  const selectedDirectory = await open({
-    directory: true,
-  });
-  // TODO
-  return selectedDirectory;
+  setMediaFiles(
+    await open({
+      directory: true,
+    })
+  );
 }
 
 export async function openFileDialog() {
-  const selectedFiles = await open({
-    multiple: true,
-    filters: filters,
-  });
-  if (selectedFiles === null) {
-    mediaFiles.set([]);
-  } else if (selectedFiles instanceof String) {
-    mediaFiles.set([selectedFiles as string]);
-  } else {
-    mediaFiles.set(selectedFiles as string[]);
-  }
+  setMediaFiles(
+    await open({
+      multiple: true,
+      filters: filters,
+    })
+  );
 }
