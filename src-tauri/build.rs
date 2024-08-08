@@ -21,11 +21,28 @@ use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "windows")]
 const MEDIA_INFO_PATH: &str = "MediaInfoLib\\Project\\MSVC2022\\x64\\Release";
+#[cfg(target_os = "macos")]
+const MEDIA_INFO_PATH: &str = "MediaInfoLib/Project/GNU/Library/.libs";
+
 #[cfg(target_os = "windows")]
-const MEDIA_INFO_LIB_NAME: &str = "MediaInfo.dll";
+const MEDIA_INFO_LIB_FULL_NAME: &str = "MediaInfo.dll";
+#[cfg(target_os = "macos")]
+const MEDIA_INFO_LIB_FULL_NAME: &str = "libmediainfo.0.dylib";
+
+#[cfg(target_os = "windows")]
+const MEDIA_INFO_LIB_NAME: &str = "MediaInfo";
+#[cfg(target_os = "macos")]
+const MEDIA_INFO_LIB_NAME: &str = "mediainfo.0";
+
+#[cfg(target_os = "macos")]
+const ZEN_PATH: &str = "ZenLib/Project/GNU/Library/.libs";
+#[cfg(target_os = "macos")]
+const ZEN_LIB_FULL_NAME: &str = "libzen.0.dylib";
+#[cfg(target_os = "macos")]
+const ZEN_LIB_NAME: &str = "zen.0";
 
 fn copy_lib(media_info_path_buf: &PathBuf) {
-  let source_media_info_lib_path_buf = media_info_path_buf.join(MEDIA_INFO_LIB_NAME);
+  let source_media_info_lib_path_buf = media_info_path_buf.join(MEDIA_INFO_LIB_FULL_NAME);
   let out_dir = env::var("OUT_DIR").unwrap();
   let out_path = Path::new(out_dir.as_str())
     .parent()
@@ -34,7 +51,7 @@ fn copy_lib(media_info_path_buf: &PathBuf) {
     .unwrap()
     .parent()
     .unwrap();
-  let target_media_info_lib_path_buf = out_path.join(MEDIA_INFO_LIB_NAME);
+  let target_media_info_lib_path_buf = out_path.join(MEDIA_INFO_LIB_FULL_NAME);
   let is_copy = if target_media_info_lib_path_buf.exists() {
     let source_metadata = fs::metadata(source_media_info_lib_path_buf.clone()).expect(
       format!(
@@ -72,10 +89,19 @@ fn main() {
   let cargo_manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
   let better_media_info_path = Path::new(cargo_manifest_dir.as_str());
   let root_path = better_media_info_path.parent().unwrap().parent().unwrap();
+  // MediaInfo
   let media_info_path_buf = root_path.join(MEDIA_INFO_PATH);
   let media_info_dir = media_info_path_buf.to_str().unwrap();
   println!("cargo:rustc-link-search={media_info_dir}");
-  println!("cargo:rustc-link-lib=MediaInfo");
+  println!("cargo:rustc-link-lib={MEDIA_INFO_LIB_NAME}");
+  // ZenLib
+  #[cfg(target_os = "macos")]
+  {
+    let zen_path_buf = root_path.join(ZEN_PATH);
+    let zen_dir = zen_path_buf.to_str().unwrap();
+    println!("cargo:rustc-link-search={zen_dir}");
+    println!("cargo:rustc-link-lib={ZEN_LIB_NAME}");
+  }
   copy_lib(&media_info_path_buf);
   tauri_build::build()
 }

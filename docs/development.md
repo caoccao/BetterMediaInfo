@@ -25,7 +25,7 @@ brew install autoconf automake libtool pkg-config zlib wxwidgets
 cd ZenLib/Project/GNU/Library
 ./autogen.sh
 ./configure --enable-static
-make
+make -j`nproc`
 ```
 
 * Build MediaInfoLib.
@@ -34,7 +34,7 @@ make
 cd MediaInfoLib/Project/GNU/Library
 ./autogen.sh
 ./configure --enable-static
-make
+make -j`nproc`
 ```
 
 ### Build MediaInfoLib for Windows
