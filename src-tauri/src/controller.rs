@@ -16,6 +16,7 @@
 */
 
 use anyhow::Result;
+use std::path::Path;
 
 use crate::config;
 use crate::media_info::*;
@@ -36,8 +37,24 @@ pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
 
-pub async fn get_file_infos(files: Vec<String>) -> Result<()> {
+pub async fn get_file_info(file: String) -> Result<()> {
   Ok(())
+}
+
+pub async fn get_files(directory: String) -> Result<Vec<String>> {
+  let path = Path::new(directory.as_str());
+  if !path.exists() {
+    Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
+  } else if !path.is_dir() {
+    Err(anyhow::anyhow!("Path {} is not a directory.", path.display()))
+  } else {
+    let mut files = Vec::new();
+    for result in path.read_dir().map_err(anyhow::Error::msg)? {
+      let dir_entry = result.map_err(anyhow::Error::msg)?;
+      dir_entry.path().to_str().map(|file| files.push(file.to_owned()));
+    }
+    Ok(files)
+  }
 }
 
 pub async fn get_parameters() -> Result<Vec<Parameter>> {

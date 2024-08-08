@@ -41,9 +41,15 @@ async fn get_config() -> Result<config::Config, String> {
 }
 
 #[tauri::command]
-async fn get_file_infos(files: Vec<String>) -> Result<(), String> {
-  log::debug!("get_file_infos({:?})", files);
-  controller::get_file_infos(files).await.map_err(convert_error)
+async fn get_file_info(file: String) -> Result<(), String> {
+  log::debug!("get_file_info({})", file);
+  controller::get_file_info(file).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_files(directory: String) -> Result<Vec<String>, String> {
+  log::debug!("get_files({})", directory);
+  controller::get_files(directory).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -64,7 +70,8 @@ fn main() {
     .invoke_handler(tauri::generate_handler![
       get_about,
       get_config,
-      get_file_infos,
+      get_file_info,
+      get_files,
       get_parameters,
       set_config
     ])

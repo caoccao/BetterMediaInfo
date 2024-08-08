@@ -41,13 +41,11 @@ config.subscribe((value) => {
   }
 });
 
-function setMediaFiles(files: string[] | string | null) {
+function setMediaFiles(files: string[] | null) {
   if (files === null) {
     mediaFiles.set([]);
-  } else if (files instanceof String) {
-    mediaFiles.set([files as string]);
   } else {
-    mediaFiles.set([]);
+    mediaFiles.set(files as string[]);
   }
 }
 
@@ -55,20 +53,29 @@ export async function openDirectoryDialog() {
   const directory = await open({
     directory: true,
   });
-  invoke<string[]>("get_files_from_directory", { path: directory })
-    .then(setMediaFiles)
-    .catch((error) => {
-      dialog.update((_value) => {
-        return { title: error, type: Protocol.DialogType.Error };
+  if (directory !== null && directory !== "") {
+    invoke<string[]>("get_files", {
+      directory: directory as string,
+    })
+      .then((value) => {
+        console.log(value);
+        setMediaFiles(value);
+      })
+      .catch((error) => {
+        dialog.update((_value) => {
+          return { title: error, type: Protocol.DialogType.Error };
+        });
       });
-    });
+  } else {
+    setMediaFiles(null);
+  }
 }
 
 export async function openFileDialog() {
   setMediaFiles(
-    await open({
+    (await open({
       multiple: true,
       filters: filters,
-    })
+    })) as string[] | null
   );
 }

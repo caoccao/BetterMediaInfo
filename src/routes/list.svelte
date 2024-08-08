@@ -29,15 +29,16 @@
     mediaFiles.subscribe((value) => {
       files = value;
       if (files.length > 0) {
-        invoke<void>("get_file_infos", { files: files })
-          .then(() => {
-            dialog.update((_value) => null);
-          })
-          .catch((error) => {
-            dialog.update((_value) => {
-              return { title: error, type: Protocol.DialogType.Error };
-            });
-          });
+        // TODO
+        // invoke<void>("get_file_infos", { files: files })
+        //   .then(() => {
+        //     dialog.update((_value) => null);
+        //   })
+        //   .catch((error) => {
+        //     dialog.update((_value) => {
+        //       return { title: error, type: Protocol.DialogType.Error };
+        //     });
+        //   });
       }
     });
   });
