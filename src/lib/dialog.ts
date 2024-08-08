@@ -15,9 +15,11 @@
  *   limitations under the License.
  */
 
+import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/dialog";
 import type { DialogFilter } from "@tauri-apps/api/dialog";
-import { config, mediaFiles } from "./store";
+import { config, dialog, mediaFiles } from "./store";
+import * as Protocol from "../lib/protocol";
 
 const filters: Array<DialogFilter> = [];
 
@@ -50,11 +52,16 @@ function setMediaFiles(files: string[] | string | null) {
 }
 
 export async function openDirectoryDialog() {
-  setMediaFiles(
-    await open({
-      directory: true,
-    })
-  );
+  const directory = await open({
+    directory: true,
+  });
+  invoke<string[]>("get_files_from_directory", { path: directory })
+    .then(setMediaFiles)
+    .catch((error) => {
+      dialog.update((_value) => {
+        return { title: error, type: Protocol.DialogType.Error };
+      });
+    });
 }
 
 export async function openFileDialog() {

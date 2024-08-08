@@ -36,6 +36,10 @@ pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
 
+pub async fn get_file_infos(files: Vec<String>) -> Result<()> {
+  Ok(())
+}
+
 pub async fn get_parameters() -> Result<Vec<Parameter>> {
   let media_info = MediaInfo::new();
   let info_parameters = media_info.getOption(MediaInfoGetOption::InfoParameters)?;

@@ -18,17 +18,17 @@
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onDestroy, onMount } from "svelte";
-  import { Button, Overlay, TableOfContents, TextField } from "svelte-ux";
+  import { Button, MenuField, TableOfContents, TextField } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
-  import { config, isConfigDirty } from "../lib/store";
+  import { config, dialog, isConfigDirty } from "../lib/store";
 
-  let errorMessageForSave: string | null = null;
+  let directoryMode: Protocol.ConfigDirectoryMode =
+    Protocol.ConfigDirectoryMode.Video;
   let fileExtensionsAudio: string = "";
   let fileExtensionsImage: string = "";
   let fileExtensionsVideo: string = "";
   let generalStreams: string[] = [];
   let isDirty = false;
-  let showNotification = false;
 
   onDestroy(() => {
     try {
@@ -44,6 +44,7 @@
   onMount(() => {
     config.subscribe((value) => {
       if (value) {
+        directoryMode = value.directoryMode;
         fileExtensionsAudio = value.fileExtensions.audio.join(", ");
         fileExtensionsImage = value.fileExtensions.image.join(", ");
         fileExtensionsVideo = value.fileExtensions.video.join(", ");
@@ -57,6 +58,7 @@
 
   function createConfig(): Protocol.Config {
     return {
+      directoryMode: directoryMode,
       fileExtensions: {
         audio: convertFileExtensions(fileExtensionsAudio),
         image: convertFileExtensions(fileExtensionsImage),
@@ -78,29 +80,33 @@
     isConfigDirty.update((_value) => true);
   }
 
-  function onClickCloseNotification(event: MouseEvent) {
-    event.stopPropagation();
-    errorMessageForSave = null;
-    showNotification = false;
-  }
-
   function onClickSave(event: MouseEvent) {
     event.stopPropagation();
     try {
       invoke<void>("set_config", { config: createConfig() })
         .then(() => {
           isConfigDirty.update((_value) => false);
-          showNotification = true;
+          dialog.update((_value) => {
+            return {
+              title: "Settings saved.",
+              type: Protocol.DialogType.Notification,
+            };
+          });
         })
         .catch((error) => {
-          errorMessageForSave = error;
-          showNotification = true;
+          dialog.update((_value) => {
+            return { title: error, type: Protocol.DialogType.Error };
+          });
         });
     } catch (error) {
-      errorMessageForSave = error
-        ? error.toString()
-        : "Failed to save with unknown error.";
-      showNotification = true;
+      dialog.update((_value) => {
+        return {
+          title: error
+            ? error.toString()
+            : "Failed to save with unknown error.",
+          type: Protocol.DialogType.Error,
+        };
+      });
     }
   }
 </script>
@@ -110,6 +116,28 @@
     <TableOfContents element="#config" />
     <div id="config" class="grid gap-2">
       <h1 class="text-lg font-bold">Settings</h1>
+      <h2 class="text-base font-medium">Directory Mode</h2>
+      <MenuField
+        classes={{
+          root: "min-w-32 max-w-32",
+        }}
+        options={[
+          {
+            label: Protocol.ConfigDirectoryMode.Video,
+            value: Protocol.ConfigDirectoryMode.Video,
+          },
+          {
+            label: Protocol.ConfigDirectoryMode.Audio,
+            value: Protocol.ConfigDirectoryMode.Audio,
+          },
+          {
+            label: Protocol.ConfigDirectoryMode.Image,
+            value: Protocol.ConfigDirectoryMode.Image,
+          },
+        ]}
+        bind:value={directoryMode}
+        on:change={onChange}
+      ></MenuField>
       <h2 class="text-base font-medium">File Extensions</h2>
       <h3 class="text-sm">Audio File Extensions</h3>
       <TextField bind:value={fileExtensionsAudio} on:change={onChange} />
@@ -129,26 +157,3 @@
     Save
   </Button>
 </div>
-{#if showNotification}
-  <Overlay center>
-    <div
-      class="w-[400px] grid gap-4 text-xl font-bold bg-gray-100 p-3 border-1 rounded-lg border-gray-200 drop-shadow-lg"
-    >
-      {#if errorMessageForSave}
-        <div class="text-red-600 justify-self-center">
-          {errorMessageForSave}
-        </div>
-      {:else}
-        <div class="text-green-600 justify-self-center">
-          Successfully Saved!
-        </div>
-      {/if}
-      <Button
-        variant="fill-light"
-        color="primary"
-        classes={{ root: "w-24 justify-self-center" }}
-        on:click={onClickCloseNotification}>Close</Button
-      >
-    </div>
-  </Overlay>
-{/if}

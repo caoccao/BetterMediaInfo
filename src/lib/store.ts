@@ -32,6 +32,13 @@ export const config = Store.writable<Protocol.Config | null>(null, (set) => {
   };
 });
 
+export const dialog = Store.writable<Protocol.Dialog | null>(null, (set) => {
+  set(null);
+  return () => {
+    set(null);
+  };
+});
+
 export const isConfigDirty = Store.writable<boolean>(false, (set) => {
   set(false);
   return () => {

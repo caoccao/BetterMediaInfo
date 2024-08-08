@@ -21,8 +21,15 @@ export interface About {
 }
 
 export interface Config {
+  directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
   streams: ConfigStreams;
+}
+
+export enum ConfigDirectoryMode {
+  Audio = "Audio",
+  Image = "Image",
+  Video = "Video",
 }
 
 export interface ConfigFileExtensions {
@@ -39,6 +46,16 @@ export enum ControlStatus {
   Hidden,
   Selected,
   Visible,
+}
+
+export interface Dialog {
+  title: string;
+  type: DialogType;
+}
+
+export enum DialogType {
+  Notification,
+  Error,
 }
 
 export interface Parameter {

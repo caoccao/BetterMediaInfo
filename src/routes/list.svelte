@@ -20,11 +20,10 @@
   import { onMount } from "svelte";
   import { Button } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
-  import { mediaFiles } from "../lib/store";
-  import { error } from "@sveltejs/kit";
+  import { dialog, mediaFiles } from "../lib/store";
+  import * as Protocol from "../lib/protocol";
 
   let files: string[] = [];
-  let errorMessage: string | null = null;
 
   onMount(() => {
     mediaFiles.subscribe((value) => {
@@ -32,10 +31,12 @@
       if (files.length > 0) {
         invoke<void>("get_file_infos", { files: files })
           .then(() => {
-            errorMessage = null;
+            dialog.update((_value) => null);
           })
           .catch((error) => {
-            errorMessage = error;
+            dialog.update((_value) => {
+              return { title: error, type: Protocol.DialogType.Error };
+            });
           });
       }
     });
@@ -63,10 +64,5 @@
     {#each files as file}
       <div>{file}</div>
     {/each}
-  {/if}
-  {#if errorMessage !== null}
-    <div class="my-3 text-red-600 justify-self-center">
-      {errorMessage}
-    </div>
   {/if}
 </div>

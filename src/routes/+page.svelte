@@ -19,13 +19,21 @@
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
   import type { FileDropEvent } from "@tauri-apps/api/window";
   import { afterUpdate, onMount } from "svelte";
-  import { Button, Tab, Tabs } from "svelte-ux";
+  import { Button, Dialog, Tab, Tabs } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import Config from "./config.svelte";
   import * as Protocol from "../lib/protocol";
-  import { mediaFiles, tabAboutStatus, tabSettingsStatus } from "../lib/store";
+  import {
+    dialog,
+    mediaFiles,
+    tabAboutStatus,
+    tabSettingsStatus,
+  } from "../lib/store";
 
+  let dialogOpen = false;
+  let dialogTitle: string | null = null;
+  let dialogType: Protocol.DialogType | null = null;
   let statusTabAbout: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
   let statusTabSettings: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
   let tabIndex = 0;
@@ -54,6 +62,12 @@
         cancelFileDrop = value;
       });
 
+    dialog.subscribe((value) => {
+      dialogOpen = value !== null;
+      dialogTitle = value?.title ?? null;
+      dialogType = value?.type ?? null;
+    });
+
     tabAboutStatus.subscribe((value) => {
       statusTabAbout = value;
     });
@@ -69,7 +83,27 @@
     };
   });
 
+  $: dialogTitleClasses = getDialogTitleClasses(dialogType);
+
   $: tabControls = getTabControls(statusTabAbout, statusTabSettings);
+
+  function getDialogTitleClasses(
+    dialogType: Protocol.DialogType | null
+  ): string {
+    let classes: Array<string> = [];
+    if (dialogType) {
+      classes.push("justify-self-center");
+      switch (dialogType) {
+        case Protocol.DialogType.Error:
+          classes.push("text-red-600");
+          break;
+        default:
+          classes.push("text-green-600");
+          break;
+      }
+    }
+    return classes.join(" ");
+  }
 
   function getTabControls(
     statusOfTabAbout: Protocol.ControlStatus,
@@ -210,3 +244,21 @@
     {/each}
   </svelte:fragment>
 </Tabs>
+<Dialog
+  bind:open={dialogOpen}
+  classes={{
+    root: "rounded-lg border-gray-200 drop-shadow-lg",
+    title: dialogTitleClasses,
+  }}
+>
+  <div slot="title">{dialogTitle}</div>
+  <div slot="actions">
+    <Button
+      variant="fill-light"
+      color="primary"
+      classes={{ root: "w-24 justify-self-center" }}
+    >
+      close
+    </Button>
+  </div>
+</Dialog>
