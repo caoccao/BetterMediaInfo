@@ -24,6 +24,7 @@
 )]
 
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::os::raw;
 use std::path::{Path, PathBuf};
 use std::usize;
@@ -106,7 +107,7 @@ impl MediaInfoSetOption {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum MediaInfoStreamKind {
   General = 0,
   Video,

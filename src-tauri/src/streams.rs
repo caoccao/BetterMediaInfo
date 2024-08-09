@@ -141,7 +141,6 @@ impl Stream {
           log::error!("Unexpected stream {}.", line);
           break;
         }
-        log::debug!("Parsing stream {}.", line);
         parse_stream_kind = false;
       } else {
         if line.is_empty() {

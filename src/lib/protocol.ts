@@ -58,10 +58,28 @@ export enum DialogType {
   Error,
 }
 
+export interface Info {
+  file: String;
+  stream: StreamKind;
+  property: String;
+  value: String;
+}
+
 export interface Parameter {
   id: number;
   stream: string;
   property: string;
+}
+
+export enum StreamKind {
+  General = "General",
+  Video = "Video",
+  Audio = "Audio",
+  Text = "Text",
+  Other = "Other",
+  Image = "Image",
+  Menu = "Menu",
+  Max = "Max",
 }
 
 export enum TabType {

@@ -41,7 +41,7 @@ async fn get_config() -> Result<config::Config, String> {
 }
 
 #[tauri::command]
-async fn get_file_info(file: String) -> Result<(), String> {
+async fn get_file_info(file: String) -> Result<protocol::Info, String> {
   log::debug!("get_file_info({})", file);
   controller::get_file_info(file).await.map_err(convert_error)
 }

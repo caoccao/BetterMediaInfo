@@ -17,12 +17,22 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::media_info;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct About {
   #[serde(rename = "appVersion")]
   pub app_version: String,
   #[serde(rename = "mediaInfoVersion")]
   pub media_info_version: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Info {
+  pub file: String,
+  pub stream: media_info::MediaInfoStreamKind,
+  pub property: String,
+  pub value: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

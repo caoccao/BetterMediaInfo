@@ -38,7 +38,7 @@ pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
 
-pub async fn get_file_info(file: String) -> Result<()> {
+pub async fn get_file_info(file: String) -> Result<Info> {
   let path = Path::new(file.as_str());
   if !path.exists() {
     return Err(anyhow::anyhow!("Path {} does not exist.", path.display()));
@@ -46,7 +46,16 @@ pub async fn get_file_info(file: String) -> Result<()> {
   if !path.is_file() {
     return Err(anyhow::anyhow!("Path {} is not a file.", path.display()));
   }
-  Ok(())
+  let media_info_file = MediaInfoFile::new(path);
+  let stream = MediaInfoStreamKind::General;
+  let property = "Information".to_owned();
+  let value = media_info_file.media_info.getInformation();
+  Ok(Info {
+    file,
+    stream,
+    property,
+    value,
+  })
 }
 
 pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
@@ -77,10 +86,7 @@ pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
       .filter(|path| {
         path
           .extension()
-          .map(|ext| {
-            log::debug!("Extension: {}", ext.to_str().unwrap_or_default());
-            file_extensions.contains(ext.to_str().unwrap_or_default())
-          })
+          .map(|ext| file_extensions.contains(ext.to_str().unwrap_or_default()))
           .unwrap_or(false)
       })
       .map(|path| path.to_str().unwrap_or_default().to_owned())

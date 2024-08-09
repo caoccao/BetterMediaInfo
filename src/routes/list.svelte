@@ -31,8 +31,10 @@
       files = value;
       if (files.length > 0) {
         for (const file of files) {
-          invoke<void>("get_file_info", { file: file })
-            .then(() => {})
+          invoke<Protocol.Info>("get_file_info", { file: file })
+            .then((info) => {
+              console.log(info);
+            })
             .catch((error) => {
               dialog.set({ title: error, type: Protocol.DialogType.Error });
             });
