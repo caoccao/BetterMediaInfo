@@ -43,12 +43,14 @@ pub struct StreamCount {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StreamProperty {
   pub stream: media_info::MediaInfoStreamKind,
+  pub num: i32,
   pub property: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StreamPropertyValue {
   pub stream: media_info::MediaInfoStreamKind,
+  pub num: i32,
   pub property: String,
   pub value: String,
 }

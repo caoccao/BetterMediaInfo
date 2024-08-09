@@ -87,6 +87,19 @@ export enum StreamKind {
   Max = "Max",
 }
 
+export interface StreamProperty {
+  stream: StreamKind;
+  num: number;
+  property: String;
+}
+
+export interface StreamPropertyValue {
+  stream: StreamKind;
+  num: number;
+  property: string;
+  value: string;
+}
+
 export enum TabType {
   About,
   List,

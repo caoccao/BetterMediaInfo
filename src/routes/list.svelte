@@ -18,13 +18,15 @@
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
-  import { Button, Card, Header } from "svelte-ux";
+  import { Button, Card, Header, Table } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import { dialog, mediaFiles, mediaStreamCountMap } from "../lib/store";
   import * as Protocol from "../lib/protocol";
 
   let files: string[] = [];
   let streamCountMap: Map<string, Protocol.StreamCount[]> = new Map();
+  let commonPropertyMap: Map<string, Protocol.StreamPropertyValue[]> =
+    new Map();
 
   onMount(() => {
     mediaStreamCountMap.subscribe((value) => {
@@ -43,10 +45,56 @@
             })
             .catch((error) => {
               dialog.set({ title: error, type: Protocol.DialogType.Error });
+            })
+            .then(() => {
+              if (streamCountMap.has(file)) {
+                let generalStreamCount = streamCountMap
+                  .get(file)
+                  ?.find(
+                    (streamCount) =>
+                      streamCount.stream === Protocol.StreamKind.General
+                  )?.count;
+                if (generalStreamCount && generalStreamCount > 0) {
+                  invoke<Protocol.StreamPropertyValue[]>("get_properties", {
+                    file: file,
+                    properties: [
+                      {
+                        stream: Protocol.StreamKind.General,
+                        num: 0,
+                        property: "Duration",
+                      },
+                    ],
+                  })
+                    .then((value) => {
+                      commonPropertyMap.set(file, value);
+                      commonPropertyMap = commonPropertyMap;
+                    })
+                    .catch((error) => {
+                      dialog.set({
+                        title: error,
+                        type: Protocol.DialogType.Error,
+                      });
+                    });
+                }
+              }
             });
         });
     });
   });
+
+  function convertProperties(
+    properties: Protocol.StreamPropertyValue[] | undefined
+  ): Array<Record<string, string>> {
+    console.log(properties);
+    const result: Record<string, string> = {};
+    if (properties) {
+      properties.forEach((property) => {
+        result[property.property] = property.value;
+      });
+    }
+    console.log(result);
+    return [result];
+  }
 </script>
 
 <div class="grid gap-2">
@@ -85,6 +133,17 @@
             </Button>
           </div>
         </Header>
+        <div slot="contents">
+          <Table
+            data={convertProperties(commonPropertyMap.get(file))}
+            columns={[
+              {
+                name: "Duration",
+                header: "Duration",
+              },
+            ]}
+          />
+        </div>
       </Card>
     {/each}
   {/if}

@@ -38,19 +38,6 @@ pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
 
-pub async fn get_file_info(file: String, properties: Vec<StreamProperty>) -> Result<Vec<StreamPropertyValue>> {
-  let path = Path::new(file.as_str());
-  validate_path_as_file(path)?;
-  let media_info_file = MediaInfoFile::new(path);
-  let mut new_properties = Vec::new();
-  // for property in properties {
-  //   media_info_file
-  //     .media_info
-  //     .get(stream_kind, stream_number, parameter, info_kind, search_kind)
-  // }
-  Ok(new_properties)
-}
-
 pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
   Ok(if files.is_empty() {
     Vec::new()
@@ -120,6 +107,24 @@ pub async fn get_parameters() -> Result<Vec<Parameter>> {
       })
       .collect::<Vec<Parameter>>(),
   )
+}
+
+pub async fn get_properties(file: String, properties: Vec<StreamProperty>) -> Result<Vec<StreamPropertyValue>> {
+  let path = Path::new(file.as_str());
+  validate_path_as_file(path)?;
+  let media_info_file = MediaInfoFile::new(path);
+  let mut new_properties = Vec::new();
+  for property in properties {
+    let stream = Stream::new(property.stream, property.property.clone());
+    let value = stream.get(&media_info_file.media_info, property.num as usize)?;
+    new_properties.push(StreamPropertyValue {
+      stream: property.stream,
+      num: property.num,
+      property: property.property,
+      value,
+    });
+  }
+  Ok(new_properties)
 }
 
 pub async fn set_config(config: config::Config) -> Result<()> {
