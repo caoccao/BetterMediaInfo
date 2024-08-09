@@ -31,11 +31,11 @@
   let buttonSettingsClasses = BUTTON_CLASSES_NORMAL;
 
   function selectTabAbout() {
-    tabAboutStatus.update((_value) => Protocol.ControlStatus.Selected);
+    tabAboutStatus.set(Protocol.ControlStatus.Selected);
   }
 
   function selectTabSettings() {
-    tabSettingsStatus.update((_value) => Protocol.ControlStatus.Selected);
+    tabSettingsStatus.set(Protocol.ControlStatus.Selected);
   }
 
   onMount(() => {

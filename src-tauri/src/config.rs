@@ -156,6 +156,15 @@ impl Default for ConfigStreams {
   }
 }
 
+pub fn get_active_file_extensions() -> Vec<String> {
+  let config = get_config();
+  match config.directory_mode {
+    ConfigDirectoryMode::Audio => config.file_extensions.audio.clone(),
+    ConfigDirectoryMode::Image => config.file_extensions.image.clone(),
+    ConfigDirectoryMode::Video => config.file_extensions.video.clone(),
+  }
+}
+
 pub fn get_config() -> Config {
   unsafe { CONFIG.to_owned() }
 }

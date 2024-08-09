@@ -33,9 +33,7 @@
   onDestroy(() => {
     try {
       let newConfig = createConfig();
-      config.update((_value) => {
-        return newConfig;
-      });
+      config.set(newConfig);
     } catch (error) {
       console.error(error);
     }
@@ -77,7 +75,7 @@
   }
 
   function onChange(_value: CustomEvent<any>) {
-    isConfigDirty.update((_value) => true);
+    isConfigDirty.set(true);
   }
 
   function onClickSave(event: MouseEvent) {
@@ -85,27 +83,19 @@
     try {
       invoke<void>("set_config", { config: createConfig() })
         .then(() => {
-          isConfigDirty.update((_value) => false);
-          dialog.update((_value) => {
-            return {
-              title: "Settings saved.",
-              type: Protocol.DialogType.Notification,
-            };
+          isConfigDirty.set(false);
+          dialog.set({
+            title: "Settings saved.",
+            type: Protocol.DialogType.Notification,
           });
         })
         .catch((error) => {
-          dialog.update((_value) => {
-            return { title: error, type: Protocol.DialogType.Error };
-          });
+          dialog.set({ title: error, type: Protocol.DialogType.Error });
         });
     } catch (error) {
-      dialog.update((_value) => {
-        return {
-          title: error
-            ? error.toString()
-            : "Failed to save with unknown error.",
-          type: Protocol.DialogType.Error,
-        };
+      dialog.set({
+        title: error ? error.toString() : "Failed to save with unknown error.",
+        type: Protocol.DialogType.Error,
       });
     }
   }

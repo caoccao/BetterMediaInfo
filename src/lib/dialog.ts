@@ -15,11 +15,10 @@
  *   limitations under the License.
  */
 
-import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/dialog";
 import type { DialogFilter } from "@tauri-apps/api/dialog";
-import { config, dialog, mediaFiles } from "./store";
-import * as Protocol from "../lib/protocol";
+import { config } from "./store";
+import { scanFiles } from "./fs";
 
 const filters: Array<DialogFilter> = [];
 
@@ -41,41 +40,20 @@ config.subscribe((value) => {
   }
 });
 
-function setMediaFiles(files: string[] | null) {
-  if (files === null) {
-    mediaFiles.set([]);
-  } else {
-    mediaFiles.set(files as string[]);
-  }
-}
-
 export async function openDirectoryDialog() {
-  const directory = await open({
-    directory: true,
-  });
-  if (directory !== null && directory !== "") {
-    invoke<string[]>("get_files", {
-      directory: directory as string,
-    })
-      .then((value) => {
-        console.log(value);
-        setMediaFiles(value);
-      })
-      .catch((error) => {
-        dialog.update((_value) => {
-          return { title: error, type: Protocol.DialogType.Error };
-        });
-      });
-  } else {
-    setMediaFiles(null);
-  }
+  await scanFiles([
+    (await open({
+      directory: true,
+    })) as string,
+  ]);
 }
 
 export async function openFileDialog() {
-  setMediaFiles(
-    (await open({
-      multiple: true,
-      filters: filters,
-    })) as string[] | null
-  );
+  const files = await open({
+    multiple: true,
+    filters: filters,
+  });
+  if (files) {
+    await scanFiles(files as string[]);
+  }
 }

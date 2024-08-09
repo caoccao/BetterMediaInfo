@@ -16,7 +16,8 @@
 */
 
 use anyhow::Result;
-use std::path::Path;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use crate::config;
 use crate::media_info::*;
@@ -38,23 +39,53 @@ pub async fn get_config() -> Result<config::Config> {
 }
 
 pub async fn get_file_info(file: String) -> Result<()> {
+  let path = Path::new(file.as_str());
+  if !path.exists() {
+    return Err(anyhow::anyhow!("Path {} does not exist.", path.display()));
+  }
+  if !path.is_file() {
+    return Err(anyhow::anyhow!("Path {} is not a file.", path.display()));
+  }
   Ok(())
 }
 
-pub async fn get_files(directory: String) -> Result<Vec<String>> {
-  let path = Path::new(directory.as_str());
-  if !path.exists() {
-    Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
-  } else if !path.is_dir() {
-    Err(anyhow::anyhow!("Path {} is not a directory.", path.display()))
+pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
+  Ok(if files.is_empty() {
+    Vec::new()
   } else {
-    let mut files = Vec::new();
-    for result in path.read_dir().map_err(anyhow::Error::msg)? {
-      let dir_entry = result.map_err(anyhow::Error::msg)?;
-      dir_entry.path().to_str().map(|file| files.push(file.to_owned()));
+    let mut paths: Vec<PathBuf> = Vec::new();
+    for file in files {
+      let path = Path::new(file.as_str());
+      if !path.exists() {
+        return Err(anyhow::anyhow!("Path {} does not exist.", path.display()));
+      }
+      if path.is_dir() {
+        for result in path.read_dir().map_err(anyhow::Error::msg)? {
+          let dir_entry = result.map_err(anyhow::Error::msg)?;
+          let path = dir_entry.path();
+          if path.is_file() {
+            paths.push(path);
+          }
+        }
+      } else if path.is_file() {
+        paths.push(path.to_path_buf());
+      }
     }
-    Ok(files)
-  }
+    let file_extensions: HashSet<String> = config::get_active_file_extensions().into_iter().collect();
+    paths
+      .into_iter()
+      .filter(|path| {
+        path
+          .extension()
+          .map(|ext| {
+            log::debug!("Extension: {}", ext.to_str().unwrap_or_default());
+            file_extensions.contains(ext.to_str().unwrap_or_default())
+          })
+          .unwrap_or(false)
+      })
+      .map(|path| path.to_str().unwrap_or_default().to_owned())
+      .collect()
+  })
 }
 
 pub async fn get_parameters() -> Result<Vec<Parameter>> {

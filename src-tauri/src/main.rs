@@ -47,9 +47,9 @@ async fn get_file_info(file: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn get_files(directory: String) -> Result<Vec<String>, String> {
-  log::debug!("get_files({})", directory);
-  controller::get_files(directory).await.map_err(convert_error)
+async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
+  log::debug!("get_files({:?})", files);
+  controller::get_files(files).await.map_err(convert_error)
 }
 
 #[tauri::command]

@@ -24,12 +24,8 @@
   import List from "./list.svelte";
   import Config from "./config.svelte";
   import * as Protocol from "../lib/protocol";
-  import {
-    dialog,
-    mediaFiles,
-    tabAboutStatus,
-    tabSettingsStatus,
-  } from "../lib/store";
+  import { dialog, tabAboutStatus, tabSettingsStatus } from "../lib/store";
+  import { scanFiles } from "../lib/fs";
 
   let dialogOpen = false;
   let dialogTitle: string | null = null;
@@ -43,10 +39,10 @@
       tabIndex = tabControls.length - 1;
     }
     if (statusTabAbout === Protocol.ControlStatus.Selected) {
-      tabAboutStatus.update((_value) => Protocol.ControlStatus.Visible);
+      tabAboutStatus.set(Protocol.ControlStatus.Visible);
     }
     if (statusTabSettings === Protocol.ControlStatus.Selected) {
-      tabSettingsStatus.update((_value) => Protocol.ControlStatus.Visible);
+      tabSettingsStatus.set(Protocol.ControlStatus.Visible);
     }
   });
 
@@ -55,7 +51,7 @@
     appWindow
       .onFileDropEvent((event: Event<FileDropEvent>) => {
         if (event.payload.type === "drop") {
-          mediaFiles.set(event.payload.paths);
+          scanFiles(event.payload.paths);
         }
       })
       .then((value) => {

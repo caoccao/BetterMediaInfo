@@ -27,18 +27,16 @@
 
   onMount(() => {
     mediaFiles.subscribe((value) => {
+      dialog.set(null);
       files = value;
       if (files.length > 0) {
-        // TODO
-        // invoke<void>("get_file_infos", { files: files })
-        //   .then(() => {
-        //     dialog.update((_value) => null);
-        //   })
-        //   .catch((error) => {
-        //     dialog.update((_value) => {
-        //       return { title: error, type: Protocol.DialogType.Error };
-        //     });
-        //   });
+        for (const file of files) {
+          invoke<void>("get_file_info", { file: file })
+            .then(() => {})
+            .catch((error) => {
+              dialog.set({ title: error, type: Protocol.DialogType.Error });
+            });
+        }
       }
     });
   });
