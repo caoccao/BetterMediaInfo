@@ -31,9 +31,9 @@
       files = value;
       if (files.length > 0) {
         for (const file of files) {
-          invoke<Protocol.Info>("get_file_info", { file: file })
-            .then((info) => {
-              console.log(info);
+          invoke<Protocol.StreamCount[]>("get_stream_count", { file: file })
+            .then((value) => {
+              console.log(value);
             })
             .catch((error) => {
               dialog.set({ title: error, type: Protocol.DialogType.Error });

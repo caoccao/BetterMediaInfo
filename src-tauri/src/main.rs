@@ -41,9 +41,12 @@ async fn get_config() -> Result<config::Config, String> {
 }
 
 #[tauri::command]
-async fn get_file_info(file: String) -> Result<protocol::Info, String> {
-  log::debug!("get_file_info({})", file);
-  controller::get_file_info(file).await.map_err(convert_error)
+async fn get_file_info(
+  file: String,
+  properties: Vec<protocol::StreamProperty>,
+) -> Result<Vec<protocol::StreamPropertyValue>, String> {
+  log::debug!("get_file_info({}, {:?})", file, properties);
+  controller::get_file_info(file, properties).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -56,6 +59,12 @@ async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
 async fn get_parameters() -> Result<Vec<protocol::Parameter>, String> {
   log::debug!("get_parameters");
   controller::get_parameters().await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_stream_count(file: String) -> Result<Vec<protocol::StreamCount>, String> {
+  log::debug!("get_stream_count({})", file);
+  controller::get_stream_count(file).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -73,6 +82,7 @@ fn main() {
       get_file_info,
       get_files,
       get_parameters,
+      get_stream_count,
       set_config
     ])
     .run(tauri::generate_context!())

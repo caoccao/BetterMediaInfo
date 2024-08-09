@@ -28,16 +28,27 @@ pub struct About {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Info {
-  pub file: String,
-  pub stream: media_info::MediaInfoStreamKind,
-  pub property: String,
-  pub value: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Parameter {
   pub id: i32,
   pub stream: String,
   pub property: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct StreamCount {
+  pub stream: media_info::MediaInfoStreamKind,
+  pub count: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct StreamProperty {
+  pub stream: media_info::MediaInfoStreamKind,
+  pub property: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct StreamPropertyValue {
+  pub stream: media_info::MediaInfoStreamKind,
+  pub property: String,
+  pub value: String,
 }

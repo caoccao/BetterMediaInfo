@@ -38,24 +38,17 @@ pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
 
-pub async fn get_file_info(file: String) -> Result<Info> {
+pub async fn get_file_info(file: String, properties: Vec<StreamProperty>) -> Result<Vec<StreamPropertyValue>> {
   let path = Path::new(file.as_str());
-  if !path.exists() {
-    return Err(anyhow::anyhow!("Path {} does not exist.", path.display()));
-  }
-  if !path.is_file() {
-    return Err(anyhow::anyhow!("Path {} is not a file.", path.display()));
-  }
+  validate_path_as_file(path)?;
   let media_info_file = MediaInfoFile::new(path);
-  let stream = MediaInfoStreamKind::General;
-  let property = "Information".to_owned();
-  let value = media_info_file.media_info.getInformation();
-  Ok(Info {
-    file,
-    stream,
-    property,
-    value,
-  })
+  let mut new_properties = Vec::new();
+  // for property in properties {
+  //   media_info_file
+  //     .media_info
+  //     .get(stream_kind, stream_number, parameter, info_kind, search_kind)
+  // }
+  Ok(new_properties)
 }
 
 pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
@@ -94,6 +87,21 @@ pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
   })
 }
 
+pub async fn get_stream_count(file: String) -> Result<Vec<StreamCount>> {
+  let path = Path::new(file.as_str());
+  validate_path_as_file(path)?;
+  let media_info_file = MediaInfoFile::new(path);
+  let mut stream_counts = Vec::new();
+  for stream_kind in MediaInfoStreamKind::values() {
+    let count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
+    stream_counts.push(StreamCount {
+      stream: *stream_kind,
+      count,
+    });
+  }
+  Ok(stream_counts)
+}
+
 pub async fn get_parameters() -> Result<Vec<Parameter>> {
   let media_info = MediaInfo::new();
   let info_parameters = media_info.getOption(MediaInfoGetOption::InfoParameters)?;
@@ -116,4 +124,14 @@ pub async fn get_parameters() -> Result<Vec<Parameter>> {
 
 pub async fn set_config(config: config::Config) -> Result<()> {
   config::set_config(config)
+}
+
+fn validate_path_as_file(path: &Path) -> Result<()> {
+  if !path.exists() {
+    Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
+  } else if !path.is_file() {
+    Err(anyhow::anyhow!("Path {} is not a file.", path.display()))
+  } else {
+    Ok(())
+  }
 }

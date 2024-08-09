@@ -71,6 +71,11 @@ export interface Parameter {
   property: string;
 }
 
+export interface StreamCount {
+  stream: StreamKind;
+  count: number;
+}
+
 export enum StreamKind {
   General = "General",
   Video = "Video",
