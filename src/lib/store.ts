@@ -53,6 +53,15 @@ export const mediaFiles = Store.writable<string[]>([], (set) => {
   };
 });
 
+export const mediaStreamCountMap = Store.writable<
+  Map<string, Protocol.StreamCount[]>
+>(new Map(), (set) => {
+  set(new Map());
+  return () => {
+    set(new Map());
+  };
+});
+
 export const mediaInfoAbout = Store.readable<Protocol.About | null>(
   null,
   (set) => {

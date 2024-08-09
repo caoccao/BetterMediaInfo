@@ -18,33 +18,38 @@
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
-  import { Button } from "svelte-ux";
+  import { Button, Card, Header } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
-  import { dialog, mediaFiles } from "../lib/store";
+  import { dialog, mediaFiles, mediaStreamCountMap } from "../lib/store";
   import * as Protocol from "../lib/protocol";
 
   let files: string[] = [];
+  let streamCountMap: Map<string, Protocol.StreamCount[]> = new Map();
 
   onMount(() => {
+    mediaStreamCountMap.subscribe((value) => {
+      streamCountMap = value;
+    });
     mediaFiles.subscribe((value) => {
       dialog.set(null);
       files = value;
-      if (files.length > 0) {
-        for (const file of files) {
+      files
+        .filter((file) => !streamCountMap.has(file))
+        .forEach((file) => {
           invoke<Protocol.StreamCount[]>("get_stream_count", { file: file })
             .then((value) => {
-              console.log(value);
+              streamCountMap.set(file, value);
+              streamCountMap = streamCountMap;
             })
             .catch((error) => {
               dialog.set({ title: error, type: Protocol.DialogType.Error });
             });
-        }
-      }
+        });
     });
   });
 </script>
 
-<div class="grid">
+<div class="grid gap-2">
   {#if files.length == 0}
     <div class="my-3 text-center">Please select some files or a directory.</div>
     <div class="my-3 grid grid-flow-col justify-center gap-2">
@@ -63,7 +68,24 @@
     </div>
   {:else}
     {#each files as file}
-      <div>{file}</div>
+      <Card>
+        <Header
+          title={file}
+          subheading={streamCountMap
+            .get(file)
+            ?.map(
+              (streamCount) => `${streamCount.stream}: ${streamCount.count}`
+            )
+            .join(", ")}
+          slot="header"
+        >
+          <div slot="actions">
+            <Button class="w-12 h-12">
+              <span class="material-symbols-outlined">note_stack</span>
+            </Button>
+          </div>
+        </Header>
+      </Card>
     {/each}
   {/if}
 </div>
