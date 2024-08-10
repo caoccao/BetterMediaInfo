@@ -35,15 +35,30 @@
     transformDuration,
   } from "../lib/format";
 
+  const COMMON_PROPERTIES: Record<string, string> = {
+    "Video - Format": "movie_info",
+    "Video - Resolution": "movie",
+    "Video - FrameRate": "acute",
+    "Video - BitRate": "health_metrics",
+    "Video - ScanType": "document_scanner",
+    "General - Duration": "schedule",
+  };
+
   let files: string[] = [];
   let streamCountMap: Map<
     string,
-    Map<string, Protocol.StreamCount>
+    Map<Protocol.StreamKind, Protocol.StreamCount>
   > = new Map();
   let commonPropertyMap: Map<
     string,
     Map<string, Protocol.StreamPropertyValue>
   > = new Map();
+
+  $: fileToPropertyMap = generateFileToPropertyMap(
+    files,
+    streamCountMap,
+    commonPropertyMap
+  );
 
   onMount(() => {
     mediaStreamCountMap.subscribe((value) => {
@@ -60,7 +75,7 @@
         .forEach((file) => {
           invoke<Protocol.StreamCount[]>("get_stream_count", { file: file })
             .then((value) => {
-              const map = new Map<string, Protocol.StreamCount>();
+              const map = new Map<Protocol.StreamKind, Protocol.StreamCount>();
               value.forEach((streamCount) => {
                 map.set(streamCount.stream, streamCount);
               });
@@ -136,16 +151,78 @@
     });
   });
 
-  function convertProperties(
-    properties: Protocol.StreamPropertyValue[] | undefined
-  ): Array<Record<string, string>> {
-    const result: Record<string, string> = {};
-    if (properties) {
-      properties.forEach((property) => {
-        result[property.property] = property.value;
+  function generateFileToPropertyMap(
+    files: string[],
+    streamCountMap: Map<string, Map<Protocol.StreamKind, Protocol.StreamCount>>,
+    commonPropertyMap: Map<string, Map<string, Protocol.StreamPropertyValue>>
+  ): Map<string, Map<string, string>> {
+    const fileMap = new Map<string, Map<string, string>>();
+    files
+      .filter((file) => streamCountMap.has(file) && commonPropertyMap.has(file))
+      .forEach((file) => {
+        const map = new Map<string, string>();
+        fileMap.set(file, map);
+        const countMap = streamCountMap.get(file) as Map<
+          Protocol.StreamKind,
+          Protocol.StreamCount
+        >;
+        const propertyMap = commonPropertyMap.get(file) as Map<
+          string,
+          Protocol.StreamPropertyValue
+        >;
+        const generalStreamCount =
+          countMap.get(Protocol.StreamKind.General)?.count ?? 0;
+        const videoStreamCount =
+          countMap.get(Protocol.StreamKind.Video)?.count ?? 0;
+        if (generalStreamCount > 0) {
+          if (propertyMap.has("General/0/Duration")) {
+            map.set(
+              "General - Duration",
+              formatProperty(
+                propertyMap,
+                Protocol.StreamKind.General,
+                generalStreamCount,
+                "Duration",
+                transformDuration
+              ).join("| ")
+            );
+          }
+        }
+        if (videoStreamCount > 0) {
+          if (propertyMap.has("Video/0/Width")) {
+            map.set(
+              "Video - Resolution",
+              formatResolution(propertyMap, videoStreamCount).join("| ")
+            );
+          }
+          if (propertyMap.has("Video/0/BitRate")) {
+            map.set(
+              "Video - BitRate",
+              formatProperty(
+                propertyMap,
+                Protocol.StreamKind.Video,
+                generalStreamCount,
+                "BitRate",
+                transformBitRate
+              ).join("| ")
+            );
+          }
+          ["Format", "FrameRate", "ScanType"].forEach((property) => {
+            if (propertyMap.has(`Video/0/${property}`)) {
+              map.set(
+                `Video - ${property}`,
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.Video,
+                  videoStreamCount,
+                  property
+                ).join("| ")
+              );
+            }
+          });
+        }
       });
-    }
-    return [result];
+    return fileMap;
   }
 </script>
 
@@ -181,86 +258,20 @@
           </div>
         </Header>
         <div slot="contents">
-          {#if commonPropertyMap.has(file)}
+          {#if fileToPropertyMap.has(file)}
             <div class="flex flex-wrap">
-              {#if commonPropertyMap.get(file)?.has("Video/0/Format")}
-                <div class="material-symbols-outlined h6">movie_info</div>
-                <Tooltip title={`Video - Format`} offset={6}>
-                  <div class="h-6 px-2">
-                    {formatProperty(
-                      commonPropertyMap.get(file),
-                      streamCountMap.get(file),
-                      Protocol.StreamKind.Video,
-                      "Format"
-                    ).join("| ")}
+              {#each Object.entries(COMMON_PROPERTIES) as commonProperty}
+                {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
+                  <div class="material-symbols-outlined h6">
+                    {commonProperty[1]}
                   </div>
-                </Tooltip>
-              {/if}
-              {#if commonPropertyMap.get(file)?.has("Video/0/Width")}
-                <div class="material-symbols-outlined h6">movie</div>
-                <Tooltip title={`Video - Resolution`} offset={6}>
-                  <div class="h-6 px-2">
-                    {formatResolution(
-                      commonPropertyMap.get(file),
-                      streamCountMap.get(file)
-                    ).join("| ")}
-                  </div>
-                </Tooltip>
-              {/if}
-              {#if commonPropertyMap.get(file)?.has("Video/0/FrameRate")}
-                <div class="material-symbols-outlined h6">acute</div>
-                <Tooltip title={`Video - FrameRate`} offset={6}>
-                  <div class="h-6 px-2">
-                    {formatProperty(
-                      commonPropertyMap.get(file),
-                      streamCountMap.get(file),
-                      Protocol.StreamKind.Video,
-                      "FrameRate"
-                    ).join("| ")}
-                  </div>
-                </Tooltip>
-              {/if}
-              {#if commonPropertyMap.get(file)?.has("Video/0/BitRate")}
-                <div class="material-symbols-outlined h6">health_metrics</div>
-                <Tooltip title={`Video - BitRate`} offset={6}>
-                  <div class="h-6 px-2">
-                    {formatProperty(
-                      commonPropertyMap.get(file),
-                      streamCountMap.get(file),
-                      Protocol.StreamKind.Video,
-                      "BitRate",
-                      transformBitRate
-                    ).join("| ")}
-                  </div>
-                </Tooltip>
-              {/if}
-              {#if commonPropertyMap.get(file)?.has("Video/0/ScanType")}
-                <div class="material-symbols-outlined h6">document_scanner</div>
-                <Tooltip title={`Video - ScanType`} offset={6}>
-                  <div class="h-6 px-2">
-                    {formatProperty(
-                      commonPropertyMap.get(file),
-                      streamCountMap.get(file),
-                      Protocol.StreamKind.Video,
-                      "ScanType"
-                    ).join("| ")}
-                  </div>
-                </Tooltip>
-              {/if}
-              {#if commonPropertyMap.get(file)?.has("General/0/Duration")}
-                <div class="material-symbols-outlined h-6">schedule</div>
-                <Tooltip title="General - Duration" offset={6}>
-                  <div class="h-6 px-2">
-                    {formatProperty(
-                      commonPropertyMap.get(file),
-                      streamCountMap.get(file),
-                      Protocol.StreamKind.General,
-                      "Duration",
-                      transformDuration
-                    ).join("| ")}
-                  </div>
-                </Tooltip>
-              {/if}
+                  <Tooltip title={commonProperty[0]} offset={6}>
+                    <div class="h-6 px-2">
+                      {fileToPropertyMap.get(file)?.get(commonProperty[0])}
+                    </div>
+                  </Tooltip>
+                {/if}
+              {/each}
             </div>
             <div class="p-2"></div>
           {/if}

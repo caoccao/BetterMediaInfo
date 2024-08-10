@@ -18,45 +18,41 @@
 import * as Protocol from "../lib/protocol";
 
 export function formatProperty(
-  propertyMap: Map<string, Protocol.StreamPropertyValue> | undefined,
-  streamCountMap: Map<string, Protocol.StreamCount> | undefined,
+  propertyMap: Map<string, Protocol.StreamPropertyValue>,
   stream: Protocol.StreamKind,
+  streamCount: number,
   key: string,
   transformer: ((value: string) => string) | undefined = undefined
 ): string[] {
   let results: Array<string> = [];
-  if (propertyMap && streamCountMap) {
-    const streamCount = streamCountMap.get(stream);
-    if (streamCount && streamCount.count > 0) {
-      for (let i = 0; i < streamCount.count; i++) {
-        const property = propertyMap.get(`${stream}/${i}/${key}`);
-        if (property) {
-          let value = property.value;
-          if (transformer) {
-            value = transformer(value);
-          }
-          results.push(value);
-        }
+  for (let i = 0; i < streamCount; i++) {
+    const name = `${stream}/${i}/${key}`;
+    const property = propertyMap.get(name);
+    if (property) {
+      let value = property.value;
+      if (transformer) {
+        value = transformer(value);
       }
+      results.push(value);
     }
   }
   return results;
 }
 
 export function formatResolution(
-  propertyMap: Map<string, Protocol.StreamPropertyValue> | undefined,
-  streamCountMap: Map<string, Protocol.StreamCount> | undefined
+  propertyMap: Map<string, Protocol.StreamPropertyValue>,
+  streamCount: number
 ): string[] {
   const widths = formatProperty(
     propertyMap,
-    streamCountMap,
     Protocol.StreamKind.Video,
+    streamCount,
     "Width"
   );
   const heights = formatProperty(
     propertyMap,
-    streamCountMap,
     Protocol.StreamKind.Video,
+    streamCount,
     "Height"
   );
   let results: Array<string> = [];
