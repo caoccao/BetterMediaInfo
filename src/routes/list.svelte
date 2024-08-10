@@ -30,6 +30,7 @@
   import {
     formatDuration,
     formatProperty,
+    formatResolution,
     formatStreamCount,
   } from "../lib/format";
 
@@ -86,10 +87,12 @@
                 }
                 if (videoStreamCount && videoStreamCount > 0) {
                   for (let i = 0; i < videoStreamCount; i++) {
-                    properties.push({
-                      stream: Protocol.StreamKind.Video,
-                      num: i,
-                      property: "ScanType",
+                    ["Width", "Height", "ScanType"].forEach((property) => {
+                      properties.push({
+                        stream: Protocol.StreamKind.Video,
+                        num: i,
+                        property: property,
+                      });
                     });
                   }
                 }
@@ -182,10 +185,19 @@
                       Protocol.StreamKind.General,
                       "Duration",
                       formatDuration
-                    )}
+                    ).join("| ")}
                   </div>
                 </Tooltip>
               {/if}
+              <Tooltip title={`Video - Resolution`}>
+                <div class="material-symbols-outlined h6">movie</div>
+                <div class="h-6">
+                  {formatResolution(
+                    commonPropertyMap.get(file),
+                    streamCountMap.get(file)
+                  ).join("| ")}
+                </div>
+              </Tooltip>
               <Tooltip title={`Video - ScanType`}>
                 <div class="material-symbols-outlined h6">document_scanner</div>
                 <div class="h-6">
@@ -194,7 +206,7 @@
                     streamCountMap.get(file),
                     Protocol.StreamKind.Video,
                     "ScanType"
-                  )}
+                  ).join("| ")}
                 </div>
               </Tooltip>
             </div>

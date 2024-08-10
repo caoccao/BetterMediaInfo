@@ -47,7 +47,7 @@ export function formatProperty(
   stream: Protocol.StreamKind,
   key: string,
   formatter: ((value: string) => string) | undefined = undefined
-): string {
+): string[] {
   let results: Array<string> = [];
   if (propertyMap && streamCountMap) {
     const streamCount = streamCountMap.get(stream);
@@ -64,7 +64,33 @@ export function formatProperty(
       }
     }
   }
-  return results.join("| ");
+  return results;
+}
+
+export function formatResolution(
+  propertyMap: Map<string, Protocol.StreamPropertyValue> | undefined,
+  streamCountMap: Map<string, Protocol.StreamCount> | undefined
+): string {
+  const widths = formatProperty(
+    propertyMap,
+    streamCountMap,
+    Protocol.StreamKind.Video,
+    "Width"
+  );
+  const heights = formatProperty(
+    propertyMap,
+    streamCountMap,
+    Protocol.StreamKind.Video,
+    "Height"
+  );
+  let results: Array<string> = [];
+  const length = Math.max(widths.length, heights.length);
+  for (let i = 0; i < length; ++i) {
+    const width = i < widths.length ? widths[i] : "0";
+    const height = i < heights.length ? heights[i] : "0";
+    results.push(`${width}x${height}`);
+  }
+  return results;
 }
 
 export function formatStreamCount(
