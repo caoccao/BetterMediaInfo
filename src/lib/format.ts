@@ -70,7 +70,7 @@ export function formatProperty(
 export function formatResolution(
   propertyMap: Map<string, Protocol.StreamPropertyValue> | undefined,
   streamCountMap: Map<string, Protocol.StreamCount> | undefined
-): string {
+): string[] {
   const widths = formatProperty(
     propertyMap,
     streamCountMap,

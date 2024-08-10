@@ -87,7 +87,13 @@
                 }
                 if (videoStreamCount && videoStreamCount > 0) {
                   for (let i = 0; i < videoStreamCount; i++) {
-                    ["Width", "Height", "ScanType"].forEach((property) => {
+                    [
+                      "Width",
+                      "Height",
+                      "ScanType",
+                      "FrameRate",
+                      "Format",
+                    ].forEach((property) => {
                       properties.push({
                         stream: Protocol.StreamKind.Video,
                         num: i,
@@ -174,11 +180,63 @@
         </Header>
         <div slot="contents">
           {#if commonPropertyMap.has(file)}
-            <div class="grid grid-flow-col justify-start gap-2">
+            <div class="flex flex-wrap">
+              {#if commonPropertyMap.get(file)?.has("Video/0/Format")}
+                <Tooltip title={`Video - Format`}>
+                  <div class="material-symbols-outlined h6">movie_info</div>
+                  <div class="h-6 px-2">
+                    {formatProperty(
+                      commonPropertyMap.get(file),
+                      streamCountMap.get(file),
+                      Protocol.StreamKind.Video,
+                      "Format"
+                    ).join("| ")}
+                  </div>
+                </Tooltip>
+              {/if}
+              {#if commonPropertyMap.get(file)?.has("Video/0/Width")}
+                <Tooltip title={`Video - Resolution`}>
+                  <div class="material-symbols-outlined h6">movie</div>
+                  <div class="h-6 px-2">
+                    {formatResolution(
+                      commonPropertyMap.get(file),
+                      streamCountMap.get(file)
+                    ).join("| ")}
+                  </div>
+                </Tooltip>
+              {/if}
+              {#if commonPropertyMap.get(file)?.has("Video/0/FrameRate")}
+                <Tooltip title={`Video - FrameRate`}>
+                  <div class="material-symbols-outlined h6">acute</div>
+                  <div class="h-6 px-2">
+                    {formatProperty(
+                      commonPropertyMap.get(file),
+                      streamCountMap.get(file),
+                      Protocol.StreamKind.Video,
+                      "FrameRate"
+                    ).join("| ")}
+                  </div>
+                </Tooltip>
+              {/if}
+              {#if commonPropertyMap.get(file)?.has("Video/0/ScanType")}
+                <Tooltip title={`Video - ScanType`}>
+                  <div class="material-symbols-outlined h6">
+                    document_scanner
+                  </div>
+                  <div class="h-6 px-2">
+                    {formatProperty(
+                      commonPropertyMap.get(file),
+                      streamCountMap.get(file),
+                      Protocol.StreamKind.Video,
+                      "ScanType"
+                    ).join("| ")}
+                  </div>
+                </Tooltip>
+              {/if}
               {#if commonPropertyMap.get(file)?.has("General/0/Duration")}
                 <Tooltip title="General - Duration">
                   <div class="material-symbols-outlined h-6">schedule</div>
-                  <div class="h-6">
+                  <div class="h-6 px-2">
                     {formatProperty(
                       commonPropertyMap.get(file),
                       streamCountMap.get(file),
@@ -189,26 +247,6 @@
                   </div>
                 </Tooltip>
               {/if}
-              <Tooltip title={`Video - Resolution`}>
-                <div class="material-symbols-outlined h6">movie</div>
-                <div class="h-6">
-                  {formatResolution(
-                    commonPropertyMap.get(file),
-                    streamCountMap.get(file)
-                  ).join("| ")}
-                </div>
-              </Tooltip>
-              <Tooltip title={`Video - ScanType`}>
-                <div class="material-symbols-outlined h6">document_scanner</div>
-                <div class="h-6">
-                  {formatProperty(
-                    commonPropertyMap.get(file),
-                    streamCountMap.get(file),
-                    Protocol.StreamKind.Video,
-                    "ScanType"
-                  ).join("| ")}
-                </div>
-              </Tooltip>
             </div>
             <div class="p-2"></div>
           {/if}
