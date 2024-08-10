@@ -18,7 +18,7 @@
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
-  import { Button, Card, Header, Tooltip } from "svelte-ux";
+  import { Button, Card, Header, TextField, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     dialog,
@@ -45,16 +45,19 @@
   };
 
   let files: string[] = [];
-  let streamCountMap: Map<
-    string,
-    Map<Protocol.StreamKind, Protocol.StreamCount>
-  > = new Map();
+  let query: string | null = null;
+
   let commonPropertyMap: Map<
     string,
     Map<string, Protocol.StreamPropertyValue>
   > = new Map();
+  let streamCountMap: Map<
+    string,
+    Map<Protocol.StreamKind, Protocol.StreamCount>
+  > = new Map();
 
   $: fileToPropertyMap = generateFileToPropertyMap(
+    query,
     files,
     streamCountMap,
     commonPropertyMap
@@ -152,6 +155,7 @@
   });
 
   function generateFileToPropertyMap(
+    query: string | null,
     files: string[],
     streamCountMap: Map<string, Map<Protocol.StreamKind, Protocol.StreamCount>>,
     commonPropertyMap: Map<string, Map<string, Protocol.StreamPropertyValue>>
@@ -161,7 +165,6 @@
       .filter((file) => streamCountMap.has(file) && commonPropertyMap.has(file))
       .forEach((file) => {
         const map = new Map<string, string>();
-        fileMap.set(file, map);
         const countMap = streamCountMap.get(file) as Map<
           Protocol.StreamKind,
           Protocol.StreamCount
@@ -221,6 +224,20 @@
             }
           });
         }
+        let hit = false;
+        if (query && query.length > 0) {
+          for (const value of map.values()) {
+            if (value.toLowerCase().includes(query.toLowerCase())) {
+              hit = true;
+              break;
+            }
+          }
+        } else {
+          hit = true;
+        }
+        if (hit) {
+          fileMap.set(file, map);
+        }
       });
     return fileMap;
   }
@@ -244,21 +261,22 @@
       </Button>
     </div>
   {:else}
+    <TextField placeholder="Filter" bind:value={query} clearable />
     {#each files as file}
-      <Card>
-        <Header
-          title={file}
-          subheading={formatStreamCount(streamCountMap.get(file))}
-          slot="header"
-        >
-          <div slot="actions">
-            <Button class="w-12 h-12">
-              <span class="material-symbols-outlined">note_stack</span>
-            </Button>
-          </div>
-        </Header>
-        <div slot="contents">
-          {#if fileToPropertyMap.has(file)}
+      {#if fileToPropertyMap.has(file)}
+        <Card>
+          <Header
+            title={file}
+            subheading={formatStreamCount(streamCountMap.get(file))}
+            slot="header"
+          >
+            <div slot="actions">
+              <Button class="w-12 h-12">
+                <span class="material-symbols-outlined">note_stack</span>
+              </Button>
+            </div>
+          </Header>
+          <div slot="contents">
             <div class="flex flex-wrap">
               {#each Object.entries(COMMON_PROPERTIES) as commonProperty}
                 {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
@@ -274,9 +292,9 @@
               {/each}
             </div>
             <div class="p-2"></div>
-          {/if}
-        </div>
-      </Card>
+          </div>
+        </Card>
+      {/if}
     {/each}
   {/if}
 </div>
