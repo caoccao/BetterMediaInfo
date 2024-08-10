@@ -28,10 +28,11 @@
   } from "../lib/store";
   import * as Protocol from "../lib/protocol";
   import {
-    formatDuration,
     formatProperty,
     formatResolution,
     formatStreamCount,
+    transformBitRate,
+    transformDuration,
   } from "../lib/format";
 
   let files: string[] = [];
@@ -93,6 +94,7 @@
                       "ScanType",
                       "FrameRate",
                       "Format",
+                      "BitRate",
                     ].forEach((property) => {
                       properties.push({
                         stream: Protocol.StreamKind.Video,
@@ -182,8 +184,8 @@
           {#if commonPropertyMap.has(file)}
             <div class="flex flex-wrap">
               {#if commonPropertyMap.get(file)?.has("Video/0/Format")}
-                <Tooltip title={`Video - Format`}>
-                  <div class="material-symbols-outlined h6">movie_info</div>
+                <div class="material-symbols-outlined h6">movie_info</div>
+                <Tooltip title={`Video - Format`} offset={6}>
                   <div class="h-6 px-2">
                     {formatProperty(
                       commonPropertyMap.get(file),
@@ -195,8 +197,8 @@
                 </Tooltip>
               {/if}
               {#if commonPropertyMap.get(file)?.has("Video/0/Width")}
-                <Tooltip title={`Video - Resolution`}>
-                  <div class="material-symbols-outlined h6">movie</div>
+                <div class="material-symbols-outlined h6">movie</div>
+                <Tooltip title={`Video - Resolution`} offset={6}>
                   <div class="h-6 px-2">
                     {formatResolution(
                       commonPropertyMap.get(file),
@@ -206,8 +208,8 @@
                 </Tooltip>
               {/if}
               {#if commonPropertyMap.get(file)?.has("Video/0/FrameRate")}
-                <Tooltip title={`Video - FrameRate`}>
-                  <div class="material-symbols-outlined h6">acute</div>
+                <div class="material-symbols-outlined h6">acute</div>
+                <Tooltip title={`Video - FrameRate`} offset={6}>
                   <div class="h-6 px-2">
                     {formatProperty(
                       commonPropertyMap.get(file),
@@ -218,11 +220,23 @@
                   </div>
                 </Tooltip>
               {/if}
-              {#if commonPropertyMap.get(file)?.has("Video/0/ScanType")}
-                <Tooltip title={`Video - ScanType`}>
-                  <div class="material-symbols-outlined h6">
-                    document_scanner
+              {#if commonPropertyMap.get(file)?.has("Video/0/BitRate")}
+                <div class="material-symbols-outlined h6">health_metrics</div>
+                <Tooltip title={`Video - BitRate`} offset={6}>
+                  <div class="h-6 px-2">
+                    {formatProperty(
+                      commonPropertyMap.get(file),
+                      streamCountMap.get(file),
+                      Protocol.StreamKind.Video,
+                      "BitRate",
+                      transformBitRate
+                    ).join("| ")}
                   </div>
+                </Tooltip>
+              {/if}
+              {#if commonPropertyMap.get(file)?.has("Video/0/ScanType")}
+                <div class="material-symbols-outlined h6">document_scanner</div>
+                <Tooltip title={`Video - ScanType`} offset={6}>
                   <div class="h-6 px-2">
                     {formatProperty(
                       commonPropertyMap.get(file),
@@ -234,15 +248,15 @@
                 </Tooltip>
               {/if}
               {#if commonPropertyMap.get(file)?.has("General/0/Duration")}
-                <Tooltip title="General - Duration">
-                  <div class="material-symbols-outlined h-6">schedule</div>
+                <div class="material-symbols-outlined h-6">schedule</div>
+                <Tooltip title="General - Duration" offset={6}>
                   <div class="h-6 px-2">
                     {formatProperty(
                       commonPropertyMap.get(file),
                       streamCountMap.get(file),
                       Protocol.StreamKind.General,
                       "Duration",
-                      formatDuration
+                      transformDuration
                     ).join("| ")}
                   </div>
                 </Tooltip>

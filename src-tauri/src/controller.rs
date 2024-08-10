@@ -125,12 +125,14 @@ pub async fn get_properties(file: String, properties: Vec<StreamProperty>) -> Re
   for property in properties {
     let stream = Stream::new(property.stream, property.property.clone());
     let value = stream.get(&media_info_file.media_info, property.num as usize)?;
-    new_properties.push(StreamPropertyValue {
-      stream: property.stream,
-      num: property.num,
-      property: property.property,
-      value,
-    });
+    if !value.is_empty() {
+      new_properties.push(StreamPropertyValue {
+        stream: property.stream,
+        num: property.num,
+        property: property.property,
+        value,
+      });
+    }
   }
   Ok(new_properties)
 }

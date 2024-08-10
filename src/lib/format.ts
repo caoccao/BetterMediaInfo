@@ -17,36 +17,12 @@
 
 import * as Protocol from "../lib/protocol";
 
-export function formatDuration(value: string): string {
-  const items: Array<string> = [];
-  const duration = parseInt(value);
-  const totalSeconds = Math.floor(duration / 1000.0);
-  const totalMinutes = Math.floor(totalSeconds / 60.0);
-  const totalHours = Math.floor(totalMinutes / 60.0);
-  const totalDays = Math.floor(totalHours / 24.0);
-  const milliseconds = duration % 1000;
-  const seconds = totalSeconds % 60;
-  const minutes = totalMinutes % 60;
-  const hours = totalHours % 24;
-  let time = `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds
-    .toString()
-    .padStart(3, "0")}`;
-  if (totalDays > 0) {
-    time = `${totalDays}d ${time}`;
-  }
-  items.push(`${duration / 1000.0}s`);
-  items.push(time);
-  return items.join(", ");
-}
-
 export function formatProperty(
   propertyMap: Map<string, Protocol.StreamPropertyValue> | undefined,
   streamCountMap: Map<string, Protocol.StreamCount> | undefined,
   stream: Protocol.StreamKind,
   key: string,
-  formatter: ((value: string) => string) | undefined = undefined
+  transformer: ((value: string) => string) | undefined = undefined
 ): string[] {
   let results: Array<string> = [];
   if (propertyMap && streamCountMap) {
@@ -56,8 +32,8 @@ export function formatProperty(
         const property = propertyMap.get(`${stream}/${i}/${key}`);
         if (property) {
           let value = property.value;
-          if (formatter) {
-            value = formatter(value);
+          if (transformer) {
+            value = transformer(value);
           }
           results.push(value);
         }
@@ -104,4 +80,39 @@ export function formatStreamCount(
       .join(", ");
   }
   return result;
+}
+
+export function transformBitRate(value: string): string {
+  const bitRate = parseInt(value);
+  if (bitRate > 1000000) {
+    return `${(bitRate / 1000000.0).toFixed(2)}Mbps`;
+  }
+  if (bitRate > 1000) {
+    return `${(bitRate / 1000.0).toFixed(2)}Kbps`;
+  }
+  return value;
+}
+
+export function transformDuration(value: string): string {
+  const items: Array<string> = [];
+  const duration = parseInt(value);
+  const totalSeconds = Math.floor(duration / 1000.0);
+  const totalMinutes = Math.floor(totalSeconds / 60.0);
+  const totalHours = Math.floor(totalMinutes / 60.0);
+  const totalDays = Math.floor(totalHours / 24.0);
+  const milliseconds = duration % 1000;
+  const seconds = totalSeconds % 60;
+  const minutes = totalMinutes % 60;
+  const hours = totalHours % 24;
+  let time = `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds
+    .toString()
+    .padStart(3, "0")}`;
+  if (totalDays > 0) {
+    time = `${totalDays}d ${time}`;
+  }
+  items.push(`${duration / 1000.0}s`);
+  items.push(time);
+  return items.join(", ");
 }
