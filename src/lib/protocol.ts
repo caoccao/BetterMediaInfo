@@ -27,6 +27,7 @@ export interface Config {
 }
 
 export enum ConfigDirectoryMode {
+  All = "All",
   Audio = "Audio",
   Image = "Image",
   Video = "Video",

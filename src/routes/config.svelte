@@ -113,6 +113,10 @@
         }}
         options={[
           {
+            label: Protocol.ConfigDirectoryMode.All,
+            value: Protocol.ConfigDirectoryMode.All,
+          },
+          {
             label: Protocol.ConfigDirectoryMode.Video,
             value: Protocol.ConfigDirectoryMode.Video,
           },

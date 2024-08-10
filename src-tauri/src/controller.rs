@@ -60,17 +60,25 @@ pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
         paths.push(path.to_path_buf());
       }
     }
-    let file_extensions: HashSet<String> = config::get_active_file_extensions().into_iter().collect();
-    paths
-      .into_iter()
-      .filter(|path| {
-        path
-          .extension()
-          .map(|ext| file_extensions.contains(ext.to_str().unwrap_or_default()))
-          .unwrap_or(false)
-      })
-      .map(|path| path.to_str().unwrap_or_default().to_owned())
-      .collect()
+    let file_extensions = config::get_active_file_extensions();
+    if file_extensions.is_empty() {
+      paths
+        .into_iter()
+        .map(|path| path.to_str().unwrap_or_default().to_owned())
+        .collect()
+    } else {
+      let file_extensions: HashSet<String> = file_extensions.into_iter().collect();
+      paths
+        .into_iter()
+        .filter(|path| {
+          path
+            .extension()
+            .map(|ext| file_extensions.contains(ext.to_str().unwrap_or_default()))
+            .unwrap_or(false)
+        })
+        .map(|path| path.to_str().unwrap_or_default().to_owned())
+        .collect()
+    }
   })
 }
 

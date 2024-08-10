@@ -18,19 +18,37 @@
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
-  import { Button, Card, Header, Table } from "svelte-ux";
+  import { Button, Card, Header, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
-  import { dialog, mediaFiles, mediaStreamCountMap } from "../lib/store";
+  import {
+    dialog,
+    mediaFiles,
+    mediaCommonPropertyMap,
+    mediaStreamCountMap,
+  } from "../lib/store";
   import * as Protocol from "../lib/protocol";
+  import {
+    formatDuration,
+    formatProperty,
+    formatStreamCount,
+  } from "../lib/format";
 
   let files: string[] = [];
-  let streamCountMap: Map<string, Protocol.StreamCount[]> = new Map();
-  let commonPropertyMap: Map<string, Protocol.StreamPropertyValue[]> =
-    new Map();
+  let streamCountMap: Map<
+    string,
+    Map<string, Protocol.StreamCount>
+  > = new Map();
+  let commonPropertyMap: Map<
+    string,
+    Map<string, Protocol.StreamPropertyValue>
+  > = new Map();
 
   onMount(() => {
     mediaStreamCountMap.subscribe((value) => {
       streamCountMap = value;
+    });
+    mediaCommonPropertyMap.subscribe((value) => {
+      commonPropertyMap = value;
     });
     mediaFiles.subscribe((value) => {
       dialog.set(null);
@@ -40,34 +58,59 @@
         .forEach((file) => {
           invoke<Protocol.StreamCount[]>("get_stream_count", { file: file })
             .then((value) => {
-              streamCountMap.set(file, value);
-              streamCountMap = streamCountMap;
+              const map = new Map<string, Protocol.StreamCount>();
+              value.forEach((streamCount) => {
+                map.set(streamCount.stream, streamCount);
+              });
+              streamCountMap.set(file, map);
+              mediaStreamCountMap.set(streamCountMap);
             })
             .catch((error) => {
               dialog.set({ title: error, type: Protocol.DialogType.Error });
             })
             .then(() => {
-              if (streamCountMap.has(file)) {
+              if (streamCountMap.has(file) && !commonPropertyMap.has(file)) {
                 let generalStreamCount = streamCountMap
                   .get(file)
-                  ?.find(
-                    (streamCount) =>
-                      streamCount.stream === Protocol.StreamKind.General
-                  )?.count;
+                  ?.get(Protocol.StreamKind.General)?.count;
+                let videoStreamCount = streamCountMap
+                  .get(file)
+                  ?.get(Protocol.StreamKind.Video)?.count;
+                let properties: Array<Protocol.StreamProperty> = [];
                 if (generalStreamCount && generalStreamCount > 0) {
+                  properties.push({
+                    stream: Protocol.StreamKind.General,
+                    num: 0,
+                    property: "Duration",
+                  });
+                }
+                if (videoStreamCount && videoStreamCount > 0) {
+                  for (let i = 0; i < videoStreamCount; i++) {
+                    properties.push({
+                      stream: Protocol.StreamKind.Video,
+                      num: i,
+                      property: "ScanType",
+                    });
+                  }
+                }
+                if (properties.length > 0) {
                   invoke<Protocol.StreamPropertyValue[]>("get_properties", {
                     file: file,
-                    properties: [
-                      {
-                        stream: Protocol.StreamKind.General,
-                        num: 0,
-                        property: "Duration",
-                      },
-                    ],
+                    properties: properties,
                   })
                     .then((value) => {
-                      commonPropertyMap.set(file, value);
-                      commonPropertyMap = commonPropertyMap;
+                      const map = new Map<
+                        string,
+                        Protocol.StreamPropertyValue
+                      >();
+                      value.forEach((property) => {
+                        map.set(
+                          `${property.stream}/${property.num}/${property.property}`,
+                          property
+                        );
+                      });
+                      commonPropertyMap.set(file, map);
+                      mediaCommonPropertyMap.set(commonPropertyMap);
                     })
                     .catch((error) => {
                       dialog.set({
@@ -85,14 +128,12 @@
   function convertProperties(
     properties: Protocol.StreamPropertyValue[] | undefined
   ): Array<Record<string, string>> {
-    console.log(properties);
     const result: Record<string, string> = {};
     if (properties) {
       properties.forEach((property) => {
         result[property.property] = property.value;
       });
     }
-    console.log(result);
     return [result];
   }
 </script>
@@ -119,12 +160,7 @@
       <Card>
         <Header
           title={file}
-          subheading={streamCountMap
-            .get(file)
-            ?.map(
-              (streamCount) => `${streamCount.stream}: ${streamCount.count}`
-            )
-            .join(", ")}
+          subheading={formatStreamCount(streamCountMap.get(file))}
           slot="header"
         >
           <div slot="actions">
@@ -134,15 +170,36 @@
           </div>
         </Header>
         <div slot="contents">
-          <Table
-            data={convertProperties(commonPropertyMap.get(file))}
-            columns={[
-              {
-                name: "Duration",
-                header: "Duration",
-              },
-            ]}
-          />
+          {#if commonPropertyMap.has(file)}
+            <div class="grid grid-flow-col justify-start gap-2">
+              {#if commonPropertyMap.get(file)?.has("General/0/Duration")}
+                <Tooltip title="General - Duration">
+                  <div class="material-symbols-outlined h-6">schedule</div>
+                  <div class="h-6">
+                    {formatProperty(
+                      commonPropertyMap.get(file),
+                      streamCountMap.get(file),
+                      Protocol.StreamKind.General,
+                      "Duration",
+                      formatDuration
+                    )}
+                  </div>
+                </Tooltip>
+              {/if}
+              <Tooltip title={`Video - ScanType`}>
+                <div class="material-symbols-outlined h6">document_scanner</div>
+                <div class="h-6">
+                  {formatProperty(
+                    commonPropertyMap.get(file),
+                    streamCountMap.get(file),
+                    Protocol.StreamKind.Video,
+                    "ScanType"
+                  )}
+                </div>
+              </Tooltip>
+            </div>
+            <div class="p-2"></div>
+          {/if}
         </div>
       </Card>
     {/each}

@@ -46,6 +46,15 @@ export const isConfigDirty = Store.writable<boolean>(false, (set) => {
   };
 });
 
+export const mediaCommonPropertyMap = Store.writable<
+  Map<string, Map<string, Protocol.StreamPropertyValue>>
+>(new Map(), (set) => {
+  set(new Map());
+  return () => {
+    set(new Map());
+  };
+});
+
 export const mediaFiles = Store.writable<string[]>([], (set) => {
   set([]);
   return () => {
@@ -54,7 +63,7 @@ export const mediaFiles = Store.writable<string[]>([], (set) => {
 });
 
 export const mediaStreamCountMap = Store.writable<
-  Map<string, Protocol.StreamCount[]>
+  Map<string, Map<string, Protocol.StreamCount>>
 >(new Map(), (set) => {
   set(new Map());
   return () => {

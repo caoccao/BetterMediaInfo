@@ -75,9 +75,10 @@ impl Config {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ConfigDirectoryMode {
-  Audio = 0,
-  Image = 1,
-  Video = 2,
+  All = 0,
+  Audio,
+  Image,
+  Video,
 }
 
 impl Default for ConfigDirectoryMode {
@@ -104,7 +105,6 @@ impl Default for ConfigFileExtensions {
         "ogg".to_owned(),
         "m4a".to_owned(),
         "mka".to_owned(),
-        "webm".to_owned(),
         "ape".to_owned(),
         "ac3".to_owned(),
         "dts".to_owned(),
@@ -120,6 +120,7 @@ impl Default for ConfigFileExtensions {
       video: vec![
         "mkv".to_owned(),
         "mp4".to_owned(),
+        "m2ts".to_owned(),
         "avi".to_owned(),
         "mov".to_owned(),
         "wmv".to_owned(),
@@ -162,6 +163,7 @@ pub fn get_active_file_extensions() -> Vec<String> {
     ConfigDirectoryMode::Audio => config.file_extensions.audio.clone(),
     ConfigDirectoryMode::Image => config.file_extensions.image.clone(),
     ConfigDirectoryMode::Video => config.file_extensions.video.clone(),
+    _ => vec![],
   }
 }
 
