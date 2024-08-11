@@ -349,7 +349,7 @@
                 formatProperty(
                   propertyMap,
                   Protocol.StreamKind.Text,
-                  audioStreamCount,
+                  textStreamCount,
                   "BitRate",
                   transformBitRate
                 )
@@ -363,7 +363,7 @@
                 formatProperty(
                   propertyMap,
                   Protocol.StreamKind.Text,
-                  audioStreamCount,
+                  textStreamCount,
                   "StreamSize",
                   transformSize
                 )
@@ -378,7 +378,7 @@
                   formatProperty(
                     propertyMap,
                     Protocol.StreamKind.Text,
-                    audioStreamCount,
+                    textStreamCount,
                     property
                   )
                 )
