@@ -81,10 +81,10 @@ export function formatStreamCount(
 export function transformBitRate(value: string): string {
   const bitRate = parseInt(value);
   if (bitRate > 1000000) {
-    return `${(bitRate / 1000000.0).toFixed(2)}Mbps`;
+    return `${trimFractionZeros((bitRate / 1000000.0).toFixed(2))}Mbps`;
   }
   if (bitRate > 1000) {
-    return `${(bitRate / 1000.0).toFixed(2)}Kbps`;
+    return `${trimFractionZeros((bitRate / 1000.0).toFixed(2))}Kbps`;
   }
   return value;
 }
@@ -108,7 +108,7 @@ export function transformDuration(value: string): string {
   if (totalDays > 0) {
     time = `${totalDays}d ${time}`;
   }
-  items.push(`${duration / 1000.0}s`);
+  items.push(`${trimFractionZeros((duration / 1000).toFixed(3))}s`);
   items.push(time);
   return items.join(", ");
 }
@@ -116,13 +116,26 @@ export function transformDuration(value: string): string {
 export function transformSize(value: string): string {
   const size = parseInt(value);
   if (size > 1 << 30) {
-    return `${(size / (1 << 30)).toFixed(2)}GB`;
+    return `${trimFractionZeros((size / (1 << 30)).toFixed(2))}GB`;
   }
   if (size > 1 << 20) {
-    return `${(size / (1 << 20)).toFixed(2)}MB`;
+    return `${trimFractionZeros((size / (1 << 20)).toFixed(2))}MB`;
   }
   if (size > 1 << 10) {
-    return `${(size / (1 << 10)).toFixed(2)}KB`;
+    return `${trimFractionZeros((size / (1 << 10)).toFixed(2))}KB`;
+  }
+  return value;
+}
+
+function trimFractionZeros(value: string): string {
+  const index = value.lastIndexOf(".");
+  if (index > 0) {
+    while (value.endsWith("0")) {
+      value = value.substring(0, value.length - 1);
+    }
+  }
+  if (value.endsWith(".")) {
+    value = value.substring(0, value.length - 1);
   }
   return value;
 }
