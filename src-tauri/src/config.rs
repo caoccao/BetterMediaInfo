@@ -121,6 +121,7 @@ impl Default for ConfigFileExtensions {
         "mkv".to_owned(),
         "mp4".to_owned(),
         "m2ts".to_owned(),
+        "ts".to_owned(),
         "avi".to_owned(),
         "mov".to_owned(),
         "wmv".to_owned(),

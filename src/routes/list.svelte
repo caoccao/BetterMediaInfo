@@ -1,20 +1,20 @@
 <script lang="ts">
   /*
- 	 *   Copyright (c) 2024. caoccao.com Sam Cao
- 	 *   All rights reserved.
+    *   Copyright (c) 2024. caoccao.com Sam Cao
+    *   All rights reserved.
 
- 	 *   Licensed under the Apache License, Version 2.0 (the "License");
- 	 *   you may not use this file except in compliance with the License.
- 	 *   You may obtain a copy of the License at
+    *   Licensed under the Apache License, Version 2.0 (the "License");
+    *   you may not use this file except in compliance with the License.
+    *   You may obtain a copy of the License at
 
- 	 *   http://www.apache.org/licenses/LICENSE-2.0
+    *   http://www.apache.org/licenses/LICENSE-2.0
 
- 	 *   Unless required by applicable law or agreed to in writing, software
- 	 *   distributed under the License is distributed on an "AS IS" BASIS,
- 	 *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	 *   See the License for the specific language governing permissions and
- 	 *   limitations under the License.
- 	 */
+    *   Unless required by applicable law or agreed to in writing, software
+    *   distributed under the License is distributed on an "AS IS" BASIS,
+    *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    *   See the License for the specific language governing permissions and
+    *   limitations under the License.
+    */
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
@@ -33,16 +33,29 @@
     formatStreamCount,
     transformBitRate,
     transformDuration,
+    transformSize,
   } from "../lib/format";
 
-  const COMMON_PROPERTIES: Record<string, string> = {
-    "Video - Format": "movie_info",
+  const COMMON_PROPERTIES_1: Record<string, string> = {
+    "Video - Format": "wallpaper",
+    "Video - Language": "language",
     "Video - Resolution": "movie",
     "Video - FrameRate": "acute",
     "Video - BitRate": "health_metrics",
     "Video - ScanType": "document_scanner",
+    "Video - StreamSize": "straighten",
     "General - Duration": "schedule",
   };
+
+  const COMMON_PROPERTIES_2: Record<string, string> = {
+    "Audio - Format": "volume_up",
+    "Audio - Language": "language",
+    "Audio - BitRate_Mode": "newsmode",
+    "Audio - BitRate": "health_metrics",
+    "Audio - StreamSize": "straighten",
+  };
+
+  const COMMON_PROPERTIES_GROUP = [COMMON_PROPERTIES_1, COMMON_PROPERTIES_2];
 
   let files: string[] = [];
   let query: string | null = null;
@@ -90,38 +103,49 @@
             })
             .then(() => {
               if (streamCountMap.has(file) && !commonPropertyMap.has(file)) {
-                let generalStreamCount = streamCountMap
-                  .get(file)
-                  ?.get(Protocol.StreamKind.General)?.count;
-                let videoStreamCount = streamCountMap
-                  .get(file)
-                  ?.get(Protocol.StreamKind.Video)?.count;
+                let generalStreamCount =
+                  streamCountMap.get(file)?.get(Protocol.StreamKind.General)
+                    ?.count ?? 0;
+                let videoStreamCount =
+                  streamCountMap.get(file)?.get(Protocol.StreamKind.Video)
+                    ?.count ?? 0;
+                let audioStreamCount =
+                  streamCountMap.get(file)?.get(Protocol.StreamKind.Audio)
+                    ?.count ?? 0;
                 let properties: Array<Protocol.StreamProperty> = [];
-                if (generalStreamCount && generalStreamCount > 0) {
-                  properties.push({
-                    stream: Protocol.StreamKind.General,
-                    num: 0,
-                    property: "Duration",
-                  });
-                }
-                if (videoStreamCount && videoStreamCount > 0) {
-                  for (let i = 0; i < videoStreamCount; i++) {
-                    [
-                      "Width",
-                      "Height",
-                      "ScanType",
-                      "FrameRate",
-                      "Format",
-                      "BitRate",
-                    ].forEach((property) => {
-                      properties.push({
-                        stream: Protocol.StreamKind.Video,
-                        num: i,
-                        property: property,
-                      });
-                    });
-                  }
-                }
+                pushProperties(
+                  properties,
+                  Protocol.StreamKind.General,
+                  generalStreamCount,
+                  ["Duration"]
+                );
+                pushProperties(
+                  properties,
+                  Protocol.StreamKind.Video,
+                  videoStreamCount,
+                  [
+                    "BitRate",
+                    "Format",
+                    "FrameRate",
+                    "Height",
+                    "Language",
+                    "ScanType",
+                    "StreamSize",
+                    "Width",
+                  ]
+                );
+                pushProperties(
+                  properties,
+                  Protocol.StreamKind.Audio,
+                  audioStreamCount,
+                  [
+                    "BitRate",
+                    "BitRate_Mode",
+                    "Format",
+                    "Language",
+                    "StreamSize",
+                  ]
+                );
                 if (properties.length > 0) {
                   invoke<Protocol.StreamPropertyValue[]>("get_properties", {
                     file: file,
@@ -177,17 +201,21 @@
           countMap.get(Protocol.StreamKind.General)?.count ?? 0;
         const videoStreamCount =
           countMap.get(Protocol.StreamKind.Video)?.count ?? 0;
+        const audioStreamCount =
+          countMap.get(Protocol.StreamKind.Audio)?.count ?? 0;
         if (generalStreamCount > 0) {
           if (propertyMap.has("General/0/Duration")) {
             map.set(
               "General - Duration",
-              formatProperty(
-                propertyMap,
-                Protocol.StreamKind.General,
-                generalStreamCount,
-                "Duration",
-                transformDuration
-              ).join("| ")
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.General,
+                  generalStreamCount,
+                  "Duration",
+                  transformDuration
+                )
+              )
             );
           }
         }
@@ -195,31 +223,98 @@
           if (propertyMap.has("Video/0/Width")) {
             map.set(
               "Video - Resolution",
-              formatResolution(propertyMap, videoStreamCount).join("| ")
+              propertiesToString(
+                formatResolution(propertyMap, videoStreamCount)
+              )
             );
           }
           if (propertyMap.has("Video/0/BitRate")) {
             map.set(
               "Video - BitRate",
-              formatProperty(
-                propertyMap,
-                Protocol.StreamKind.Video,
-                generalStreamCount,
-                "BitRate",
-                transformBitRate
-              ).join("| ")
-            );
-          }
-          ["Format", "FrameRate", "ScanType"].forEach((property) => {
-            if (propertyMap.has(`Video/0/${property}`)) {
-              map.set(
-                `Video - ${property}`,
+              propertiesToString(
                 formatProperty(
                   propertyMap,
                   Protocol.StreamKind.Video,
                   videoStreamCount,
-                  property
-                ).join("| ")
+                  "BitRate",
+                  transformBitRate
+                )
+              )
+            );
+          }
+          if (propertyMap.has("Video/0/StreamSize")) {
+            map.set(
+              "Video - StreamSize",
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.Video,
+                  videoStreamCount,
+                  "StreamSize",
+                  transformSize
+                )
+              )
+            );
+          }
+          ["Format", "FrameRate", "Language", "ScanType"].forEach(
+            (property) => {
+              if (propertyMap.has(`Video/0/${property}`)) {
+                map.set(
+                  `Video - ${property}`,
+                  propertiesToString(
+                    formatProperty(
+                      propertyMap,
+                      Protocol.StreamKind.Video,
+                      videoStreamCount,
+                      property
+                    )
+                  )
+                );
+              }
+            }
+          );
+        }
+        if (audioStreamCount > 0) {
+          if (propertyMap.has("Audio/0/BitRate")) {
+            map.set(
+              "Audio - BitRate",
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.Audio,
+                  audioStreamCount,
+                  "BitRate",
+                  transformBitRate
+                )
+              )
+            );
+          }
+          if (propertyMap.has("Audio/0/StreamSize")) {
+            map.set(
+              "Audio - StreamSize",
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.Audio,
+                  audioStreamCount,
+                  "StreamSize",
+                  transformSize
+                )
+              )
+            );
+          }
+          ["Format", "BitRate_Mode", "Language"].forEach((property) => {
+            if (propertyMap.has(`Audio/0/${property}`)) {
+              map.set(
+                `Audio - ${property}`,
+                propertiesToString(
+                  formatProperty(
+                    propertyMap,
+                    Protocol.StreamKind.Audio,
+                    audioStreamCount,
+                    property
+                  )
+                )
               );
             }
           });
@@ -240,6 +335,29 @@
         }
       });
     return fileMap;
+  }
+
+  function propertiesToString(properties: string[]): string {
+    return properties.join(" | ");
+  }
+
+  function pushProperties(
+    properties: Array<Protocol.StreamProperty>,
+    stream: Protocol.StreamKind,
+    streamCount: number,
+    keys: string[]
+  ) {
+    if (streamCount > 0) {
+      for (let i = 0; i < streamCount; i++) {
+        keys.forEach((key) => {
+          properties.push({
+            stream: stream,
+            num: i,
+            property: key,
+          });
+        });
+      }
+    }
   }
 </script>
 
@@ -277,21 +395,24 @@
             </div>
           </Header>
           <div slot="contents">
-            <div class="flex flex-wrap">
-              {#each Object.entries(COMMON_PROPERTIES) as commonProperty}
-                {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
-                  <div class="material-symbols-outlined h6">
-                    {commonProperty[1]}
-                  </div>
-                  <Tooltip title={commonProperty[0]} offset={6}>
-                    <div class="h-6 px-2">
-                      {fileToPropertyMap.get(file)?.get(commonProperty[0])}
+            {#each COMMON_PROPERTIES_GROUP as commonProperties}
+              <div class="flex flex-wrap">
+                {#each Object.entries(commonProperties) as commonProperty}
+                  {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
+                    <div class="material-symbols-outlined h6">
+                      {commonProperty[1]}
                     </div>
-                  </Tooltip>
-                {/if}
-              {/each}
-            </div>
-            <div class="p-2"></div>
+                    <Tooltip title={commonProperty[0]} offset={6}>
+                      <div class="h-6 px-2">
+                        {fileToPropertyMap.get(file)?.get(commonProperty[0])}
+                      </div>
+                    </Tooltip>
+                  {/if}
+                {/each}
+              </div>
+              <div class="pb-2"></div>
+            {/each}
+            <div class="pb-2"></div>
           </div>
         </Card>
       {/if}
