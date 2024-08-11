@@ -36,7 +36,7 @@
     transformSize,
   } from "../lib/format";
 
-  const COMMON_PROPERTIES_1: Record<string, string> = {
+  const COMMON_PROPERTIES_VIDEO: Record<string, string> = {
     "Video - Format": "wallpaper",
     "Video - Language": "language",
     "Video - Resolution": "movie",
@@ -47,7 +47,7 @@
     "General - Duration": "schedule",
   };
 
-  const COMMON_PROPERTIES_2: Record<string, string> = {
+  const COMMON_PROPERTIES_AUDIO: Record<string, string> = {
     "Audio - Format": "volume_up",
     "Audio - Language": "language",
     "Audio - BitRate_Mode": "newsmode",
@@ -55,7 +55,10 @@
     "Audio - StreamSize": "straighten",
   };
 
-  const COMMON_PROPERTIES_GROUP = [COMMON_PROPERTIES_1, COMMON_PROPERTIES_2];
+  const COMMON_PROPERTIES_GROUP = [
+    COMMON_PROPERTIES_VIDEO,
+    COMMON_PROPERTIES_AUDIO,
+  ];
 
   let files: string[] = [];
   let query: string | null = null;
@@ -396,21 +399,24 @@
           </Header>
           <div slot="contents">
             {#each COMMON_PROPERTIES_GROUP as commonProperties}
-              <div class="flex flex-wrap">
-                {#each Object.entries(commonProperties) as commonProperty}
-                  {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
-                    <div class="material-symbols-outlined h6">
-                      {commonProperty[1]}
-                    </div>
-                    <Tooltip title={commonProperty[0]} offset={6}>
-                      <div class="h-6 px-2">
-                        {fileToPropertyMap.get(file)?.get(commonProperty[0])}
+              {#if commonProperties !== COMMON_PROPERTIES_AUDIO || (commonProperties === COMMON_PROPERTIES_AUDIO && (streamCountMap
+                    .get(file)
+                    ?.get(Protocol.StreamKind.Audio)?.count ?? 0) > 0)}
+                <div class="flex flex-wrap pb-2">
+                  {#each Object.entries(commonProperties) as commonProperty}
+                    {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
+                      <div class="material-symbols-outlined h6">
+                        {commonProperty[1]}
                       </div>
-                    </Tooltip>
-                  {/if}
-                {/each}
-              </div>
-              <div class="pb-2"></div>
+                      <Tooltip title={commonProperty[0]} offset={6}>
+                        <div class="h-6 px-2">
+                          {fileToPropertyMap.get(file)?.get(commonProperty[0])}
+                        </div>
+                      </Tooltip>
+                    {/if}
+                  {/each}
+                </div>
+              {/if}
             {/each}
             <div class="pb-2"></div>
           </div>
