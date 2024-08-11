@@ -42,8 +42,8 @@
     "Video - Resolution": "movie",
     "Video - FrameRate": "acute",
     "Video - BitRate": "health_metrics",
-    "Video - ScanType": "document_scanner",
     "Video - StreamSize": "straighten",
+    "Video - ScanType": "document_scanner",
     "General - Duration": "schedule",
   };
 
@@ -55,9 +55,17 @@
     "Audio - StreamSize": "straighten",
   };
 
+  const COMMON_PROPERTIES_TEXT: Record<string, string> = {
+    "Text - Format": "subtitles",
+    "Text - Language": "language",
+    "Text - BitRate": "health_metrics",
+    "Text - StreamSize": "straighten",
+  };
+
   const COMMON_PROPERTIES_GROUP = [
     COMMON_PROPERTIES_VIDEO,
     COMMON_PROPERTIES_AUDIO,
+    COMMON_PROPERTIES_TEXT,
   ];
 
   let files: string[] = [];
@@ -115,6 +123,9 @@
                 let audioStreamCount =
                   streamCountMap.get(file)?.get(Protocol.StreamKind.Audio)
                     ?.count ?? 0;
+                let textStreamCount =
+                  streamCountMap.get(file)?.get(Protocol.StreamKind.Text)
+                    ?.count ?? 0;
                 let properties: Array<Protocol.StreamProperty> = [];
                 pushProperties(
                   properties,
@@ -148,6 +159,12 @@
                     "Language",
                     "StreamSize",
                   ]
+                );
+                pushProperties(
+                  properties,
+                  Protocol.StreamKind.Text,
+                  textStreamCount,
+                  ["BitRate", "Format", "Language", "StreamSize"]
                 );
                 if (properties.length > 0) {
                   invoke<Protocol.StreamPropertyValue[]>("get_properties", {
@@ -206,6 +223,8 @@
           countMap.get(Protocol.StreamKind.Video)?.count ?? 0;
         const audioStreamCount =
           countMap.get(Protocol.StreamKind.Audio)?.count ?? 0;
+        const textStreamCount =
+          countMap.get(Protocol.StreamKind.Text)?.count ?? 0;
         if (generalStreamCount > 0) {
           if (propertyMap.has("General/0/Duration")) {
             map.set(
@@ -322,6 +341,51 @@
             }
           });
         }
+        if (textStreamCount > 0) {
+          if (propertyMap.has("Text/0/BitRate")) {
+            map.set(
+              "Text - BitRate",
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.Text,
+                  audioStreamCount,
+                  "BitRate",
+                  transformBitRate
+                )
+              )
+            );
+          }
+          if (propertyMap.has("Text/0/StreamSize")) {
+            map.set(
+              "Text - StreamSize",
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.Text,
+                  audioStreamCount,
+                  "StreamSize",
+                  transformSize
+                )
+              )
+            );
+          }
+          ["Format", "Language"].forEach((property) => {
+            if (propertyMap.has(`Text/0/${property}`)) {
+              map.set(
+                `Text - ${property}`,
+                propertiesToString(
+                  formatProperty(
+                    propertyMap,
+                    Protocol.StreamKind.Text,
+                    audioStreamCount,
+                    property
+                  )
+                )
+              );
+            }
+          });
+        }
         let hit = false;
         if (query && query.length > 0) {
           for (const value of map.values()) {
@@ -399,9 +463,11 @@
           </Header>
           <div slot="contents">
             {#each COMMON_PROPERTIES_GROUP as commonProperties}
-              {#if commonProperties !== COMMON_PROPERTIES_AUDIO || (commonProperties === COMMON_PROPERTIES_AUDIO && (streamCountMap
+              {#if (commonProperties !== COMMON_PROPERTIES_AUDIO || (commonProperties === COMMON_PROPERTIES_AUDIO && (streamCountMap
                     .get(file)
-                    ?.get(Protocol.StreamKind.Audio)?.count ?? 0) > 0)}
+                    ?.get(Protocol.StreamKind.Audio)?.count ?? 0) > 0)) && (commonProperties !== COMMON_PROPERTIES_TEXT || (commonProperties === COMMON_PROPERTIES_TEXT && (streamCountMap
+                      .get(file)
+                      ?.get(Protocol.StreamKind.Text)?.count ?? 0) > 0))}
                 <div class="flex flex-wrap pb-2">
                   {#each Object.entries(commonProperties) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}

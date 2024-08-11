@@ -86,7 +86,7 @@ export function transformBitRate(value: string): string {
   if (bitRate > 1000) {
     return `${trimFractionZeros((bitRate / 1000.0).toFixed(2))}Kbps`;
   }
-  return value;
+  return `${value}bps`;
 }
 
 export function transformDuration(value: string): string {
@@ -124,7 +124,7 @@ export function transformSize(value: string): string {
   if (size > 1 << 10) {
     return `${trimFractionZeros((size / (1 << 10)).toFixed(2))}KB`;
   }
-  return value;
+  return `${value}B`;
 }
 
 function trimFractionZeros(value: string): string {
