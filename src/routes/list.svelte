@@ -36,6 +36,12 @@
     transformSize,
   } from "../lib/format";
 
+  const COMMON_PROPERTIES_GENERAL: Record<string, string> = {
+    "General - Format": "newsmode",
+    "General - FileSize": "straighten",
+    "General - Duration": "schedule",
+  };
+
   const COMMON_PROPERTIES_VIDEO: Record<string, string> = {
     "Video - Format": "wallpaper",
     "Video - Language": "language",
@@ -44,7 +50,6 @@
     "Video - BitRate": "health_metrics",
     "Video - StreamSize": "straighten",
     "Video - ScanType": "document_scanner",
-    "General - Duration": "schedule",
   };
 
   const COMMON_PROPERTIES_AUDIO: Record<string, string> = {
@@ -63,6 +68,7 @@
   };
 
   const COMMON_PROPERTIES_GROUP = [
+    COMMON_PROPERTIES_GENERAL,
     COMMON_PROPERTIES_VIDEO,
     COMMON_PROPERTIES_AUDIO,
     COMMON_PROPERTIES_TEXT,
@@ -131,7 +137,7 @@
                   properties,
                   Protocol.StreamKind.General,
                   generalStreamCount,
-                  ["Duration"]
+                  ["Duration", "Format", "FileSize"]
                 );
                 pushProperties(
                   properties,
@@ -240,6 +246,35 @@
               )
             );
           }
+          if (propertyMap.has("General/0/FileSize")) {
+            map.set(
+              "General - FileSize",
+              propertiesToString(
+                formatProperty(
+                  propertyMap,
+                  Protocol.StreamKind.General,
+                  generalStreamCount,
+                  "FileSize",
+                  transformSize
+                )
+              )
+            );
+          }
+          ["Format"].forEach((property) => {
+            if (propertyMap.has(`General/0/${property}`)) {
+              map.set(
+                `General - ${property}`,
+                propertiesToString(
+                  formatProperty(
+                    propertyMap,
+                    Protocol.StreamKind.General,
+                    generalStreamCount,
+                    property
+                  )
+                )
+              );
+            }
+          });
         }
         if (videoStreamCount > 0) {
           if (propertyMap.has("Video/0/Width")) {
@@ -404,6 +439,38 @@
     return fileMap;
   }
 
+  function isStreamAvailable(
+    properties: Record<string, string>,
+    file: string
+  ): boolean {
+    if (
+      properties === COMMON_PROPERTIES_GENERAL &&
+      (streamCountMap.get(file)?.get(Protocol.StreamKind.General)?.count ?? 0) >
+        0
+    ) {
+      return true;
+    }
+    if (
+      properties === COMMON_PROPERTIES_VIDEO &&
+      (streamCountMap.get(file)?.get(Protocol.StreamKind.Video)?.count ?? 0) > 0
+    ) {
+      return true;
+    }
+    if (
+      properties === COMMON_PROPERTIES_AUDIO &&
+      (streamCountMap.get(file)?.get(Protocol.StreamKind.Audio)?.count ?? 0) > 0
+    ) {
+      return true;
+    }
+    if (
+      properties === COMMON_PROPERTIES_TEXT &&
+      (streamCountMap.get(file)?.get(Protocol.StreamKind.Text)?.count ?? 0) > 0
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   function propertiesToString(properties: string[]): string {
     return properties.join(" | ");
   }
@@ -432,18 +499,26 @@
   {#if files.length == 0}
     <div class="my-3 text-center">Please select some files or a directory.</div>
     <div class="my-3 grid grid-flow-col justify-center gap-2">
-      <Button
-        classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
-        on:click={openFileDialog}
-      >
-        <span class="material-symbols-outlined text-3xl">movie</span>
-      </Button>
-      <Button
-        classes={{ root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white" }}
-        on:click={openDirectoryDialog}
-      >
-        <span class="material-symbols-outlined text-3xl">folder_open</span>
-      </Button>
+      <Tooltip title="Add Files" offset={6}>
+        <Button
+          classes={{
+            root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white",
+          }}
+          on:click={() => openFileDialog(false)}
+        >
+          <span class="material-symbols-outlined text-3xl">article</span>
+        </Button>
+      </Tooltip>
+      <Tooltip title="Add Folder" offset={6}>
+        <Button
+          classes={{
+            root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white",
+          }}
+          on:click={() => openDirectoryDialog(false)}
+        >
+          <span class="material-symbols-outlined text-3xl">folder</span>
+        </Button>
+      </Tooltip>
     </div>
   {:else}
     <TextField placeholder="Filter" bind:value={query} clearable />
@@ -457,17 +532,15 @@
           >
             <div slot="actions">
               <Button class="w-12 h-12">
-                <span class="material-symbols-outlined">note_stack</span>
+                <span class="material-symbols-outlined text-3xl"
+                  >note_stack</span
+                >
               </Button>
             </div>
           </Header>
           <div slot="contents">
             {#each COMMON_PROPERTIES_GROUP as commonProperties}
-              {#if (commonProperties !== COMMON_PROPERTIES_AUDIO || (commonProperties === COMMON_PROPERTIES_AUDIO && (streamCountMap
-                    .get(file)
-                    ?.get(Protocol.StreamKind.Audio)?.count ?? 0) > 0)) && (commonProperties !== COMMON_PROPERTIES_TEXT || (commonProperties === COMMON_PROPERTIES_TEXT && (streamCountMap
-                      .get(file)
-                      ?.get(Protocol.StreamKind.Text)?.count ?? 0) > 0))}
+              {#if isStreamAvailable(commonProperties, file)}
                 <div class="flex flex-wrap pb-2">
                   {#each Object.entries(commonProperties) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}

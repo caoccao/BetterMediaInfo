@@ -17,7 +17,7 @@
  	 */
 
   import { onMount } from "svelte";
-  import { Button, ButtonGroup } from "svelte-ux";
+  import { Button, ButtonGroup, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import { tabAboutStatus, tabSettingsStatus } from "../lib/store";
   import * as Protocol from "../lib/protocol";
@@ -56,25 +56,52 @@
 
 <div class="mt-1 mb-3 grid grid-flow-col justify-start gap-2">
   <ButtonGroup variant="outline" color="default">
-    <Button classes={{ root: BUTTON_CLASSES_NORMAL }} on:click={openFileDialog}>
-      <span class="material-symbols-outlined">movie</span>
-    </Button>
-    <Button
-      classes={{ root: BUTTON_CLASSES_NORMAL }}
-      on:click={openDirectoryDialog}
-    >
-      <span class="material-symbols-outlined">folder_open</span>
-    </Button>
+    <Tooltip title="Add Files" offset={6}>
+      <Button
+        classes={{ root: BUTTON_CLASSES_NORMAL }}
+        on:click={() => openFileDialog(false)}
+      >
+        <span class="material-symbols-outlined">article</span>
+      </Button>
+    </Tooltip>
+    <Tooltip title="Append Files" offset={6}>
+      <Button
+        classes={{ root: BUTTON_CLASSES_NORMAL }}
+        on:click={() => openFileDialog(true)}
+      >
+        <span class="material-symbols-outlined">post_add</span>
+      </Button>
+    </Tooltip>
+    <Tooltip title="Add Folder" offset={6}>
+      <Button
+        classes={{ root: BUTTON_CLASSES_NORMAL }}
+        on:click={() => openDirectoryDialog(false)}
+      >
+        <span class="material-symbols-outlined">folder</span>
+      </Button>
+    </Tooltip>
+    <Tooltip title="Append Folder" offset={6}>
+      <Button
+        classes={{ root: BUTTON_CLASSES_NORMAL }}
+        on:click={() => openDirectoryDialog(true)}
+      >
+        <span class="material-symbols-outlined">create_new_folder</span>
+      </Button>
+    </Tooltip>
   </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
-    <Button
-      classes={{ root: buttonSettingsClasses }}
-      on:click={selectTabSettings}
-    >
-      <span class="material-symbols-outlined">settings</span>
-    </Button>
-    <Button classes={{ root: buttonAboutClasses }} on:click={selectTabAbout}>
-      <span class="material-symbols-outlined">info</span>
-    </Button>
+    <Tooltip title="Settings" offset={6}>
+      <Button
+        classes={{ root: buttonSettingsClasses }}
+        on:click={selectTabSettings}
+      >
+        <span class="material-symbols-outlined">settings</span>
+      </Button>
+    </Tooltip>
+    <Tooltip title="About" offset={6}>
+      <Button classes={{ root: buttonAboutClasses }} on:click={selectTabAbout}>
+        <span class="material-symbols-outlined">info</span>
+      </Button>
+    </Tooltip>
   </ButtonGroup>
 </div>

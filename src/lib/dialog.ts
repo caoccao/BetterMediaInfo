@@ -40,20 +40,23 @@ config.subscribe((value) => {
   }
 });
 
-export async function openDirectoryDialog() {
-  await scanFiles([
-    (await open({
-      directory: true,
-    })) as string,
-  ]);
+export async function openDirectoryDialog(append: boolean) {
+  await scanFiles(
+    [
+      (await open({
+        directory: true,
+      })) as string,
+    ],
+    append
+  );
 }
 
-export async function openFileDialog() {
+export async function openFileDialog(append: boolean) {
   const files = await open({
     multiple: true,
     filters: filters,
   });
   if (files) {
-    await scanFiles(files as string[]);
+    await scanFiles(files as string[], append);
   }
 }

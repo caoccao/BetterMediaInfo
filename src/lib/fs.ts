@@ -19,13 +19,19 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { dialog, mediaFiles } from "./store";
 import * as Protocol from "../lib/protocol";
 
-export async function scanFiles(files: string[]) {
+export async function scanFiles(files: string[], append: boolean) {
   if (files.length > 0) {
     invoke<string[]>("get_files", {
       files: files,
     })
       .then((value) => {
-        mediaFiles.set(value);
+        if (append) {
+          mediaFiles.update((existingFiles) => {
+            return [...new Set([...existingFiles, ...value]).keys()];
+          });
+        } else {
+          mediaFiles.set(value);
+        }
       })
       .catch((error) => {
         dialog.set({ title: error, type: Protocol.DialogType.Error });
