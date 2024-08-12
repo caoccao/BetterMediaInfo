@@ -68,7 +68,7 @@ async fn get_stream_count(file: String) -> Result<Vec<protocol::StreamCount>, St
 }
 
 #[tauri::command]
-async fn set_config(config: config::Config) -> Result<(), String> {
+async fn set_config(config: config::Config) -> Result<config::Config, String> {
   log::debug!("set_config({:?})", config);
   controller::set_config(config).await.map_err(convert_error)
 }

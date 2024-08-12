@@ -36,20 +36,6 @@
   let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
   let buttonSettingsClasses = BUTTON_CLASSES_NORMAL;
 
-  function clearFiles() {
-    mediaFiles.set([]);
-    mediaCommonPropertyMap.set(new Map());
-    mediaStreamCountMap.set(new Map());
-  }
-
-  function selectTabAbout() {
-    tabAboutStatus.set(Protocol.ControlStatus.Selected);
-  }
-
-  function selectTabSettings() {
-    tabSettingsStatus.set(Protocol.ControlStatus.Selected);
-  }
-
   onMount(() => {
     tabAboutStatus.subscribe((value) => {
       buttonAboutClasses =
@@ -64,6 +50,20 @@
           : BUTTON_CLASSES_VISIBLE;
     });
   });
+
+  function clearFiles() {
+    mediaFiles.set([]);
+    mediaCommonPropertyMap.set(new Map());
+    mediaStreamCountMap.set(new Map());
+  }
+
+  function selectTabAbout() {
+    tabAboutStatus.set(Protocol.ControlStatus.Selected);
+  }
+
+  function selectTabSettings() {
+    tabSettingsStatus.set(Protocol.ControlStatus.Selected);
+  }
 </script>
 
 <div class="mt-1 mb-3 grid grid-flow-col justify-start gap-2">

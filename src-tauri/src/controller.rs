@@ -137,8 +137,9 @@ pub async fn get_properties(file: String, properties: Vec<StreamProperty>) -> Re
   Ok(new_properties)
 }
 
-pub async fn set_config(config: config::Config) -> Result<()> {
-  config::set_config(config)
+pub async fn set_config(config: config::Config) -> Result<config::Config> {
+  config::set_config(config)?;
+  Ok(config::get_config())
 }
 
 fn validate_path_as_file(path: &Path) -> Result<()> {

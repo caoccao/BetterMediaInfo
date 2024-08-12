@@ -81,8 +81,9 @@
   function onClickSave(event: MouseEvent) {
     event.stopPropagation();
     try {
-      invoke<void>("set_config", { config: createConfig() })
-        .then(() => {
+      invoke<Protocol.Config>("set_config", { config: createConfig() })
+        .then((value) => {
+          config.set(value);
           isConfigDirty.set(false);
           dialog.set({
             title: "Settings saved.",
