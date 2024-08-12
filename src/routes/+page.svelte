@@ -51,7 +51,7 @@
     appWindow
       .onFileDropEvent((event: Event<FileDropEvent>) => {
         if (event.payload.type === "drop") {
-          scanFiles(event.payload.paths);
+          scanFiles(event.payload.paths, true);
         }
       })
       .then((value) => {

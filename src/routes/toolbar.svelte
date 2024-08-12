@@ -19,7 +19,13 @@
   import { onMount } from "svelte";
   import { Button, ButtonGroup, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
-  import { tabAboutStatus, tabSettingsStatus } from "../lib/store";
+  import {
+    mediaCommonPropertyMap,
+    mediaFiles,
+    mediaStreamCountMap,
+    tabAboutStatus,
+    tabSettingsStatus,
+  } from "../lib/store";
   import * as Protocol from "../lib/protocol";
 
   const BUTTON_CLASSES_NORMAL =
@@ -29,6 +35,12 @@
 
   let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
   let buttonSettingsClasses = BUTTON_CLASSES_NORMAL;
+
+  function clearFiles() {
+    mediaFiles.set([]);
+    mediaCommonPropertyMap.set(new Map());
+    mediaStreamCountMap.set(new Map());
+  }
 
   function selectTabAbout() {
     tabAboutStatus.set(Protocol.ControlStatus.Selected);
@@ -86,6 +98,13 @@
         on:click={() => openDirectoryDialog(true)}
       >
         <span class="material-symbols-outlined">create_new_folder</span>
+      </Button>
+    </Tooltip>
+  </ButtonGroup>
+  <ButtonGroup variant="outline" color="default">
+    <Tooltip title="Clear" offset={6}>
+      <Button classes={{ root: BUTTON_CLASSES_NORMAL }} on:click={clearFiles}>
+        <span class="material-symbols-outlined">contract_delete</span>
       </Button>
     </Tooltip>
   </ButtonGroup>
