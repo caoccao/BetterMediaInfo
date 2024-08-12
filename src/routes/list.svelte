@@ -40,6 +40,8 @@
     "General - Format": "newsmode",
     "General - FileSize": "straighten",
     "General - Duration": "schedule",
+    "General - Title": "title",
+    "General - Encoded_Date": "calendar_month",
   };
 
   const COMMON_PROPERTIES_VIDEO: Record<string, string> = {
@@ -137,7 +139,7 @@
                   properties,
                   Protocol.StreamKind.General,
                   generalStreamCount,
-                  ["Duration", "Format", "FileSize"]
+                  ["Duration", "Format", "FileSize", "Title", "Encoded_Date"]
                 );
                 pushProperties(
                   properties,
@@ -260,7 +262,7 @@
               )
             );
           }
-          ["Format"].forEach((property) => {
+          ["Format", "Title", "Encoded_Date"].forEach((property) => {
             if (propertyMap.has(`General/0/${property}`)) {
               map.set(
                 `General - ${property}`,
