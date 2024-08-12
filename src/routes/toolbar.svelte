@@ -29,9 +29,9 @@
   import * as Protocol from "../lib/protocol";
 
   const BUTTON_CLASSES_NORMAL =
-    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white hover:text-lime-100";
+    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
   const BUTTON_CLASSES_VISIBLE =
-    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white hover:text-lime-100";
+    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white hover:text-blue-200";
 
   let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
   let buttonSettingsClasses = BUTTON_CLASSES_NORMAL;

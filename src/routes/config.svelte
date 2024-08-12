@@ -28,6 +28,10 @@
   import * as Protocol from "../lib/protocol";
   import { config, dialog, isConfigDirty } from "../lib/store";
 
+  const CSS_CLASS_H1 = "text-lg font-bold py-2 border-b-2 border-b-lime-400";
+  const CSS_CLASS_H2 = "text-base font-medium py-2 border-b border-b-lime-300";
+  const CSS_CLASS_H3 = "text-sm";
+
   let appendOnFileDrop: boolean = true;
   let directoryMode: Protocol.ConfigDirectoryMode =
     Protocol.ConfigDirectoryMode.All;
@@ -119,8 +123,8 @@
   <div class="grid grid-flow-col grid-cols-[auto,1fr] gap-2">
     <TableOfContents element="#config" />
     <div id="config" class="grid gap-2">
-      <h1 class="text-lg font-bold">Settings</h1>
-      <h2 class="text-base font-medium">Append on File Drop</h2>
+      <h1 class={CSS_CLASS_H1}>Settings</h1>
+      <h2 class={CSS_CLASS_H2}>Append on File Drop</h2>
       <div class="flex gap-4">
         <Radio
           name="appendOnFileDrop"
@@ -139,7 +143,7 @@
           Do not append
         </Radio>
       </div>
-      <h2 class="text-base font-medium">Directory Mode</h2>
+      <h2 class={CSS_CLASS_H2}>Directory Mode</h2>
       <MenuField
         classes={{
           root: "min-w-32 max-w-32",
@@ -151,12 +155,12 @@
         bind:value={directoryMode}
         on:change={onChange}
       ></MenuField>
-      <h2 class="text-base font-medium">File Extensions</h2>
-      <h3 class="text-sm">Audio File Extensions</h3>
+      <h2 class={CSS_CLASS_H2}>File Extensions</h2>
+      <h3 class={CSS_CLASS_H3}>Audio File Extensions</h3>
       <TextField bind:value={fileExtensionsAudio} on:change={onChange} />
-      <h3 class="text-sm">Image File Extensions</h3>
+      <h3 class={CSS_CLASS_H3}>Image File Extensions</h3>
       <TextField bind:value={fileExtensionsImage} on:change={onChange} />
-      <h3 class="text-sm">Video File Extensions</h3>
+      <h3 class={CSS_CLASS_H3}>Video File Extensions</h3>
       <TextField bind:value={fileExtensionsVideo} on:change={onChange} />
     </div>
   </div>

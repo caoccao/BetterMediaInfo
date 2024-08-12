@@ -36,6 +36,11 @@
     transformSize,
   } from "../lib/format";
 
+  const BUTTON_CLASSES_ALERT =
+    "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-red-500";
+  const BUTTON_CLASSES_NORMAL =
+    "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-blue-500";
+
   const COMMON_PROPERTIES_GENERAL: Record<string, string> = {
     "General - Format": "newsmode",
     "General - FileSize": "hard_drive",
@@ -205,6 +210,20 @@
         });
     });
   });
+
+  function deleteFile(file: string) {
+    mediaFiles.update((existingFiles) => {
+      return existingFiles.filter((value) => value !== file);
+    });
+    mediaCommonPropertyMap.update((value) => {
+      value.delete(file);
+      return value;
+    });
+    mediaStreamCountMap.update((value) => {
+      value.delete(file);
+      return value;
+    });
+  }
 
   function generateFileToPropertyMap(
     query: string | null,
@@ -533,11 +552,21 @@
             slot="header"
           >
             <div slot="actions">
-              <Button class="w-12 h-12">
-                <span class="material-symbols-outlined text-3xl"
-                  >note_stack</span
+              <Tooltip title="Details" offset={6}>
+                <Button classes={{ root: BUTTON_CLASSES_NORMAL }}>
+                  <span class="material-symbols-outlined text-3xl"
+                    >note_stack</span
+                  >
+                </Button>
+              </Tooltip>
+              <Tooltip title="Delete" offset={6}>
+                <Button
+                  classes={{ root: BUTTON_CLASSES_ALERT }}
+                  on:click={() => deleteFile(file)}
                 >
-              </Button>
+                  <span class="material-symbols-outlined text-3xl">delete</span>
+                </Button>
+              </Tooltip>
             </div>
           </Header>
           <div slot="contents">
