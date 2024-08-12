@@ -24,13 +24,26 @@ use std::path::PathBuf;
 
 static mut CONFIG: Lazy<Config> = Lazy::new(|| Config::new());
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
+  #[serde(rename = "appendOnFileDrop")]
+  pub append_on_file_drop: bool,
   #[serde(rename = "directoryMode")]
   pub directory_mode: ConfigDirectoryMode,
   #[serde(rename = "fileExtensions")]
   pub file_extensions: ConfigFileExtensions,
   pub streams: ConfigStreams,
+}
+
+impl Default for Config {
+  fn default() -> Self {
+    Self {
+      append_on_file_drop: true,
+      directory_mode: Default::default(),
+      file_extensions: Default::default(),
+      streams: Default::default(),
+    }
+  }
 }
 
 impl Config {
@@ -83,7 +96,7 @@ pub enum ConfigDirectoryMode {
 
 impl Default for ConfigDirectoryMode {
   fn default() -> Self {
-    Self::Video
+    Self::All
   }
 }
 

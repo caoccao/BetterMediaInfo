@@ -24,9 +24,15 @@
   import List from "./list.svelte";
   import Config from "./config.svelte";
   import * as Protocol from "../lib/protocol";
-  import { dialog, tabAboutStatus, tabSettingsStatus } from "../lib/store";
+  import {
+    config,
+    dialog,
+    tabAboutStatus,
+    tabSettingsStatus,
+  } from "../lib/store";
   import { scanFiles } from "../lib/fs";
 
+  let appendOnFileDrop: boolean = true;
   let dialogOpen = false;
   let dialogTitle: string | null = null;
   let dialogType: Protocol.DialogType | null = null;
@@ -51,12 +57,18 @@
     appWindow
       .onFileDropEvent((event: Event<FileDropEvent>) => {
         if (event.payload.type === "drop") {
-          scanFiles(event.payload.paths, true);
+          scanFiles(event.payload.paths, appendOnFileDrop);
         }
       })
       .then((value) => {
         cancelFileDrop = value;
       });
+
+    config.subscribe((value) => {
+      if (value) {
+        appendOnFileDrop = value.appendOnFileDrop;
+      }
+    });
 
     dialog.subscribe((value) => {
       dialogOpen = value !== null;

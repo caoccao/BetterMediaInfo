@@ -21,6 +21,7 @@ export interface About {
 }
 
 export interface Config {
+  appendOnFileDrop: boolean;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
   streams: ConfigStreams;
@@ -110,4 +111,13 @@ export enum TabType {
 export interface TabControl {
   type: TabType;
   index: number;
+}
+
+export function getConfigDirectoryModes(): ConfigDirectoryMode[] {
+  return [
+    ConfigDirectoryMode.All,
+    ConfigDirectoryMode.Audio,
+    ConfigDirectoryMode.Image,
+    ConfigDirectoryMode.Video,
+  ];
 }

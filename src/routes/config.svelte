@@ -18,12 +18,19 @@
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { onDestroy, onMount } from "svelte";
-  import { Button, MenuField, TableOfContents, TextField } from "svelte-ux";
+  import {
+    Button,
+    MenuField,
+    Radio,
+    TableOfContents,
+    TextField,
+  } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
   import { config, dialog, isConfigDirty } from "../lib/store";
 
+  let appendOnFileDrop: boolean = true;
   let directoryMode: Protocol.ConfigDirectoryMode =
-    Protocol.ConfigDirectoryMode.Video;
+    Protocol.ConfigDirectoryMode.All;
   let fileExtensionsAudio: string = "";
   let fileExtensionsImage: string = "";
   let fileExtensionsVideo: string = "";
@@ -42,6 +49,7 @@
   onMount(() => {
     config.subscribe((value) => {
       if (value) {
+        appendOnFileDrop = value.appendOnFileDrop;
         directoryMode = value.directoryMode;
         fileExtensionsAudio = value.fileExtensions.audio.join(", ");
         fileExtensionsImage = value.fileExtensions.image.join(", ");
@@ -56,6 +64,7 @@
 
   function createConfig(): Protocol.Config {
     return {
+      appendOnFileDrop: appendOnFileDrop,
       directoryMode: directoryMode,
       fileExtensions: {
         audio: convertFileExtensions(fileExtensionsAudio),
@@ -75,6 +84,10 @@
   }
 
   function onChange(_value: CustomEvent<any>) {
+    isConfigDirty.set(true);
+  }
+
+  function onChangeAppendOnFileDrop() {
     isConfigDirty.set(true);
   }
 
@@ -107,29 +120,34 @@
     <TableOfContents element="#config" />
     <div id="config" class="grid gap-2">
       <h1 class="text-lg font-bold">Settings</h1>
+      <h2 class="text-base font-medium">Append on File Drop</h2>
+      <div class="flex gap-4">
+        <Radio
+          name="appendOnFileDrop"
+          bind:group={appendOnFileDrop}
+          value={true}
+          on:change={onChangeAppendOnFileDrop}
+        >
+          Append
+        </Radio>
+        <Radio
+          name="appendOnFileDrop"
+          bind:group={appendOnFileDrop}
+          value={false}
+          on:change={onChangeAppendOnFileDrop}
+        >
+          Do not append
+        </Radio>
+      </div>
       <h2 class="text-base font-medium">Directory Mode</h2>
       <MenuField
         classes={{
           root: "min-w-32 max-w-32",
         }}
-        options={[
-          {
-            label: Protocol.ConfigDirectoryMode.All,
-            value: Protocol.ConfigDirectoryMode.All,
-          },
-          {
-            label: Protocol.ConfigDirectoryMode.Video,
-            value: Protocol.ConfigDirectoryMode.Video,
-          },
-          {
-            label: Protocol.ConfigDirectoryMode.Audio,
-            value: Protocol.ConfigDirectoryMode.Audio,
-          },
-          {
-            label: Protocol.ConfigDirectoryMode.Image,
-            value: Protocol.ConfigDirectoryMode.Image,
-          },
-        ]}
+        options={Protocol.getConfigDirectoryModes().map((mode) => ({
+          label: mode,
+          value: mode,
+        }))}
         bind:value={directoryMode}
         on:change={onChange}
       ></MenuField>
