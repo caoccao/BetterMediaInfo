@@ -38,7 +38,7 @@
 
   const COMMON_PROPERTIES_GENERAL: Record<string, string> = {
     "General - Format": "newsmode",
-    "General - FileSize": "straighten",
+    "General - FileSize": "hard_drive",
     "General - Duration": "schedule",
     "General - Title": "title",
     "General - Encoded_Date": "calendar_month",
@@ -50,8 +50,8 @@
     "Video - Resolution": "movie",
     "Video - FrameRate": "acute",
     "Video - BitRate": "health_metrics",
-    "Video - StreamSize": "straighten",
-    "Video - ScanType": "document_scanner",
+    "Video - StreamSize": "hard_drive",
+    "Video - ScanType": "satellite",
   };
 
   const COMMON_PROPERTIES_AUDIO: Record<string, string> = {
@@ -59,14 +59,14 @@
     "Audio - Language": "language",
     "Audio - BitRate_Mode": "newsmode",
     "Audio - BitRate": "health_metrics",
-    "Audio - StreamSize": "straighten",
+    "Audio - StreamSize": "hard_drive",
   };
 
   const COMMON_PROPERTIES_TEXT: Record<string, string> = {
     "Text - Format": "subtitles",
     "Text - Language": "language",
     "Text - BitRate": "health_metrics",
-    "Text - StreamSize": "straighten",
+    "Text - StreamSize": "hard_drive",
   };
 
   const COMMON_PROPERTIES_GROUP = [
@@ -546,18 +546,18 @@
                 <div class="flex flex-wrap pb-2">
                   {#each Object.entries(commonProperties) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
-                      <div class="flex">
-                        <div class="material-symbols-outlined h6">
-                          {commonProperty[1]}
-                        </div>
-                        <Tooltip title={commonProperty[0]} offset={6}>
+                      <Tooltip title={commonProperty[0]} offset={6}>
+                        <div class="flex">
+                          <div class="material-symbols-outlined h6">
+                            {commonProperty[1]}
+                          </div>
                           <div class="h-6 px-2">
                             {fileToPropertyMap
                               .get(file)
                               ?.get(commonProperty[0])}
                           </div>
-                        </Tooltip>
-                      </div>
+                        </div>
+                      </Tooltip>
                     {/if}
                   {/each}
                 </div>

@@ -36,7 +36,12 @@
   let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
   let buttonSettingsClasses = BUTTON_CLASSES_NORMAL;
 
+  let files: string[] = [];
+
   onMount(() => {
+    mediaFiles.subscribe((value) => {
+      files = value;
+    });
     tabAboutStatus.subscribe((value) => {
       buttonAboutClasses =
         value === Protocol.ControlStatus.Hidden
@@ -103,7 +108,11 @@
   </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
     <Tooltip title="Clear" offset={6}>
-      <Button classes={{ root: BUTTON_CLASSES_NORMAL }} on:click={clearFiles}>
+      <Button
+        classes={{ root: BUTTON_CLASSES_NORMAL }}
+        on:click={clearFiles}
+        disabled={files.length == 0}
+      >
         <span class="material-symbols-outlined">contract_delete</span>
       </Button>
     </Tooltip>
