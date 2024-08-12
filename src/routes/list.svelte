@@ -546,14 +546,18 @@
                 <div class="flex flex-wrap pb-2">
                   {#each Object.entries(commonProperties) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
-                      <div class="material-symbols-outlined h6">
-                        {commonProperty[1]}
-                      </div>
-                      <Tooltip title={commonProperty[0]} offset={6}>
-                        <div class="h-6 px-2">
-                          {fileToPropertyMap.get(file)?.get(commonProperty[0])}
+                      <div class="flex">
+                        <div class="material-symbols-outlined h6">
+                          {commonProperty[1]}
                         </div>
-                      </Tooltip>
+                        <Tooltip title={commonProperty[0]} offset={6}>
+                          <div class="h-6 px-2">
+                            {fileToPropertyMap
+                              .get(file)
+                              ?.get(commonProperty[0])}
+                          </div>
+                        </Tooltip>
+                      </div>
                     {/if}
                   {/each}
                 </div>
