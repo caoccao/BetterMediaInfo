@@ -69,7 +69,7 @@ export interface Info {
 
 export interface Parameter {
   id: number;
-  stream: string;
+  stream: StreamKind;
   property: string;
 }
 

@@ -16,6 +16,7 @@
 */
 
 use anyhow::Result;
+use once_cell::sync::Lazy;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -24,9 +25,17 @@ use crate::media_info::*;
 use crate::protocol::*;
 use crate::streams::*;
 
+static ALL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
+  let media_info = MediaInfo::new();
+  let info_parameters = media_info
+    .getOption(MediaInfoGetOption::InfoParameters)
+    .expect("Failed to get info parameters.");
+  Stream::parse(info_parameters)
+});
+
 pub async fn get_about() -> Result<About> {
   let media_info = MediaInfo::new();
-  let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion).unwrap();
+  let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion)?;
   let app_version = env!("CARGO_PKG_VERSION").to_owned();
   Ok(About {
     app_version,
@@ -98,17 +107,15 @@ pub async fn get_stream_count(file: String) -> Result<Vec<StreamCount>> {
 }
 
 pub async fn get_parameters() -> Result<Vec<Parameter>> {
-  let media_info = MediaInfo::new();
-  let info_parameters = media_info.getOption(MediaInfoGetOption::InfoParameters)?;
   let mut id = 0;
   Ok(
-    Stream::parse(info_parameters)
-      .into_iter()
+    ALL_STREAMS
+      .iter()
       .map(|stream| {
         let parameter = Parameter {
           id,
-          stream: stream.stream_kind.get_name().to_owned(),
-          property: stream.parameter,
+          stream: stream.stream_kind,
+          property: stream.parameter.clone(),
         };
         id += 1;
         parameter

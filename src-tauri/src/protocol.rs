@@ -30,7 +30,7 @@ pub struct About {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Parameter {
   pub id: i32,
-  pub stream: String,
+  pub stream: media_info::MediaInfoStreamKind,
   pub property: String,
 }
 
