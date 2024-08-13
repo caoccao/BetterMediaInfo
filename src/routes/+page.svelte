@@ -19,7 +19,7 @@
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
   import type { FileDropEvent } from "@tauri-apps/api/window";
   import { afterUpdate, onMount } from "svelte";
-  import { Button, Dialog, Tab, Tabs } from "svelte-ux";
+  import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import Config from "./config.svelte";
@@ -204,7 +204,7 @@
         on:click={() => (tabIndex = tabControl.index)}
         selected={tabIndex === tabControl.index}
       >
-        About
+        <Tooltip title="About" offset={6}>About</Tooltip>
         <Button
           classes={{ root: "w-2 h-4 m-0 p-2" }}
           on:click={onClickCloseTabAbout}
@@ -220,7 +220,7 @@
         on:click={() => (tabIndex = tabControl.index)}
         selected={tabIndex === tabControl.index}
       >
-        Settings
+        <Tooltip title="Settings" offset={6}>Settings</Tooltip>
         <Button
           classes={{ root: "w-2 h-4 m-0 p-2" }}
           on:click={onClickCloseTabSettings}
@@ -234,8 +234,10 @@
           root: "rounded-t",
         }}
         on:click={() => (tabIndex = tabControl.index)}
-        selected={tabIndex === tabControl.index}>List</Tab
+        selected={tabIndex === tabControl.index}
       >
+        <Tooltip title="File List" offset={6}>List</Tooltip>
+      </Tab>
     {/if}
   {/each}
   <svelte:fragment slot="content" let:value={tabIndex}>

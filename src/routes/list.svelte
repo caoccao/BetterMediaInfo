@@ -40,6 +40,8 @@
     "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-red-500";
   const BUTTON_CLASSES_NORMAL =
     "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-blue-500";
+  const BUTTON_CLASSES_TOOLBAR =
+    "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
   const COMMON_PROPERTIES_GENERAL: Record<string, string> = {
     "General - Format": "newsmode",
@@ -522,9 +524,7 @@
     <div class="my-3 grid grid-flow-col justify-center gap-2">
       <Tooltip title="Add Files" offset={6}>
         <Button
-          classes={{
-            root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white",
-          }}
+          classes={{ root: BUTTON_CLASSES_TOOLBAR }}
           on:click={() => openFileDialog(false)}
         >
           <span class="material-symbols-outlined text-3xl">article</span>
@@ -532,9 +532,7 @@
       </Tooltip>
       <Tooltip title="Add Folder" offset={6}>
         <Button
-          classes={{
-            root: "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white",
-          }}
+          classes={{ root: BUTTON_CLASSES_TOOLBAR }}
           on:click={() => openDirectoryDialog(false)}
         >
           <span class="material-symbols-outlined text-3xl">folder</span>
@@ -554,9 +552,9 @@
             <div slot="actions">
               <Tooltip title="Details" offset={6}>
                 <Button classes={{ root: BUTTON_CLASSES_NORMAL }}>
-                  <span class="material-symbols-outlined text-3xl"
-                    >note_stack</span
-                  >
+                  <span class="material-symbols-outlined text-3xl">
+                    note_stack
+                  </span>
                 </Button>
               </Tooltip>
               <Tooltip title="Delete" offset={6}>
@@ -564,7 +562,9 @@
                   classes={{ root: BUTTON_CLASSES_ALERT }}
                   on:click={() => deleteFile(file)}
                 >
-                  <span class="material-symbols-outlined text-3xl">delete</span>
+                  <span class="material-symbols-outlined text-3xl">
+                    delete
+                  </span>
                 </Button>
               </Tooltip>
             </div>
