@@ -16,7 +16,6 @@
  	 *   limitations under the License.
  	 */
 
-  import { invoke } from "@tauri-apps/api/tauri";
   import { onDestroy, onMount } from "svelte";
   import {
     Button,
@@ -26,6 +25,7 @@
     TextField,
   } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
+  import { setConfig } from "../lib/service";
   import { config, dialog, isConfigDirty } from "../lib/store";
 
   const CSS_CLASS_H1 = "text-lg font-bold py-2 border-b-2 border-b-lime-400";
@@ -95,21 +95,14 @@
     isConfigDirty.set(true);
   }
 
-  function onClickSave(event: MouseEvent) {
+  async function onClickSave(event: MouseEvent) {
     event.stopPropagation();
     try {
-      invoke<Protocol.Config>("set_config", { config: createConfig() })
-        .then((value) => {
-          config.set(value);
-          isConfigDirty.set(false);
-          dialog.set({
-            title: "Settings saved.",
-            type: Protocol.DialogType.Notification,
-          });
-        })
-        .catch((error) => {
-          dialog.set({ title: error, type: Protocol.DialogType.Error });
-        });
+      config.set(await setConfig(createConfig()));
+      dialog.set({
+        title: "Settings saved.",
+        type: Protocol.DialogType.Notification,
+      });
     } catch (error) {
       dialog.set({
         title: error ? error.toString() : "Failed to save with unknown error.",

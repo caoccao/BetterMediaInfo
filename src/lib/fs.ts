@@ -15,26 +15,23 @@
  *   limitations under the License.
  */
 
-import { invoke } from "@tauri-apps/api/tauri";
 import { dialog, mediaFiles } from "./store";
 import * as Protocol from "../lib/protocol";
+import { getFiles } from "../lib/service";
 
 export async function scanFiles(files: string[], append: boolean) {
   if (files.length > 0) {
-    invoke<string[]>("get_files", {
-      files: files,
-    })
-      .then((value) => {
-        if (append) {
-          mediaFiles.update((existingFiles) => {
-            return [...new Set([...existingFiles, ...value]).keys()];
-          });
-        } else {
-          mediaFiles.set(value);
-        }
-      })
-      .catch((error) => {
-        dialog.set({ title: error, type: Protocol.DialogType.Error });
-      });
+    try {
+      const newFiles = await getFiles(files);
+      if (append) {
+        mediaFiles.update((existingFiles) => {
+          return [...new Set([...existingFiles, ...newFiles]).keys()];
+        });
+      } else {
+        mediaFiles.set(newFiles);
+      }
+    } catch (error) {
+      dialog.set({ title: error as string, type: Protocol.DialogType.Error });
+    }
   }
 }

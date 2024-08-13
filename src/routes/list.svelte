@@ -16,17 +16,17 @@
     *   limitations under the License.
     */
 
-  import { invoke } from "@tauri-apps/api/tauri";
   import { onMount } from "svelte";
   import { Button, Card, Header, TextField, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     dialog,
     mediaFiles,
-    mediaCommonPropertyMap,
-    mediaStreamCountMap,
+    mediaFileToCommonPropertyMap,
+    mediaFileToStreamCountMap,
   } from "../lib/store";
   import * as Protocol from "../lib/protocol";
+  import { getPropertyMap, getStreamCountMap } from "../lib/service";
   import {
     formatProperty,
     formatResolution,
@@ -86,11 +86,11 @@
   let files: string[] = [];
   let query: string | null = null;
 
-  let commonPropertyMap: Map<
+  let fileToCommonPropertyMap: Map<
     string,
     Map<string, Protocol.StreamPropertyValue>
   > = new Map();
-  let streamCountMap: Map<
+  let fileToStreamCountMap: Map<
     string,
     Map<Protocol.StreamKind, Protocol.StreamCount>
   > = new Map();
@@ -98,118 +98,95 @@
   $: fileToPropertyMap = generateFileToPropertyMap(
     query,
     files,
-    streamCountMap,
-    commonPropertyMap
+    fileToStreamCountMap,
+    fileToCommonPropertyMap
   );
 
   onMount(() => {
-    mediaStreamCountMap.subscribe((value) => {
-      streamCountMap = value;
+    mediaFileToStreamCountMap.subscribe((value) => {
+      fileToStreamCountMap = value;
     });
-    mediaCommonPropertyMap.subscribe((value) => {
-      commonPropertyMap = value;
+    mediaFileToCommonPropertyMap.subscribe((value) => {
+      fileToCommonPropertyMap = value;
     });
     mediaFiles.subscribe((value) => {
       dialog.set(null);
       files = value;
-      files
-        .filter((file) => !streamCountMap.has(file))
-        .forEach((file) => {
-          invoke<Protocol.StreamCount[]>("get_stream_count", { file: file })
-            .then((value) => {
-              const map = new Map<Protocol.StreamKind, Protocol.StreamCount>();
-              value.forEach((streamCount) => {
-                map.set(streamCount.stream, streamCount);
-              });
-              streamCountMap.set(file, map);
-              mediaStreamCountMap.set(streamCountMap);
-            })
-            .catch((error) => {
-              dialog.set({ title: error, type: Protocol.DialogType.Error });
-            })
-            .then(() => {
-              if (streamCountMap.has(file) && !commonPropertyMap.has(file)) {
-                let generalStreamCount =
-                  streamCountMap.get(file)?.get(Protocol.StreamKind.General)
-                    ?.count ?? 0;
-                let videoStreamCount =
-                  streamCountMap.get(file)?.get(Protocol.StreamKind.Video)
-                    ?.count ?? 0;
-                let audioStreamCount =
-                  streamCountMap.get(file)?.get(Protocol.StreamKind.Audio)
-                    ?.count ?? 0;
-                let textStreamCount =
-                  streamCountMap.get(file)?.get(Protocol.StreamKind.Text)
-                    ?.count ?? 0;
-                let properties: Array<Protocol.StreamProperty> = [];
-                pushProperties(
-                  properties,
-                  Protocol.StreamKind.General,
-                  generalStreamCount,
-                  ["Duration", "Format", "FileSize", "Title", "Encoded_Date"]
-                );
-                pushProperties(
-                  properties,
-                  Protocol.StreamKind.Video,
-                  videoStreamCount,
-                  [
-                    "BitRate",
-                    "Format",
-                    "FrameRate",
-                    "Height",
-                    "Language",
-                    "ScanType",
-                    "StreamSize",
-                    "Width",
-                  ]
-                );
-                pushProperties(
-                  properties,
-                  Protocol.StreamKind.Audio,
-                  audioStreamCount,
-                  [
-                    "BitRate",
-                    "BitRate_Mode",
-                    "Format",
-                    "Language",
-                    "StreamSize",
-                  ]
-                );
-                pushProperties(
-                  properties,
-                  Protocol.StreamKind.Text,
-                  textStreamCount,
-                  ["BitRate", "Format", "Language", "StreamSize"]
-                );
-                if (properties.length > 0) {
-                  invoke<Protocol.StreamPropertyValue[]>("get_properties", {
-                    file: file,
-                    properties: properties,
-                  })
-                    .then((value) => {
-                      const map = new Map<
-                        string,
-                        Protocol.StreamPropertyValue
-                      >();
-                      value.forEach((property) => {
-                        map.set(
-                          `${property.stream}/${property.num}/${property.property}`,
-                          property
-                        );
-                      });
-                      commonPropertyMap.set(file, map);
-                      mediaCommonPropertyMap.set(commonPropertyMap);
-                    })
-                    .catch((error) => {
-                      dialog.set({
-                        title: error,
-                        type: Protocol.DialogType.Error,
-                      });
-                    });
-                }
-              }
+      files.forEach(async (file) => {
+        let streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount>;
+        if (fileToStreamCountMap.has(file)) {
+          streamCountMap = fileToStreamCountMap.get(file)!;
+        } else {
+          try {
+            streamCountMap = await getStreamCountMap(file);
+            fileToStreamCountMap.set(file, streamCountMap);
+            mediaFileToStreamCountMap.set(fileToStreamCountMap);
+          } catch (error) {
+            dialog.set({
+              title: error as string,
+              type: Protocol.DialogType.Error,
             });
-        });
+            return;
+          }
+        }
+        if (!fileToCommonPropertyMap.has(file)) {
+          let generalStreamCount =
+            streamCountMap.get(Protocol.StreamKind.General)?.count ?? 0;
+          let videoStreamCount =
+            streamCountMap.get(Protocol.StreamKind.Video)?.count ?? 0;
+          let audioStreamCount =
+            streamCountMap.get(Protocol.StreamKind.Audio)?.count ?? 0;
+          let textStreamCount =
+            streamCountMap.get(Protocol.StreamKind.Text)?.count ?? 0;
+          const properties: Array<Protocol.StreamProperty> = [];
+          pushProperties(
+            properties,
+            Protocol.StreamKind.General,
+            generalStreamCount,
+            ["Duration", "Format", "FileSize", "Title", "Encoded_Date"]
+          );
+          pushProperties(
+            properties,
+            Protocol.StreamKind.Video,
+            videoStreamCount,
+            [
+              "BitRate",
+              "Format",
+              "FrameRate",
+              "Height",
+              "Language",
+              "ScanType",
+              "StreamSize",
+              "Width",
+            ]
+          );
+          pushProperties(
+            properties,
+            Protocol.StreamKind.Audio,
+            audioStreamCount,
+            ["BitRate", "BitRate_Mode", "Format", "Language", "StreamSize"]
+          );
+          pushProperties(
+            properties,
+            Protocol.StreamKind.Text,
+            textStreamCount,
+            ["BitRate", "Format", "Language", "StreamSize"]
+          );
+          if (properties.length > 0) {
+            try {
+              const commonPropertyMap = await getPropertyMap(file, properties);
+              fileToCommonPropertyMap.set(file, commonPropertyMap);
+              mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
+            } catch (error) {
+              dialog.set({
+                title: error as string,
+                type: Protocol.DialogType.Error,
+              });
+              return;
+            }
+          }
+        }
+      });
     });
   });
 
@@ -217,11 +194,11 @@
     mediaFiles.update((existingFiles) => {
       return existingFiles.filter((value) => value !== file);
     });
-    mediaCommonPropertyMap.update((value) => {
+    mediaFileToCommonPropertyMap.update((value) => {
       value.delete(file);
       return value;
     });
-    mediaStreamCountMap.update((value) => {
+    mediaFileToStreamCountMap.update((value) => {
       value.delete(file);
       return value;
     });
@@ -468,26 +445,29 @@
   ): boolean {
     if (
       properties === COMMON_PROPERTIES_GENERAL &&
-      (streamCountMap.get(file)?.get(Protocol.StreamKind.General)?.count ?? 0) >
-        0
+      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.General)
+        ?.count ?? 0) > 0
     ) {
       return true;
     }
     if (
       properties === COMMON_PROPERTIES_VIDEO &&
-      (streamCountMap.get(file)?.get(Protocol.StreamKind.Video)?.count ?? 0) > 0
+      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Video)?.count ??
+        0) > 0
     ) {
       return true;
     }
     if (
       properties === COMMON_PROPERTIES_AUDIO &&
-      (streamCountMap.get(file)?.get(Protocol.StreamKind.Audio)?.count ?? 0) > 0
+      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Audio)?.count ??
+        0) > 0
     ) {
       return true;
     }
     if (
       properties === COMMON_PROPERTIES_TEXT &&
-      (streamCountMap.get(file)?.get(Protocol.StreamKind.Text)?.count ?? 0) > 0
+      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Text)?.count ??
+        0) > 0
     ) {
       return true;
     }
@@ -520,7 +500,10 @@
 
 <div class="grid gap-2">
   {#if files.length == 0}
-    <div class="my-3 text-center">Please select some files or a directory.</div>
+    <div class="mt-3 text-center">Please select some files or a directory,</div>
+    <div class="text-center">
+      or drag and drop some files or directories here.
+    </div>
     <div class="my-3 grid grid-flow-col justify-center gap-2">
       <Tooltip title="Add Files" offset={6}>
         <Button
@@ -546,7 +529,7 @@
         <Card>
           <Header
             title={file}
-            subheading={formatStreamCount(streamCountMap.get(file))}
+            subheading={formatStreamCount(fileToStreamCountMap.get(file))}
             slot="header"
           >
             <div slot="actions">
@@ -572,7 +555,9 @@
           <div slot="contents">
             {#each COMMON_PROPERTIES_GROUP as commonProperties}
               {#if isStreamAvailable(commonProperties, file)}
-                <div class="flex flex-wrap gap-3 mb-1 py-1 border-b border-dashed">
+                <div
+                  class="flex flex-wrap gap-3 mb-1 py-1 border-b border-dashed"
+                >
                   {#each Object.entries(commonProperties) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
                       <Tooltip title={commonProperty[0]} offset={6}>

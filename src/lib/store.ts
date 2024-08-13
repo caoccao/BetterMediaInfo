@@ -15,12 +15,12 @@
  *   limitations under the License.
  */
 
-import { invoke } from "@tauri-apps/api/tauri";
 import * as Store from "svelte/store";
 import * as Protocol from "./protocol";
+import { getAbout, getConfig, getParameters } from "./service";
 
 export const config = Store.writable<Protocol.Config | null>(null, (set) => {
-  invoke<Protocol.Config>("get_config")
+  getConfig()
     .then((result) => {
       set(result);
     })
@@ -46,7 +46,14 @@ export const isConfigDirty = Store.writable<boolean>(false, (set) => {
   };
 });
 
-export const mediaCommonPropertyMap = Store.writable<
+export const mediaFiles = Store.writable<string[]>([], (set) => {
+  set([]);
+  return () => {
+    set([]);
+  };
+});
+
+export const mediaFileToCommonPropertyMap = Store.writable<
   Map<string, Map<string, Protocol.StreamPropertyValue>>
 >(new Map(), (set) => {
   set(new Map());
@@ -55,14 +62,7 @@ export const mediaCommonPropertyMap = Store.writable<
   };
 });
 
-export const mediaFiles = Store.writable<string[]>([], (set) => {
-  set([]);
-  return () => {
-    set([]);
-  };
-});
-
-export const mediaStreamCountMap = Store.writable<
+export const mediaFileToStreamCountMap = Store.writable<
   Map<string, Map<Protocol.StreamKind, Protocol.StreamCount>>
 >(new Map(), (set) => {
   set(new Map());
@@ -74,7 +74,7 @@ export const mediaStreamCountMap = Store.writable<
 export const mediaInfoAbout = Store.readable<Protocol.About | null>(
   null,
   (set) => {
-    invoke<Protocol.About>("get_about")
+    getAbout()
       .then((result) => {
         set(result);
       })
@@ -90,7 +90,7 @@ export const mediaInfoAbout = Store.readable<Protocol.About | null>(
 export const mediaInfoParameters = Store.readable<Array<Protocol.Parameter>>(
   [],
   (set) => {
-    invoke<Array<Protocol.Parameter>>("get_parameters")
+    getParameters()
       .then((result) => {
         set(result);
       })
