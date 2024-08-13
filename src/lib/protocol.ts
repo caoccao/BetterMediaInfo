@@ -104,13 +104,15 @@ export interface StreamPropertyValue {
 
 export enum TabType {
   About,
-  List,
   Config,
+  Details,
+  List,
 }
 
 export interface TabControl {
   type: TabType;
   index: number;
+  value: string | null;
 }
 
 export function getConfigDirectoryModes(): ConfigDirectoryMode[] {

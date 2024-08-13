@@ -20,6 +20,7 @@
   import { Button, ButtonGroup, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
+    mediaDetailedFiles,
     mediaFileToCommonPropertyMap,
     mediaFiles,
     mediaFileToStreamCountMap,
@@ -63,6 +64,7 @@
 
   function clearFiles() {
     mediaFiles.set([]);
+    mediaDetailedFiles.set([]);
     mediaFileToCommonPropertyMap.set(new Map());
     mediaFileToStreamCountMap.set(new Map());
   }

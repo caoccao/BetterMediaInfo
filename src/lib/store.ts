@@ -46,6 +46,13 @@ export const isConfigDirty = Store.writable<boolean>(false, (set) => {
   };
 });
 
+export const mediaDetailedFiles = Store.writable<string[]>([], (set) => {
+  set([]);
+  return () => {
+    set([]);
+  };
+});
+
 export const mediaFiles = Store.writable<string[]>([], (set) => {
   set([]);
   return () => {

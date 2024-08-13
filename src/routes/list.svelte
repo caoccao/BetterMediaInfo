@@ -21,6 +21,7 @@
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     dialog,
+    mediaDetailedFiles,
     mediaFiles,
     mediaFileToCommonPropertyMap,
     mediaFileToStreamCountMap,
@@ -474,6 +475,16 @@
     return false;
   }
 
+  function openDetails(file: string) {
+    mediaDetailedFiles.update((detailedFiles) => {
+      if (detailedFiles.includes(file)) {
+        return detailedFiles;
+      } else {
+        return [...detailedFiles, file];
+      }
+    });
+  }
+
   function propertiesToString(properties: string[]): string {
     return properties.join(" | ");
   }
@@ -534,7 +545,10 @@
           >
             <div slot="actions">
               <Tooltip title="Details" offset={6}>
-                <Button classes={{ root: BUTTON_CLASSES_NORMAL }}>
+                <Button
+                  classes={{ root: BUTTON_CLASSES_NORMAL }}
+                  on:click={() => openDetails(file)}
+                >
                   <span class="material-symbols-outlined text-3xl">
                     note_stack
                   </span>

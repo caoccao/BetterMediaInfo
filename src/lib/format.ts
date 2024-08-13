@@ -78,6 +78,13 @@ export function formatStreamCount(
   return result;
 }
 
+export function shrinkFileName(fileName: string, maxLength: number): string {
+  if (fileName.length > maxLength) {
+    return "..." + fileName.substring(fileName.length - maxLength + 3);
+  }
+  return fileName;
+}
+
 export function transformBitRate(value: string): string {
   const bitRate = parseInt(value);
   if (bitRate > 1000000) {

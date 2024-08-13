@@ -18,24 +18,28 @@
   import { appWindow } from "@tauri-apps/api/window";
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
   import type { FileDropEvent } from "@tauri-apps/api/window";
-  import { afterUpdate, onMount } from "svelte";
+  import { afterUpdate, onDestroy, onMount } from "svelte";
   import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import Config from "./config.svelte";
+  import Details from "./details.svelte";
   import * as Protocol from "../lib/protocol";
   import {
     config,
     dialog,
+    mediaDetailedFiles,
     tabAboutStatus,
     tabSettingsStatus,
   } from "../lib/store";
   import { scanFiles } from "../lib/fs";
+  import { shrinkFileName } from "../lib/format";
 
   let appendOnFileDrop: boolean = true;
   let dialogOpen = false;
   let dialogTitle: string | null = null;
   let dialogType: Protocol.DialogType | null = null;
+  let detailedFiles: string[] = [];
   let statusTabAbout: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
   let statusTabSettings: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
   let tabIndex = 0;
@@ -50,6 +54,10 @@
     if (statusTabSettings === Protocol.ControlStatus.Selected) {
       tabSettingsStatus.set(Protocol.ControlStatus.Visible);
     }
+  });
+
+  onDestroy(() => {
+    document.removeEventListener("keyup", onKeyUp);
   });
 
   onMount(() => {
@@ -76,6 +84,10 @@
       dialogType = value?.type ?? null;
     });
 
+    mediaDetailedFiles.subscribe((value) => {
+      detailedFiles = value;
+    });
+
     tabAboutStatus.subscribe((value) => {
       statusTabAbout = value;
     });
@@ -83,6 +95,8 @@
     tabSettingsStatus.subscribe((value) => {
       statusTabSettings = value;
     });
+
+    document.addEventListener("keyup", onKeyUp);
 
     return () => {
       if (cancelFileDrop) {
@@ -93,7 +107,11 @@
 
   $: dialogTitleClasses = getDialogTitleClasses(dialogType);
 
-  $: tabControls = getTabControls(statusTabAbout, statusTabSettings);
+  $: tabControls = getTabControls(
+    statusTabAbout,
+    statusTabSettings,
+    detailedFiles
+  );
 
   function getDialogTitleClasses(
     dialogType: Protocol.DialogType | null
@@ -114,25 +132,24 @@
   }
 
   function getTabControls(
-    statusOfTabAbout: Protocol.ControlStatus,
-    statusOfTabSettings: Protocol.ControlStatus
+    statusTabAbout: Protocol.ControlStatus,
+    statusTabSettings: Protocol.ControlStatus,
+    detailedFiles: string[]
   ): Array<Protocol.TabControl> {
     let controls = tabControls
       ? [...tabControls]
-      : [{ type: Protocol.TabType.List, index: 0 }];
+      : [{ type: Protocol.TabType.List, index: 0, value: null }];
     const controlTabAbout = controls.find(
       (control) => control.type === Protocol.TabType.About
     );
-    if (
-      statusOfTabAbout !== Protocol.ControlStatus.Hidden &&
-      !controlTabAbout
-    ) {
+    if (statusTabAbout !== Protocol.ControlStatus.Hidden && !controlTabAbout) {
       controls.push({
         type: Protocol.TabType.About,
         index: 0,
+        value: null,
       });
     } else if (
-      statusOfTabAbout === Protocol.ControlStatus.Hidden &&
+      statusTabAbout === Protocol.ControlStatus.Hidden &&
       controlTabAbout
     ) {
       controls = controls.filter(
@@ -143,31 +160,58 @@
       (control) => control.type === Protocol.TabType.Config
     );
     if (
-      statusOfTabSettings !== Protocol.ControlStatus.Hidden &&
+      statusTabSettings !== Protocol.ControlStatus.Hidden &&
       !controlTabSettings
     ) {
       controls.push({
         type: Protocol.TabType.Config,
         index: 0,
+        value: null,
       });
     } else if (
-      statusOfTabSettings === Protocol.ControlStatus.Hidden &&
+      statusTabSettings === Protocol.ControlStatus.Hidden &&
       controlTabSettings
     ) {
       controls = controls.filter(
         (control) => control.type !== Protocol.TabType.Config
       );
     }
+    const toBeAddedDetailedFileSet = new Set(detailedFiles);
+    const toBeDeletedDetailedFileSet: Set<string> = new Set();
+    controls
+      .filter((control) => control.type === Protocol.TabType.Details)
+      .forEach((control) => {
+        if (control.value) {
+          if (toBeAddedDetailedFileSet.has(control.value)) {
+            toBeAddedDetailedFileSet.delete(control.value);
+          } else {
+            toBeDeletedDetailedFileSet.add(control.value);
+          }
+        }
+      });
+    controls = controls.filter(
+      (control) =>
+        control.type !== Protocol.TabType.Details ||
+        (control.type === Protocol.TabType.Details &&
+          !toBeDeletedDetailedFileSet.has(control.value ?? ""))
+    );
+    toBeAddedDetailedFileSet.forEach((detailedFile) => {
+      controls.push({
+        type: Protocol.TabType.Details,
+        index: 0,
+        value: detailedFile,
+      });
+    });
     controls.forEach((control, index) => {
       control.index = index;
     });
-    if (statusOfTabAbout === Protocol.ControlStatus.Selected) {
+    if (statusTabAbout === Protocol.ControlStatus.Selected) {
       controls
         .filter((control) => control.type === Protocol.TabType.About)
         .forEach((control) => {
           tabIndex = control.index;
         });
-    } else if (statusOfTabSettings === Protocol.ControlStatus.Selected) {
+    } else if (statusTabSettings === Protocol.ControlStatus.Selected) {
       controls
         .filter((control) => control.type === Protocol.TabType.Config)
         .forEach((control) => {
@@ -177,14 +221,35 @@
     return controls;
   }
 
-  function onClickCloseTabAbout(event: MouseEvent) {
-    event.stopPropagation();
-    tabAboutStatus.set(Protocol.ControlStatus.Hidden);
+  function closeTab(index: number) {
+    if (index >= 0 && index < tabControls.length) {
+      const tabControl = tabControls[index];
+      switch (tabControl.type) {
+        case Protocol.TabType.About:
+          tabAboutStatus.set(Protocol.ControlStatus.Hidden);
+          break;
+        case Protocol.TabType.Config:
+          tabSettingsStatus.set(Protocol.ControlStatus.Hidden);
+          break;
+        case Protocol.TabType.Details:
+          const file = tabControl.value ?? "";
+          mediaDetailedFiles.update((detailedFiles) => {
+            return detailedFiles.filter(
+              (detailedFile) => detailedFile !== file
+            );
+          });
+          break;
+      }
+    }
   }
 
-  function onClickCloseTabSettings(event: MouseEvent) {
-    event.stopPropagation();
-    tabSettingsStatus.set(Protocol.ControlStatus.Hidden);
+  function onKeyUp(event: KeyboardEvent) {
+    if (event.ctrlKey && !event.altKey && !event.shiftKey) {
+      if (event.key === "w") {
+        event.stopPropagation();
+        closeTab(tabIndex);
+      }
+    }
   }
 </script>
 
@@ -196,49 +261,41 @@
   }}
 >
   {#each tabControls as tabControl}
-    {#if tabControl.type === Protocol.TabType.About}
-      <Tab
-        classes={{
-          root: "rounded-t",
-        }}
-        on:click={() => (tabIndex = tabControl.index)}
-        selected={tabIndex === tabControl.index}
-      >
+    <Tab
+      classes={{
+        root: "rounded-t",
+      }}
+      on:click={(event) => {
+        event.stopPropagation();
+        tabIndex = tabControl.index;
+      }}
+      selected={tabIndex === tabControl.index}
+    >
+      {#if tabControl.type === Protocol.TabType.About}
         <Tooltip title="About" offset={6}>About</Tooltip>
-        <Button
-          classes={{ root: "w-2 h-4 m-0 p-2" }}
-          on:click={onClickCloseTabAbout}
-        >
-          <span class="material-symbols-outlined text-xs">close</span>
-        </Button>
-      </Tab>
-    {:else if tabControl.type === Protocol.TabType.Config}
-      <Tab
-        classes={{
-          root: "rounded-t",
-        }}
-        on:click={() => (tabIndex = tabControl.index)}
-        selected={tabIndex === tabControl.index}
-      >
+      {:else if tabControl.type === Protocol.TabType.Config}
         <Tooltip title="Settings" offset={6}>Settings</Tooltip>
-        <Button
-          classes={{ root: "w-2 h-4 m-0 p-2" }}
-          on:click={onClickCloseTabSettings}
-        >
-          <span class="material-symbols-outlined text-xs">close</span>
-        </Button>
-      </Tab>
-    {:else if tabControl.type === Protocol.TabType.List}
-      <Tab
-        classes={{
-          root: "rounded-t",
-        }}
-        on:click={() => (tabIndex = tabControl.index)}
-        selected={tabIndex === tabControl.index}
-      >
+      {:else if tabControl.type === Protocol.TabType.List}
         <Tooltip title="File List" offset={6}>List</Tooltip>
-      </Tab>
-    {/if}
+      {:else if tabControl.type === Protocol.TabType.Details}
+        <Tooltip title={tabControl.value ?? ""} offset={6}>
+          {shrinkFileName(tabControl.value ?? "", 30)}
+        </Tooltip>
+      {/if}
+      {#if tabControl.type !== Protocol.TabType.List}
+        <Tooltip title="Close (Ctrl + W)" offset={6}>
+          <Button
+            classes={{ root: "w-2 h-4 m-0 p-2" }}
+            on:click={(event) => {
+              event.stopPropagation();
+              closeTab(tabControl.index);
+            }}
+          >
+            <span class="material-symbols-outlined text-xs">close</span>
+          </Button>
+        </Tooltip>
+      {/if}
+    </Tab>
   {/each}
   <svelte:fragment slot="content" let:value={tabIndex}>
     {#each tabControls as tabControl}
@@ -249,6 +306,8 @@
           <Config />
         {:else if tabControl.type === Protocol.TabType.List}
           <List />
+        {:else if tabControl.type === Protocol.TabType.Details}
+          <Details file={tabControl.value} />
         {/if}
       {/if}
     {/each}
