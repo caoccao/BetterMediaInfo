@@ -16,7 +16,7 @@
  	 *   limitations under the License.
  	 */
 
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { Button, ButtonGroup, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
@@ -38,6 +38,10 @@
 
   let files: string[] = [];
 
+  onDestroy(() => {
+    document.removeEventListener("keyup", onKeyUp);
+  });
+
   onMount(() => {
     mediaFiles.subscribe((value) => {
       files = value;
@@ -54,12 +58,27 @@
           ? BUTTON_CLASSES_NORMAL
           : BUTTON_CLASSES_VISIBLE;
     });
+    document.addEventListener("keyup", onKeyUp);
   });
 
   function clearFiles() {
     mediaFiles.set([]);
     mediaCommonPropertyMap.set(new Map());
     mediaStreamCountMap.set(new Map());
+  }
+
+  function onKeyUp(event: KeyboardEvent) {
+    if (!event.altKey && !event.ctrlKey && !event.shiftKey) {
+      if (event.key === "F10") {
+        event.stopPropagation();
+        selectTabSettings();
+      }
+    } else if (event.ctrlKey && !event.altKey && !event.shiftKey) {
+      if (event.key === "Delete") {
+        event.stopPropagation();
+        clearFiles();
+      }
+    }
   }
 
   function selectTabAbout() {
@@ -107,18 +126,18 @@
     </Tooltip>
   </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
-    <Tooltip title="Clear" offset={6}>
+    <Tooltip title="Clear (Ctrl + Delete)" offset={6}>
       <Button
         classes={{ root: BUTTON_CLASSES_NORMAL }}
         on:click={clearFiles}
         disabled={files.length == 0}
       >
-        <span class="material-symbols-outlined">contract_delete</span>
+        <span class="material-symbols-outlined">delete</span>
       </Button>
     </Tooltip>
   </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
-    <Tooltip title="Settings" offset={6}>
+    <Tooltip title="Settings (F10)" offset={6}>
       <Button
         classes={{ root: buttonSettingsClasses }}
         on:click={selectTabSettings}

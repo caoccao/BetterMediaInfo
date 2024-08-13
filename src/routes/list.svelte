@@ -572,15 +572,15 @@
           <div slot="contents">
             {#each COMMON_PROPERTIES_GROUP as commonProperties}
               {#if isStreamAvailable(commonProperties, file)}
-                <div class="flex flex-wrap pb-2">
+                <div class="flex flex-wrap gap-3 mb-1 py-1 border-b border-dashed">
                   {#each Object.entries(commonProperties) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
                       <Tooltip title={commonProperty[0]} offset={6}>
-                        <div class="flex">
+                        <div class="flex gap-2">
                           <div class="material-symbols-outlined h6">
                             {commonProperty[1]}
                           </div>
-                          <div class="h-6 px-2">
+                          <div class="h-6 text-wrap">
                             {fileToPropertyMap
                               .get(file)
                               ?.get(commonProperty[0])}
@@ -592,7 +592,7 @@
                 </div>
               {/if}
             {/each}
-            <div class="pb-2"></div>
+            <div class="pb-4"></div>
           </div>
         </Card>
       {/if}

@@ -72,8 +72,9 @@
         href="https://github.com/caoccao"
         target="_blank"
         class="text-blue-600 visited:text-purple-600 underline underline-offset-auto"
-        >Sam Cao</a
       >
+        Sam Cao
+      </a>
     </p>
   </div>
   <div class="my-3 grid grid-flow-col grid-cols-[auto,1fr] gap-2">

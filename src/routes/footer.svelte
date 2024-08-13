@@ -15,10 +15,19 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
+
+  const LINK_CLASS =
+    "text-blue-600 visited:text-purple-600 underline underline-offset-auto";
 </script>
 
 <div class="my-3 place-content-center grid">
   <div class="text-zinc-400">
-    © Copyright 2024 Sam Cao <a href="https://www.caoccao.com/">caoccao.com</a>
+    © Copyright 2024
+    <a href="https://github.com/caoccao" target="_blank" class={LINK_CLASS}>
+      Sam Cao
+    </a>
+    <a href="https://www.caoccao.com/" target="_blank" class={LINK_CLASS}>
+      caoccao.com
+    </a>
   </div>
 </div>
