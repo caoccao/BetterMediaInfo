@@ -16,10 +16,85 @@
     *   limitations under the License.
     */
 
-  export let file: string | null = null;
+  import { onMount } from "svelte";
+  import { Badge, Button, Card, Checkbox, Header, Tooltip } from "svelte-ux";
+  import * as Protocol from "../lib/protocol";
+  import { dialog, mediaFileToStreamCountMap } from "../lib/store";
+  import {
+    formatProperty,
+    formatResolution,
+    transformBitRate,
+    transformDuration,
+    transformSize,
+  } from "../lib/format";
+
+  export let file: string;
+
+  let fileToStreamCountMap: Map<
+    string,
+    Map<Protocol.StreamKind, Protocol.StreamCount>
+  > = new Map();
+
+  let streamGroup: Protocol.StreamKind[] = [];
+  let streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount> =
+    new Map();
+
+  onMount(() => {
+    mediaFileToStreamCountMap.subscribe((value) => {
+      fileToStreamCountMap = value;
+      streamCountMap = fileToStreamCountMap.get(file) ?? new Map();
+      onClickSelectAll();
+    });
+  });
+
+  function onClickSelectAll() {
+    streamGroup = [...streamCountMap.keys()];
+  }
+
+  function onClickSelectNone() {
+    streamGroup = [];
+  }
 </script>
 
-<div>
-  <p>{file}</p>
-  <p>TODO</p>
+<div class="grid gap-2">
+  <Card>
+    <Header title={file} slot="header" />
+    <div slot="actions">
+      <div class="flex flex-wrap gap-2 px-2 pb-2">
+        <Tooltip title="Select All" offset={6}>
+          <Button
+            classes={{ root: "w-4 h-8" }}
+            on:click={onClickSelectAll}
+            disabled={streamCountMap.size === streamGroup.length}
+          >
+            <span class="material-symbols-outlined">done_all</span>
+          </Button>
+        </Tooltip>
+        <Tooltip title="Select None" offset={6}>
+          <Button
+            classes={{ root: "w-4 h-8" }}
+            on:click={onClickSelectNone}
+            disabled={streamGroup.length === 0}
+          >
+            <span class="material-symbols-outlined">remove_done</span>
+          </Button>
+        </Tooltip>
+        <div class="flex flex-wrap gap-8 pl-4">
+          {#each Protocol.getStreamKinds() as streamKind}
+            {#if (streamCountMap.get(streamKind)?.count ?? 0) > 0}
+              <Badge value={streamCountMap.get(streamKind)?.count ?? 0}>
+                <Checkbox
+                  bind:group={streamGroup}
+                  value={streamKind}
+                  classes={{ root: "pr-4" }}
+                >
+                  {streamKind}
+                </Checkbox>
+              </Badge>
+            {/if}
+          {/each}
+        </div>
+      </div>
+    </div>
+  </Card>
 </div>

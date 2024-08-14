@@ -123,3 +123,16 @@ export function getConfigDirectoryModes(): ConfigDirectoryMode[] {
     ConfigDirectoryMode.Video,
   ];
 }
+
+export function getStreamKinds(): StreamKind[] {
+  return [
+    StreamKind.General,
+    StreamKind.Video,
+    StreamKind.Audio,
+    StreamKind.Text,
+    StreamKind.Other,
+    StreamKind.Image,
+    StreamKind.Menu,
+    StreamKind.Max,
+  ];
+}

@@ -307,7 +307,7 @@
         {:else if tabControl.type === Protocol.TabType.List}
           <List />
         {:else if tabControl.type === Protocol.TabType.Details}
-          <Details file={tabControl.value} />
+          <Details file={tabControl.value ?? ""} />
         {/if}
       {/if}
     {/each}
