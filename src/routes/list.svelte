@@ -195,6 +195,9 @@
     mediaFiles.update((existingFiles) => {
       return existingFiles.filter((value) => value !== file);
     });
+    mediaDetailedFiles.update((existingFiles) => {
+      return existingFiles.filter((value) => value !== file);
+    });
     mediaFileToCommonPropertyMap.update((value) => {
       value.delete(file);
       return value;
