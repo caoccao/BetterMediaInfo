@@ -79,18 +79,17 @@
             <span class="material-symbols-outlined">remove_done</span>
           </Button>
         </Tooltip>
-        <div class="flex flex-wrap gap-8 pl-4">
+        <div class="flex flex-wrap gap-4 pl-4">
           {#each Protocol.getStreamKinds() as streamKind}
             {#if (streamCountMap.get(streamKind)?.count ?? 0) > 0}
-              <Badge value={streamCountMap.get(streamKind)?.count ?? 0}>
-                <Checkbox
-                  bind:group={streamGroup}
-                  value={streamKind}
-                  classes={{ root: "pr-4" }}
-                >
-                  {streamKind}
-                </Checkbox>
-              </Badge>
+              <Checkbox bind:group={streamGroup} value={streamKind}>
+                <div class="flex gap-2">
+                  <div>{streamKind}</div>
+                  <div class="w-5 h-5 rounded-full border flex items-center justify-center text-center">
+                    {streamCountMap.get(streamKind)?.count ?? 0}
+                  </div>
+                </div>
+              </Checkbox>
             {/if}
           {/each}
         </div>
