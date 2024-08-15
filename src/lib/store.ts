@@ -32,6 +32,23 @@ export const config = Store.writable<Protocol.Config | null>(null, (set) => {
   };
 });
 
+export function deleteMediaFile(file: string) {
+  mediaFiles.update((existingFiles) => {
+    return existingFiles.filter((value) => value !== file);
+  });
+  mediaDetailedFiles.update((existingFiles) => {
+    return existingFiles.filter((value) => value !== file);
+  });
+  mediaFileToCommonPropertyMap.update((value) => {
+    value.delete(file);
+    return value;
+  });
+  mediaFileToStreamCountMap.update((value) => {
+    value.delete(file);
+    return value;
+  });
+}
+
 export const dialog = Store.writable<Protocol.Dialog | null>(null, (set) => {
   set(null);
   return () => {

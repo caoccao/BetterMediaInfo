@@ -20,6 +20,7 @@
   import { Button, Card, Header, TextField, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
+    deleteMediaFile,
     dialog,
     mediaDetailedFiles,
     mediaFiles,
@@ -190,23 +191,6 @@
       });
     });
   });
-
-  function deleteFile(file: string) {
-    mediaFiles.update((existingFiles) => {
-      return existingFiles.filter((value) => value !== file);
-    });
-    mediaDetailedFiles.update((existingFiles) => {
-      return existingFiles.filter((value) => value !== file);
-    });
-    mediaFileToCommonPropertyMap.update((value) => {
-      value.delete(file);
-      return value;
-    });
-    mediaFileToStreamCountMap.update((value) => {
-      value.delete(file);
-      return value;
-    });
-  }
 
   function generateFileToPropertyMap(
     query: string | null,
@@ -560,7 +544,7 @@
               <Tooltip title="Delete" offset={6}>
                 <Button
                   classes={{ root: BUTTON_CLASSES_ALERT }}
-                  on:click={() => deleteFile(file)}
+                  on:click={() => deleteMediaFile(file)}
                 >
                   <span class="material-symbols-outlined text-3xl">
                     delete
