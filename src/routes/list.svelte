@@ -98,7 +98,7 @@
 
   let fileToAllPropertiesMap: Map<
     string,
-    Array<Protocol.StreamProperties>
+    Array<Protocol.StreamPropertyMap>
   > = new Map();
 
   let fileToCommonPropertyMap: Map<

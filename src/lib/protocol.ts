@@ -100,11 +100,10 @@ export interface StreamProperty {
   property: String;
 }
 
-export interface StreamProperties {
+export interface StreamPropertyMap {
   stream: StreamKind;
   num: number;
-  inform: string | null;
-  properties: Array<PropertyValue>;
+  propertyMap: Record<string, string>;
 }
 
 export interface StreamPropertyValue {

@@ -35,7 +35,7 @@ async fn get_about() -> Result<protocol::About, String> {
 }
 
 #[tauri::command]
-async fn get_all_properties(file: String) -> Result<Vec<protocol::StreamProperties>, String> {
+async fn get_all_properties(file: String) -> Result<Vec<protocol::StreamPropertyMap>, String> {
   log::debug!("get_all_properties({})", file);
   controller::get_all_properties(file).await.map_err(convert_error)
 }

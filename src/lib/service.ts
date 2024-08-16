@@ -24,8 +24,8 @@ export async function getAbout(): Promise<Protocol.About> {
 
 export async function getAllProperties(
   file: string
-): Promise<Array<Protocol.StreamProperties>> {
-  return await invoke<Array<Protocol.StreamProperties>>("get_all_properties", {
+): Promise<Array<Protocol.StreamPropertyMap>> {
+  return await invoke<Array<Protocol.StreamPropertyMap>>("get_all_properties", {
     file: file,
   });
 }

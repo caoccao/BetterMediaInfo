@@ -82,7 +82,7 @@ export const mediaFiles = Store.writable<string[]>([], (set) => {
 });
 
 export const mediaFileToAllPropertiesMap = Store.writable<
-  Map<string, Array<Protocol.StreamProperties>>
+  Map<string, Array<Protocol.StreamPropertyMap>>
 >(new Map(), (set) => {
   set(new Map());
   return () => {

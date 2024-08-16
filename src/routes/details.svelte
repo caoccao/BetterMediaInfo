@@ -23,6 +23,7 @@
     Checkbox,
     ExpansionPanel,
     Header,
+    sort,
     Table,
     TextField,
     Tooltip,
@@ -42,11 +43,11 @@
 
   export let file: string;
 
-  let allProperties: Array<Protocol.StreamProperties> = [];
+  let allProperties: Array<Protocol.StreamPropertyMap> = [];
 
   let fileToAllPropertiesMap: Map<
     string,
-    Array<Protocol.StreamProperties>
+    Array<Protocol.StreamPropertyMap>
   > = new Map();
 
   let fileToStreamCountMap: Map<
@@ -62,39 +63,27 @@
 
   $: filteredAllProperties = allProperties
     .map((properties) => {
-      let newProperties: Protocol.StreamProperties;
+      let newProperties = properties;
       if (query && query.length > 0) {
         const lowerCasedQuery = query.toLowerCase();
+        const propertyMap: Record<string, string> = {};
+        Object.entries(properties.propertyMap).forEach(([key, value]) => {
+          if (
+            key.toLowerCase().includes(lowerCasedQuery) ||
+            value.toLowerCase().includes(lowerCasedQuery)
+          ) {
+            propertyMap[key] = value;
+          }
+        });
         newProperties = {
           stream: properties.stream,
           num: properties.num,
-          inform: null,
-          properties: properties.properties.filter(
-            (property) =>
-              property.property.toLowerCase().includes(lowerCasedQuery) ||
-              property.value.toLowerCase().includes(lowerCasedQuery)
-          ),
-        };
-      } else {
-        newProperties = {
-          stream: properties.stream,
-          num: properties.num,
-          inform: null,
-          properties: [...properties.properties],
+          propertyMap: propertyMap,
         };
       }
-      const propertyInform = newProperties.properties.find(
-        (property) => property.property === "Inform"
-      );
-      newProperties.inform = propertyInform?.value ?? null;
-      newProperties.properties = newProperties.properties.filter(
-        (property) => property !== propertyInform
-      );
       return newProperties;
     })
-    .filter(
-      (properties) => properties.inform || properties.properties.length > 0
-    );
+    .filter((properties) => Object.keys(properties.propertyMap).length > 0);
 
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
@@ -171,14 +160,19 @@
         />
         <div slot="contents">
           <div class="grid gap-2">
-            {#if properties.inform}
+            {#if properties.propertyMap["Inform"]}
               <ExpansionPanel classes={{ root: "p-2 border" }}>
                 <div slot="trigger" class="flex-1 px-3">Inform</div>
-                <pre>{properties.inform}</pre>
+                <pre>{properties.propertyMap["Inform"]}</pre>
               </ExpansionPanel>
             {/if}
             <Table
-              data={properties.properties}
+              data={Object.entries(properties.propertyMap)
+                .filter(([key, _value]) => key !== "Inform")
+                .map(([key, value]) => {
+                  return { property: key, value: value };
+                })
+                .toSorted((a, b) => a.property.localeCompare(b.property))}
               classes={{
                 table: "border-collapse border border-slate-500",
                 th: "border border-slate-600 p-2 bg-lime-50",
