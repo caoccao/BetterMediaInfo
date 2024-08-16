@@ -151,50 +151,130 @@
       </div>
     </div>
   </Card>
-  {#each filteredAllProperties as properties}
-    {#if streamGroup.includes(properties.stream)}
-      <Card>
-        <Header
-          title={`${properties.stream} (${properties.num + 1})`}
-          slot="header"
-        />
-        <div slot="contents">
-          <div class="grid gap-2">
-            {#if properties.propertyMap["Inform"]}
-              <ExpansionPanel classes={{ root: "p-2 border" }}>
-                <div slot="trigger" class="flex-1 px-3">Inform</div>
-                <pre>{properties.propertyMap["Inform"]}</pre>
-              </ExpansionPanel>
-            {/if}
-            <Table
-              data={Object.entries(properties.propertyMap)
-                .filter(([key, _value]) => key !== "Inform")
-                .map(([key, value]) => {
-                  return { property: key, value: value };
-                })
-                .toSorted((a, b) => a.property.localeCompare(b.property))}
-              classes={{
-                table: "border-collapse border border-slate-500",
-                th: "border border-slate-600 p-2 bg-lime-50",
-                td: "border border-slate-700 p-2",
-              }}
-              columns={[
-                {
-                  name: "property",
-                  header: "Property",
-                  align: "left",
-                },
-                {
-                  name: "value",
-                  header: "Value",
-                  align: "left",
-                },
-              ]}
-            />
-            <div class="pb-2"></div>
+  {#if filteredAllProperties.length === 0}
+    <div class="loader"></div>
+  {:else}
+    {#each filteredAllProperties as properties}
+      {#if streamGroup.includes(properties.stream)}
+        <Card>
+          <Header
+            title={`${properties.stream} (${properties.num + 1})`}
+            slot="header"
+          />
+          <div slot="contents">
+            <div class="grid gap-2">
+              {#if properties.propertyMap["Inform"]}
+                <ExpansionPanel classes={{ root: "p-2 border" }}>
+                  <div slot="trigger" class="flex-1 px-3">Inform</div>
+                  <pre>{properties.propertyMap["Inform"]}</pre>
+                </ExpansionPanel>
+              {/if}
+              <Table
+                data={Object.entries(properties.propertyMap)
+                  .filter(([key, _value]) => key !== "Inform")
+                  .map(([key, value]) => {
+                    return { property: key, value: value };
+                  })
+                  .toSorted((a, b) => a.property.localeCompare(b.property))}
+                classes={{
+                  table: "border-collapse border border-slate-500",
+                  th: "border border-slate-600 p-2 bg-lime-50",
+                  td: "border border-slate-700 p-2",
+                }}
+                columns={[
+                  {
+                    name: "property",
+                    header: "Property",
+                    align: "left",
+                  },
+                  {
+                    name: "value",
+                    header: "Value",
+                    align: "left",
+                  },
+                ]}
+              />
+              <div class="pb-2"></div>
+            </div>
           </div>
-        </div>
-      </Card>
-    {/if}
-  {/each}
+        </Card>
+      {/if}
+    {/each}
+  {/if}
 </div>
+
+<style>
+  .loader {
+    font-weight: bold;
+    font-family: monospace;
+    display: inline-grid;
+    font-size: 30px;
+  }
+  .loader:before,
+  .loader:after {
+    content: "Loading...";
+    grid-area: 1/1;
+    -webkit-mask-size:
+      2ch 100%,
+      100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: l37 3s infinite;
+  }
+  .loader:before {
+    -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  }
+  .loader:after {
+    -webkit-mask-image: linear-gradient(#000 0 0);
+    transform: scaleY(0.5);
+  }
+
+  @keyframes l37 {
+    0% {
+      -webkit-mask-position:
+        1ch 0,
+        0 0;
+    }
+    12.5% {
+      -webkit-mask-position:
+        100% 0,
+        0 0;
+    }
+    25% {
+      -webkit-mask-position:
+        4ch 0,
+        0 0;
+    }
+    37.5% {
+      -webkit-mask-position:
+        8ch 0,
+        0 0;
+    }
+    50% {
+      -webkit-mask-position:
+        2ch 0,
+        0 0;
+    }
+    62.5% {
+      -webkit-mask-position:
+        100% 0,
+        0 0;
+    }
+    75% {
+      -webkit-mask-position:
+        0ch 0,
+        0 0;
+    }
+    87.5% {
+      -webkit-mask-position:
+        6ch 0,
+        0 0;
+    }
+    100% {
+      -webkit-mask-position:
+        3ch 0,
+        0 0;
+    }
+  }
+</style>
