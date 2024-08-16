@@ -151,8 +151,10 @@
       </div>
     </div>
   </Card>
-  {#if filteredAllProperties.length === 0}
+  {#if allProperties.length == 0}
     <div class="loader"></div>
+  {:else if filteredAllProperties.length == 0}
+    <div class="grid place-content-center"><img src="images/empty.gif" alt="Not Found" /></div>
   {:else}
     {#each filteredAllProperties as properties}
       {#if streamGroup.includes(properties.stream)}
@@ -209,6 +211,7 @@
     font-family: monospace;
     display: inline-grid;
     font-size: 30px;
+    text-align: center;
   }
   .loader:before,
   .loader:after {
