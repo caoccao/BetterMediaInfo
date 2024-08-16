@@ -103,6 +103,7 @@ export interface StreamProperty {
 export interface StreamProperties {
   stream: StreamKind;
   num: number;
+  inform: string | null;
   properties: Array<PropertyValue>;
 }
 

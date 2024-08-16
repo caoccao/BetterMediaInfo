@@ -21,6 +21,7 @@
     Button,
     Card,
     Checkbox,
+    ExpansionPanel,
     Header,
     Table,
     TextField,
@@ -61,11 +62,13 @@
 
   $: filteredAllProperties = allProperties
     .map((properties) => {
+      let newProperties: Protocol.StreamProperties;
       if (query && query.length > 0) {
         const lowerCasedQuery = query.toLowerCase();
-        return {
+        newProperties = {
           stream: properties.stream,
           num: properties.num,
+          inform: null,
           properties: properties.properties.filter(
             (property) =>
               property.property.toLowerCase().includes(lowerCasedQuery) ||
@@ -73,10 +76,25 @@
           ),
         };
       } else {
-        return properties;
+        newProperties = {
+          stream: properties.stream,
+          num: properties.num,
+          inform: null,
+          properties: [...properties.properties],
+        };
       }
+      const propertyInform = newProperties.properties.find(
+        (property) => property.property === "Inform"
+      );
+      newProperties.inform = propertyInform?.value ?? null;
+      newProperties.properties = newProperties.properties.filter(
+        (property) => property !== propertyInform
+      );
+      return newProperties;
     })
-    .filter((properties) => properties.properties.length > 0);
+    .filter(
+      (properties) => properties.inform || properties.properties.length > 0
+    );
 
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
@@ -89,10 +107,6 @@
       onClickSelectAll();
     });
   });
-
-  function formatPropertyValue(value: any): string {
-    return `<pre>${value}</pre>`;
-  }
 
   function onClickSelectAll() {
     streamGroup = [...streamCountMap.keys()];
@@ -156,29 +170,35 @@
           slot="header"
         />
         <div slot="contents">
-          <Table
-            data={properties.properties}
-            classes={{
-              table: "border-collapse border border-slate-500",
-              th: "border border-slate-600 p-2 bg-lime-50",
-              td: "border border-slate-700 p-2",
-            }}
-            columns={[
-              {
-                name: "property",
-                header: "Property",
-                align: "left",
-              },
-              {
-                name: "value",
-                header: "Value",
-                align: "left",
-                html: true,
-                format: formatPropertyValue,
-              },
-            ]}
-          />
-          <div class="py-2"></div>
+          <div class="grid gap-2">
+            {#if properties.inform}
+              <ExpansionPanel classes={{ root: "p-2 border" }}>
+                <div slot="trigger" class="flex-1 px-3">Inform</div>
+                <pre>{properties.inform}</pre>
+              </ExpansionPanel>
+            {/if}
+            <Table
+              data={properties.properties}
+              classes={{
+                table: "border-collapse border border-slate-500",
+                th: "border border-slate-600 p-2 bg-lime-50",
+                td: "border border-slate-700 p-2",
+              }}
+              columns={[
+                {
+                  name: "property",
+                  header: "Property",
+                  align: "left",
+                },
+                {
+                  name: "value",
+                  header: "Value",
+                  align: "left",
+                },
+              ]}
+            />
+            <div class="pb-2"></div>
+          </div>
         </div>
       </Card>
     {/if}
