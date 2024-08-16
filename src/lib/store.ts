@@ -39,6 +39,10 @@ export function deleteMediaFile(file: string) {
   mediaDetailedFiles.update((existingFiles) => {
     return existingFiles.filter((value) => value !== file);
   });
+  mediaFileToAllPropertiesMap.update((value) => {
+    value.delete(file);
+    return value;
+  });
   mediaFileToCommonPropertyMap.update((value) => {
     value.delete(file);
     return value;
@@ -74,6 +78,15 @@ export const mediaFiles = Store.writable<string[]>([], (set) => {
   set([]);
   return () => {
     set([]);
+  };
+});
+
+export const mediaFileToAllPropertiesMap = Store.writable<
+  Map<string, Array<Protocol.StreamProperties>>
+>(new Map(), (set) => {
+  set(new Map());
+  return () => {
+    set(new Map());
   };
 });
 

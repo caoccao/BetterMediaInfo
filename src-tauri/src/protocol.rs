@@ -35,9 +35,23 @@ pub struct Parameter {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PropertyValue {
+  pub property: String,
+  pub value: String,
+}
+
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StreamCount {
   pub stream: media_info::MediaInfoStreamKind,
   pub count: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct StreamProperties {
+  pub stream: media_info::MediaInfoStreamKind,
+  pub num: i32,
+  pub properties: Vec<PropertyValue>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

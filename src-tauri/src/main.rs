@@ -35,6 +35,12 @@ async fn get_about() -> Result<protocol::About, String> {
 }
 
 #[tauri::command]
+async fn get_all_properties(file: String) -> Result<Vec<protocol::StreamProperties>, String> {
+  log::debug!("get_all_properties({})", file);
+  controller::get_all_properties(file).await.map_err(convert_error)
+}
+
+#[tauri::command]
 async fn get_config() -> Result<config::Config, String> {
   log::debug!("get_config");
   controller::get_config().await.map_err(convert_error)
@@ -58,7 +64,9 @@ async fn get_properties(
   properties: Vec<protocol::StreamProperty>,
 ) -> Result<Vec<protocol::StreamPropertyValue>, String> {
   log::debug!("get_properties({}, {:?})", file, properties);
-  controller::get_properties(file, properties).await.map_err(convert_error)
+  controller::get_properties(file, properties)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
@@ -78,6 +86,7 @@ fn main() {
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       get_about,
+      get_all_properties,
       get_config,
       get_properties,
       get_files,

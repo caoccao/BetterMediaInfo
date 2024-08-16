@@ -17,7 +17,7 @@
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use crate::config;
@@ -33,6 +33,20 @@ static ALL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
   Stream::parse(info_parameters)
 });
 
+static ALL_PROPERTIES_MAP: Lazy<HashMap<MediaInfoStreamKind, Vec<String>>> = Lazy::new(|| {
+  let mut all_properties_map = HashMap::new();
+  for stream_kind in MediaInfoStreamKind::values() {
+    all_properties_map.insert(*stream_kind, Vec::new());
+  }
+  ALL_STREAMS.iter().for_each(|stream| {
+    let parameters = all_properties_map
+      .get_mut(&stream.stream_kind)
+      .expect("Failed to get properties.");
+    parameters.push(stream.parameter.clone());
+  });
+  all_properties_map
+});
+
 pub async fn get_about() -> Result<About> {
   let media_info = MediaInfo::new();
   let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion)?;
@@ -41,6 +55,39 @@ pub async fn get_about() -> Result<About> {
     app_version,
     media_info_version,
   })
+}
+
+pub async fn get_all_properties(file: String) -> Result<Vec<StreamProperties>> {
+  let path = Path::new(file.as_str());
+  validate_path_as_file(path)?;
+  let media_info_file = MediaInfoFile::new(path);
+  let mut stream_properties_list: Vec<StreamProperties> = Vec::new();
+  for stream_kind in MediaInfoStreamKind::values() {
+    let stream_count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
+    if stream_count > 0 {
+      for parameters in ALL_PROPERTIES_MAP.get(&stream_kind).iter() {
+        for num in 0..stream_count {
+          let mut properties: Vec<PropertyValue> = Vec::new();
+          for parameter in parameters.iter() {
+            let stream = Stream::new(stream_kind.clone(), parameter.to_owned());
+            let value = stream.get(&media_info_file.media_info, num as usize)?;
+            if !value.is_empty() {
+              properties.push(PropertyValue {
+                property: parameter.to_owned(),
+                value,
+              });
+            }
+          }
+          stream_properties_list.push(StreamProperties {
+            stream: stream_kind.clone(),
+            num,
+            properties,
+          })
+        }
+      }
+    }
+  }
+  Ok(stream_properties_list)
 }
 
 pub async fn get_config() -> Result<config::Config> {
@@ -97,10 +144,10 @@ pub async fn get_stream_count(file: String) -> Result<Vec<StreamCount>> {
   let media_info_file = MediaInfoFile::new(path);
   let mut stream_counts = Vec::new();
   for stream_kind in MediaInfoStreamKind::values() {
-    let count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
+    let stream_count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
     stream_counts.push(StreamCount {
       stream: *stream_kind,
-      count,
+      count: stream_count,
     });
   }
   Ok(stream_counts)

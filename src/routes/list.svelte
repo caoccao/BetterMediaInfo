@@ -22,13 +22,18 @@
   import {
     deleteMediaFile,
     dialog,
+    mediaFileToAllPropertiesMap,
     mediaDetailedFiles,
     mediaFiles,
     mediaFileToCommonPropertyMap,
     mediaFileToStreamCountMap,
   } from "../lib/store";
   import * as Protocol from "../lib/protocol";
-  import { getPropertyMap, getStreamCountMap } from "../lib/service";
+  import {
+    getAllProperties,
+    getPropertyMap,
+    getStreamCountMap,
+  } from "../lib/service";
   import {
     formatProperty,
     formatResolution,
@@ -78,15 +83,23 @@
     "Text - StreamSize": "hard_drive",
   };
 
-  const COMMON_PROPERTIES_GROUP = [
-    COMMON_PROPERTIES_GENERAL,
-    COMMON_PROPERTIES_VIDEO,
-    COMMON_PROPERTIES_AUDIO,
-    COMMON_PROPERTIES_TEXT,
-  ];
+  const COMMON_PROPERTIES_MAP = new Map<
+    Protocol.StreamKind,
+    Record<string, string>
+  >([
+    [Protocol.StreamKind.General, COMMON_PROPERTIES_GENERAL],
+    [Protocol.StreamKind.Video, COMMON_PROPERTIES_VIDEO],
+    [Protocol.StreamKind.Audio, COMMON_PROPERTIES_AUDIO],
+    [Protocol.StreamKind.Text, COMMON_PROPERTIES_TEXT],
+  ]);
 
   let files: string[] = [];
   let query: string | null = null;
+
+  let fileToAllPropertiesMap: Map<
+    string,
+    Array<Protocol.StreamProperties>
+  > = new Map();
 
   let fileToCommonPropertyMap: Map<
     string,
@@ -105,6 +118,9 @@
   );
 
   onMount(() => {
+    mediaFileToAllPropertiesMap.subscribe((value) => {
+      fileToAllPropertiesMap = value;
+    });
     mediaFileToStreamCountMap.subscribe((value) => {
       fileToStreamCountMap = value;
     });
@@ -427,41 +443,6 @@
     return fileMap;
   }
 
-  function isStreamAvailable(
-    properties: Record<string, string>,
-    file: string
-  ): boolean {
-    if (
-      properties === COMMON_PROPERTIES_GENERAL &&
-      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.General)
-        ?.count ?? 0) > 0
-    ) {
-      return true;
-    }
-    if (
-      properties === COMMON_PROPERTIES_VIDEO &&
-      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Video)?.count ??
-        0) > 0
-    ) {
-      return true;
-    }
-    if (
-      properties === COMMON_PROPERTIES_AUDIO &&
-      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Audio)?.count ??
-        0) > 0
-    ) {
-      return true;
-    }
-    if (
-      properties === COMMON_PROPERTIES_TEXT &&
-      (fileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Text)?.count ??
-        0) > 0
-    ) {
-      return true;
-    }
-    return false;
-  }
-
   function openDetails(file: string) {
     mediaDetailedFiles.update((detailedFiles) => {
       if (detailedFiles.includes(file)) {
@@ -470,6 +451,22 @@
         return [...detailedFiles, file];
       }
     });
+    if (!fileToAllPropertiesMap.has(file)) {
+      getAllProperties(file)
+        .then((value) => {
+          mediaFileToAllPropertiesMap.update((map) => {
+            map.set(file, value);
+            return map;
+          });
+          dialog.set(null);
+        })
+        .catch((error) => {
+          dialog.set({
+            title: error as string,
+            type: Protocol.DialogType.Error,
+          });
+        });
+    }
   }
 
   function propertiesToString(properties: string[]): string {
@@ -554,12 +551,14 @@
             </div>
           </Header>
           <div slot="contents">
-            {#each COMMON_PROPERTIES_GROUP as commonProperties}
-              {#if isStreamAvailable(commonProperties, file)}
+            {#each [...COMMON_PROPERTIES_MAP.entries()] as commonPropertiesEntry}
+              {#if (fileToStreamCountMap
+                .get(file)
+                ?.get(commonPropertiesEntry[0])?.count ?? 0) > 0}
                 <div
                   class="flex flex-wrap gap-3 mb-1 py-1 border-b border-dashed"
                 >
-                  {#each Object.entries(commonProperties) as commonProperty}
+                  {#each Object.entries(commonPropertiesEntry[1]) as commonProperty}
                     {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
                       <Tooltip title={commonProperty[0]} offset={6}>
                         <div class="flex gap-2">

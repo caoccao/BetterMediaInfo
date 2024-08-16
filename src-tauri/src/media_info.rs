@@ -107,7 +107,7 @@ impl MediaInfoSetOption {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub enum MediaInfoStreamKind {
   General = 0,
   Video,

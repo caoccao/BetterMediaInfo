@@ -17,9 +17,20 @@
     */
 
   import { onMount } from "svelte";
-  import { Badge, Button, Card, Checkbox, Header, Tooltip } from "svelte-ux";
+  import {
+    Button,
+    Card,
+    Checkbox,
+    Header,
+    Table,
+    TextField,
+    Tooltip,
+  } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
-  import { dialog, mediaFileToStreamCountMap } from "../lib/store";
+  import {
+    mediaFileToAllPropertiesMap,
+    mediaFileToStreamCountMap,
+  } from "../lib/store";
   import {
     formatProperty,
     formatResolution,
@@ -30,22 +41,58 @@
 
   export let file: string;
 
+  let allProperties: Array<Protocol.StreamProperties> = [];
+
+  let fileToAllPropertiesMap: Map<
+    string,
+    Array<Protocol.StreamProperties>
+  > = new Map();
+
   let fileToStreamCountMap: Map<
     string,
     Map<Protocol.StreamKind, Protocol.StreamCount>
   > = new Map();
 
+  let query: string | null = null;
+
   let streamGroup: Protocol.StreamKind[] = [];
   let streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount> =
     new Map();
 
+  $: filteredAllProperties = allProperties
+    .map((properties) => {
+      if (query && query.length > 0) {
+        const lowerCasedQuery = query.toLowerCase();
+        return {
+          stream: properties.stream,
+          num: properties.num,
+          properties: properties.properties.filter(
+            (property) =>
+              property.property.toLowerCase().includes(lowerCasedQuery) ||
+              property.value.toLowerCase().includes(lowerCasedQuery)
+          ),
+        };
+      } else {
+        return properties;
+      }
+    })
+    .filter((properties) => properties.properties.length > 0);
+
   onMount(() => {
+    mediaFileToAllPropertiesMap.subscribe((value) => {
+      fileToAllPropertiesMap = value;
+      allProperties = fileToAllPropertiesMap.get(file) ?? [];
+    });
     mediaFileToStreamCountMap.subscribe((value) => {
       fileToStreamCountMap = value;
       streamCountMap = fileToStreamCountMap.get(file) ?? new Map();
       onClickSelectAll();
     });
   });
+
+  function formatPropertyValue(value: any): string {
+    return `<pre>${value}</pre>`;
+  }
 
   function onClickSelectAll() {
     streamGroup = [...streamCountMap.keys()];
@@ -60,40 +107,80 @@
   <Card>
     <Header title={file} slot="header" />
     <div slot="actions">
-      <div class="flex flex-wrap gap-2 px-2 pb-2">
-        <Tooltip title="Select All" offset={6}>
-          <Button
-            classes={{ root: "w-4 h-8" }}
-            on:click={onClickSelectAll}
-            disabled={streamCountMap.size === streamGroup.length}
-          >
-            <span class="material-symbols-outlined">done_all</span>
-          </Button>
-        </Tooltip>
-        <Tooltip title="Select None" offset={6}>
-          <Button
-            classes={{ root: "w-4 h-8" }}
-            on:click={onClickSelectNone}
-            disabled={streamGroup.length === 0}
-          >
-            <span class="material-symbols-outlined">remove_done</span>
-          </Button>
-        </Tooltip>
-        <div class="flex flex-wrap gap-4 pl-4">
-          {#each Protocol.getStreamKinds() as streamKind}
-            {#if (streamCountMap.get(streamKind)?.count ?? 0) > 0}
-              <Checkbox bind:group={streamGroup} value={streamKind}>
-                <div class="flex gap-2">
-                  <div>{streamKind}</div>
-                  <div class="w-5 h-5 rounded-full border flex items-center justify-center text-center">
-                    {streamCountMap.get(streamKind)?.count ?? 0}
+      <div class="grid gap-2 px-2 pb-2">
+        <div class="flex flex-wrap gap-2">
+          <Tooltip title="Select All" offset={6}>
+            <Button
+              classes={{ root: "w-4 h-8" }}
+              on:click={onClickSelectAll}
+              disabled={streamCountMap.size === streamGroup.length}
+            >
+              <span class="material-symbols-outlined">done_all</span>
+            </Button>
+          </Tooltip>
+          <Tooltip title="Select None" offset={6}>
+            <Button
+              classes={{ root: "w-4 h-8" }}
+              on:click={onClickSelectNone}
+              disabled={streamGroup.length === 0}
+            >
+              <span class="material-symbols-outlined">remove_done</span>
+            </Button>
+          </Tooltip>
+          <div class="flex flex-wrap gap-4 pl-4">
+            {#each Protocol.getStreamKinds() as streamKind}
+              {#if (streamCountMap.get(streamKind)?.count ?? 0) > 0}
+                <Checkbox bind:group={streamGroup} value={streamKind}>
+                  <div class="flex gap-2">
+                    <div>{streamKind}</div>
+                    <div
+                      class="w-5 h-5 rounded-full border flex items-center justify-center text-center"
+                    >
+                      {streamCountMap.get(streamKind)?.count ?? 0}
+                    </div>
                   </div>
-                </div>
-              </Checkbox>
-            {/if}
-          {/each}
+                </Checkbox>
+              {/if}
+            {/each}
+          </div>
         </div>
+        <TextField placeholder="Filter" bind:value={query} clearable />
       </div>
     </div>
   </Card>
+  {#each filteredAllProperties as properties}
+    {#if streamGroup.includes(properties.stream)}
+      <Card>
+        <Header
+          title={`${properties.stream} (${properties.num + 1})`}
+          slot="header"
+        />
+        <div slot="contents">
+          <Table
+            data={properties.properties}
+            classes={{
+              table: "border-collapse border border-slate-500",
+              th: "border border-slate-600 p-2 bg-lime-50",
+              td: "border border-slate-700 p-2",
+            }}
+            columns={[
+              {
+                name: "property",
+                header: "Property",
+                align: "left",
+              },
+              {
+                name: "value",
+                header: "Value",
+                align: "left",
+                html: true,
+                format: formatPropertyValue,
+              },
+            ]}
+          />
+          <div class="py-2"></div>
+        </div>
+      </Card>
+    {/if}
+  {/each}
 </div>

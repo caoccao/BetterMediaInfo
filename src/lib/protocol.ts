@@ -73,6 +73,11 @@ export interface Parameter {
   property: string;
 }
 
+export interface PropertyValue {
+  property: string;
+  value: string;
+}
+
 export interface StreamCount {
   stream: StreamKind;
   count: number;
@@ -93,6 +98,12 @@ export interface StreamProperty {
   stream: StreamKind;
   num: number;
   property: String;
+}
+
+export interface StreamProperties {
+  stream: StreamKind;
+  num: number;
+  properties: Array<PropertyValue>;
 }
 
 export interface StreamPropertyValue {
