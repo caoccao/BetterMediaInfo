@@ -154,7 +154,9 @@
   {#if allProperties.length == 0}
     <div class="loader"></div>
   {:else if filteredAllProperties.length == 0}
-    <div class="grid place-content-center"><img src="images/empty.gif" alt="Not Found" /></div>
+    <div class="grid place-content-center">
+      <img src="images/empty.gif" alt="Not Found" />
+    </div>
   {:else}
     {#each filteredAllProperties as properties}
       {#if streamGroup.includes(properties.stream)}
@@ -164,40 +166,30 @@
             slot="header"
           />
           <div slot="contents">
-            <div class="grid gap-2">
-              {#if properties.propertyMap["Inform"]}
-                <ExpansionPanel classes={{ root: "p-2 border" }}>
-                  <div slot="trigger" class="flex-1 px-3">Inform</div>
-                  <pre>{properties.propertyMap["Inform"]}</pre>
-                </ExpansionPanel>
-              {/if}
-              <Table
-                data={Object.entries(properties.propertyMap)
-                  .filter(([key, _value]) => key !== "Inform")
-                  .map(([key, value]) => {
-                    return { property: key, value: value };
-                  })
-                  .toSorted((a, b) => a.property.localeCompare(b.property))}
-                classes={{
-                  table: "border-collapse border border-slate-500",
-                  th: "border border-slate-600 p-2 bg-lime-50",
-                  td: "border border-slate-700 p-2",
-                }}
-                columns={[
-                  {
-                    name: "property",
-                    header: "Property",
-                    align: "left",
-                  },
-                  {
-                    name: "value",
-                    header: "Value",
-                    align: "left",
-                  },
-                ]}
-              />
-              <div class="pb-2"></div>
-            </div>
+            <Table
+              data={Object.entries(properties.propertyMap)
+                .map(([key, value]) => {
+                  return { property: key, value: value };
+                })
+                .toSorted((a, b) => a.property.localeCompare(b.property))}
+              classes={{
+                table: "border-collapse border border-slate-500 mb-4",
+                th: "border border-slate-600 p-2 bg-lime-50",
+                td: "border border-slate-700 p-2 font-mono whitespace-pre-wrap",
+              }}
+              columns={[
+                {
+                  name: "property",
+                  header: "Property",
+                  align: "left",
+                },
+                {
+                  name: "value",
+                  header: "Value",
+                  align: "left",
+                },
+              ]}
+            />
           </div>
         </Card>
       {/if}

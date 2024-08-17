@@ -20,8 +20,17 @@
     "text-blue-600 visited:text-purple-600 underline underline-offset-auto";
 </script>
 
-<div class="my-3 place-content-center grid">
-  <div class="text-zinc-400">
+<div class="my-3 text-zinc-400 place-content-center text-center grid gap-2">
+  <div>
+    <a
+      href="https://paypal.me/caoccao?locale.x=en_US"
+      target="_blank"
+      class={LINK_CLASS}
+    >
+      Donate to Support the Development
+    </a>
+  </div>
+  <div>
     © Copyright 2024
     <a href="https://github.com/caoccao" target="_blank" class={LINK_CLASS}>
       Sam Cao

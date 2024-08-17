@@ -134,6 +134,29 @@ export function getConfigDirectoryModes(): ConfigDirectoryMode[] {
   ];
 }
 
+export function getStreamKindIndex(streamKind: StreamKind): number {
+  switch (streamKind) {
+    case StreamKind.General:
+      return 0;
+    case StreamKind.Video:
+      return 1;
+    case StreamKind.Audio:
+      return 2;
+    case StreamKind.Text:
+      return 3;
+    case StreamKind.Other:
+      return 4;
+    case StreamKind.Image:
+      return 5;
+    case StreamKind.Menu:
+      return 6;
+    case StreamKind.Max:
+      return 7;
+    default:
+      return 0;
+  }
+}
+
 export function getStreamKinds(): StreamKind[] {
   return [
     StreamKind.General,

@@ -184,7 +184,6 @@
                 file,
                 properties
               );
-              console.log(commonPropertyMap);
               fileToCommonPropertyMap.set(file, commonPropertyMap);
               mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
             } catch (error) {
