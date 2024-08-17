@@ -17,6 +17,7 @@
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
@@ -138,10 +139,7 @@ pub async fn get_parameters() -> Result<Vec<Parameter>> {
   )
 }
 
-pub async fn get_properties(
-  file: String,
-  properties: Option<Vec<StreamProperty>>,
-) -> Result<Vec<StreamPropertyMap>> {
+pub async fn get_properties(file: String, properties: Option<Vec<StreamProperty>>) -> Result<Vec<StreamPropertyMap>> {
   let path = Path::new(file.as_str());
   validate_path_as_file(path)?;
   let media_info_file = MediaInfoFile::new(path);
@@ -182,6 +180,14 @@ pub async fn get_properties(
       }
     }
   }
+  stream_property_maps.sort_by(|a, b| {
+    let ordering = a.stream.cmp(&b.stream);
+    if ordering == Ordering::Equal {
+      a.num.cmp(&b.num)
+    } else {
+      ordering
+    }
+  });
   Ok(stream_property_maps)
 }
 

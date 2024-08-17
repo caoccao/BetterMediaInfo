@@ -40,23 +40,10 @@ export async function getPropertiesMap(
   file: string,
   properties: Array<Protocol.StreamProperty> | null
 ): Promise<Array<Protocol.StreamPropertyMap>> {
-  const propertyMaps = await invoke<Array<Protocol.StreamPropertyMap>>(
-    "get_properties",
-    {
-      file: file,
-      properties: properties,
-    }
-  );
-  propertyMaps.sort((a, b) => {
-    const aStreamKindIndex = Protocol.getStreamKindIndex(a.stream);
-    const bStreamKindIndex = Protocol.getStreamKindIndex(b.stream);
-    if (aStreamKindIndex == bStreamKindIndex) {
-      return a.num - b.num;
-    } else {
-      return aStreamKindIndex - bStreamKindIndex;
-    }
+  return await invoke<Array<Protocol.StreamPropertyMap>>("get_properties", {
+    file: file,
+    properties: properties,
   });
-  return propertyMaps;
 }
 
 export async function getStreamCountMap(
