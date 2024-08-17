@@ -19,6 +19,23 @@ git clone https://github.com/MediaArea/ZenLib.git
 brew install autoconf automake libtool pkg-config zlib wxwidgets
 ```
 
+* Download zlib.
+
+```sh
+curl -o zlib.tar.gz https://www.zlib.net/zlib-1.3.1.tar.gz
+tar -xzvf zlib.tar.gz
+mv zlib-1.3.1 ZLib
+rm zlib.tar.gz
+```
+
+* Build ZLib.
+
+```sh
+cd ZLib
+./configure --static
+make -j`nproc`
+```
+
 * Build ZenLib.
 
 ```sh
