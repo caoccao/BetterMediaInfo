@@ -57,36 +57,6 @@ pub async fn get_about() -> Result<About> {
   })
 }
 
-pub async fn get_all_properties(file: String) -> Result<Vec<StreamPropertyMap>> {
-  let path = Path::new(file.as_str());
-  validate_path_as_file(path)?;
-  let media_info_file = MediaInfoFile::new(path);
-  let mut stream_property_maps: Vec<StreamPropertyMap> = Vec::new();
-  for stream_kind in MediaInfoStreamKind::values() {
-    let stream_count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
-    if stream_count > 0 {
-      for parameters in ALL_PROPERTIES_MAP.get(&stream_kind).iter() {
-        for num in 0..stream_count {
-          let mut property_map: HashMap<String, String> = HashMap::new();
-          for parameter in parameters.iter() {
-            let stream = Stream::new(stream_kind.clone(), parameter.to_owned());
-            let value = stream.get(&media_info_file.media_info, num as usize)?;
-            if !value.is_empty() {
-              property_map.insert(parameter.to_owned(), value);
-            }
-          }
-          stream_property_maps.push(StreamPropertyMap {
-            stream: stream_kind.clone(),
-            num,
-            property_map,
-          })
-        }
-      }
-    }
-  }
-  Ok(stream_property_maps)
-}
-
 pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
@@ -168,24 +138,51 @@ pub async fn get_parameters() -> Result<Vec<Parameter>> {
   )
 }
 
-pub async fn get_properties(file: String, properties: Vec<StreamProperty>) -> Result<Vec<StreamPropertyValue>> {
+pub async fn get_properties(
+  file: String,
+  properties: Option<Vec<StreamProperty>>,
+) -> Result<Vec<StreamPropertyMap>> {
   let path = Path::new(file.as_str());
   validate_path_as_file(path)?;
   let media_info_file = MediaInfoFile::new(path);
-  let mut new_properties = Vec::new();
-  for property in properties {
-    let stream = Stream::new(property.stream, property.property.clone());
-    let value = stream.get(&media_info_file.media_info, property.num as usize)?;
-    if !value.is_empty() {
-      new_properties.push(StreamPropertyValue {
-        stream: property.stream,
-        num: property.num,
-        property: property.property,
-        value,
+  let mut stream_property_maps: Vec<StreamPropertyMap> = Vec::new();
+  let properties_map = match properties {
+    Some(properties) => {
+      let mut properties_map: HashMap<MediaInfoStreamKind, Vec<String>> = HashMap::new();
+      properties.into_iter().for_each(|property| {
+        if !properties_map.contains_key(&property.stream) {
+          properties_map.insert(property.stream.clone(), Vec::new());
+        }
+        let properties = properties_map.get_mut(&property.stream).unwrap();
+        properties.push(property.property);
       });
+      properties_map
+    }
+    None => ALL_PROPERTIES_MAP.clone(),
+  };
+  for stream_kind in properties_map.keys() {
+    let stream_count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
+    if stream_count > 0 {
+      for parameters in properties_map.get(&stream_kind).iter() {
+        for num in 0..stream_count {
+          let mut property_map: HashMap<String, String> = HashMap::new();
+          for parameter in parameters.iter() {
+            let stream = Stream::new(stream_kind.clone(), parameter.to_owned());
+            let value = stream.get(&media_info_file.media_info, num as usize)?;
+            if !value.is_empty() {
+              property_map.insert(parameter.to_owned(), value);
+            }
+          }
+          stream_property_maps.push(StreamPropertyMap {
+            stream: stream_kind.clone(),
+            num,
+            property_map,
+          })
+        }
+      }
     }
   }
-  Ok(new_properties)
+  Ok(stream_property_maps)
 }
 
 pub async fn set_config(config: config::Config) -> Result<config::Config> {

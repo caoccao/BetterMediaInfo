@@ -22,14 +22,6 @@ export async function getAbout(): Promise<Protocol.About> {
   return await invoke<Protocol.About>("get_about");
 }
 
-export async function getAllProperties(
-  file: string
-): Promise<Array<Protocol.StreamPropertyMap>> {
-  return await invoke<Array<Protocol.StreamPropertyMap>>("get_all_properties", {
-    file: file,
-  });
-}
-
 export async function getConfig(): Promise<Protocol.Config> {
   return await invoke<Protocol.Config>("get_config");
 }
@@ -44,25 +36,14 @@ export async function getParameters(): Promise<Array<Protocol.Parameter>> {
   return await invoke<Array<Protocol.Parameter>>("get_parameters");
 }
 
-export async function getPropertyMap(
+export async function getPropertiesMap(
   file: string,
-  properties: Array<Protocol.StreamProperty>
-): Promise<Map<string, Protocol.StreamPropertyValue>> {
-  const propertyMap = new Map<string, Protocol.StreamPropertyValue>();
-  const streamProperties = await invoke<Protocol.StreamPropertyValue[]>(
-    "get_properties",
-    {
-      file: file,
-      properties: properties,
-    }
-  );
-  streamProperties.forEach((property) => {
-    propertyMap.set(
-      `${property.stream}/${property.num}/${property.property}`,
-      property
-    );
+  properties: Array<Protocol.StreamProperty> | null
+): Promise<Array<Protocol.StreamPropertyMap>> {
+  return await invoke<Array<Protocol.StreamPropertyMap>>("get_properties", {
+    file: file,
+    properties: properties,
   });
-  return propertyMap;
 }
 
 export async function getStreamCountMap(

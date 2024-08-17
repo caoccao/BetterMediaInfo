@@ -91,7 +91,7 @@ export const mediaFileToAllPropertiesMap = Store.writable<
 });
 
 export const mediaFileToCommonPropertyMap = Store.writable<
-  Map<string, Map<string, Protocol.StreamPropertyValue>>
+  Map<string, Array<Protocol.StreamPropertyMap>>
 >(new Map(), (set) => {
   set(new Map());
   return () => {

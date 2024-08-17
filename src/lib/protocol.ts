@@ -96,7 +96,6 @@ export enum StreamKind {
 
 export interface StreamProperty {
   stream: StreamKind;
-  num: number;
   property: String;
 }
 

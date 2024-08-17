@@ -30,8 +30,7 @@
   } from "../lib/store";
   import * as Protocol from "../lib/protocol";
   import {
-    getAllProperties,
-    getPropertyMap,
+    getPropertiesMap,
     getStreamCountMap,
   } from "../lib/service";
   import {
@@ -103,7 +102,7 @@
 
   let fileToCommonPropertyMap: Map<
     string,
-    Map<string, Protocol.StreamPropertyValue>
+    Array<Protocol.StreamPropertyMap>
   > = new Map();
   let fileToStreamCountMap: Map<
     string,
@@ -148,51 +147,44 @@
           }
         }
         if (!fileToCommonPropertyMap.has(file)) {
-          let generalStreamCount =
-            streamCountMap.get(Protocol.StreamKind.General)?.count ?? 0;
-          let videoStreamCount =
-            streamCountMap.get(Protocol.StreamKind.Video)?.count ?? 0;
-          let audioStreamCount =
-            streamCountMap.get(Protocol.StreamKind.Audio)?.count ?? 0;
-          let textStreamCount =
-            streamCountMap.get(Protocol.StreamKind.Text)?.count ?? 0;
           const properties: Array<Protocol.StreamProperty> = [];
-          pushProperties(
-            properties,
-            Protocol.StreamKind.General,
-            generalStreamCount,
-            ["Duration", "Format", "FileSize", "Title", "Encoded_Date"]
-          );
-          pushProperties(
-            properties,
-            Protocol.StreamKind.Video,
-            videoStreamCount,
-            [
-              "BitRate",
-              "Format",
-              "FrameRate",
-              "Height",
-              "Language",
-              "ScanType",
-              "StreamSize",
-              "Width",
-            ]
-          );
-          pushProperties(
-            properties,
-            Protocol.StreamKind.Audio,
-            audioStreamCount,
-            ["BitRate", "BitRate_Mode", "Format", "Language", "StreamSize"]
-          );
-          pushProperties(
-            properties,
-            Protocol.StreamKind.Text,
-            textStreamCount,
-            ["BitRate", "Format", "Language", "StreamSize"]
-          );
+          pushProperties(properties, Protocol.StreamKind.General, [
+            "Duration",
+            "Format",
+            "FileSize",
+            "Title",
+            "Encoded_Date",
+          ]);
+          pushProperties(properties, Protocol.StreamKind.Video, [
+            "BitRate",
+            "Format",
+            "FrameRate",
+            "Height",
+            "Language",
+            "ScanType",
+            "StreamSize",
+            "Width",
+          ]);
+          pushProperties(properties, Protocol.StreamKind.Audio, [
+            "BitRate",
+            "BitRate_Mode",
+            "Format",
+            "Language",
+            "StreamSize",
+          ]);
+          pushProperties(properties, Protocol.StreamKind.Text, [
+            "BitRate",
+            "Format",
+            "Language",
+            "StreamSize",
+          ]);
           if (properties.length > 0) {
             try {
-              const commonPropertyMap = await getPropertyMap(file, properties);
+              const commonPropertyMap = await getPropertiesMap(
+                file,
+                properties
+              );
+              console.log(commonPropertyMap);
               fileToCommonPropertyMap.set(file, commonPropertyMap);
               mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
             } catch (error) {
@@ -212,215 +204,144 @@
     query: string | null,
     files: string[],
     streamCountMap: Map<string, Map<Protocol.StreamKind, Protocol.StreamCount>>,
-    commonPropertyMap: Map<string, Map<string, Protocol.StreamPropertyValue>>
+    commonPropertyMap: Map<string, Array<Protocol.StreamPropertyMap>>
   ): Map<string, Map<string, string>> {
     const fileMap = new Map<string, Map<string, string>>();
     files
       .filter((file) => streamCountMap.has(file) && commonPropertyMap.has(file))
       .forEach((file) => {
         const map = new Map<string, string>();
-        const countMap = streamCountMap.get(file) as Map<
-          Protocol.StreamKind,
-          Protocol.StreamCount
-        >;
-        const propertyMap = commonPropertyMap.get(file) as Map<
-          string,
-          Protocol.StreamPropertyValue
-        >;
-        const generalStreamCount =
-          countMap.get(Protocol.StreamKind.General)?.count ?? 0;
-        const videoStreamCount =
-          countMap.get(Protocol.StreamKind.Video)?.count ?? 0;
-        const audioStreamCount =
-          countMap.get(Protocol.StreamKind.Audio)?.count ?? 0;
-        const textStreamCount =
-          countMap.get(Protocol.StreamKind.Text)?.count ?? 0;
-        if (generalStreamCount > 0) {
-          if (propertyMap.has("General/0/Duration")) {
+        const propertyMaps = commonPropertyMap.get(
+          file
+        ) as Array<Protocol.StreamPropertyMap>;
+        const generalPropertyMaps = propertyMaps.filter(
+          (propertyMap) => propertyMap.stream === Protocol.StreamKind.General
+        );
+        const videoPropertyMaps = propertyMaps.filter(
+          (propertyMap) => propertyMap.stream === Protocol.StreamKind.Video
+        );
+        const audioPropertyMaps = propertyMaps.filter(
+          (propertyMap) => propertyMap.stream === Protocol.StreamKind.Audio
+        );
+        const textPropertyMaps = propertyMaps.filter(
+          (propertyMap) => propertyMap.stream === Protocol.StreamKind.Text
+        );
+        if (generalPropertyMaps.length > 0) {
+          if (generalPropertyMaps[0].propertyMap["Duration"]) {
             map.set(
               "General - Duration",
               propertiesToString(
                 formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.General,
-                  generalStreamCount,
+                  generalPropertyMaps,
                   "Duration",
                   transformDuration
                 )
               )
             );
           }
-          if (propertyMap.has("General/0/FileSize")) {
+          if (generalPropertyMaps[0].propertyMap["FileSize"]) {
             map.set(
               "General - FileSize",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.General,
-                  generalStreamCount,
-                  "FileSize",
-                  transformSize
-                )
+                formatProperty(generalPropertyMaps, "FileSize", transformSize)
               )
             );
           }
           ["Format", "Title", "Encoded_Date"].forEach((property) => {
-            if (propertyMap.has(`General/0/${property}`)) {
+            if (generalPropertyMaps[0].propertyMap[property]) {
               map.set(
                 `General - ${property}`,
                 propertiesToString(
-                  formatProperty(
-                    propertyMap,
-                    Protocol.StreamKind.General,
-                    generalStreamCount,
-                    property
-                  )
+                  formatProperty(generalPropertyMaps, property)
                 )
               );
             }
           });
         }
-        if (videoStreamCount > 0) {
-          if (propertyMap.has("Video/0/Width")) {
+        if (videoPropertyMaps.length > 0) {
+          if (videoPropertyMaps[0].propertyMap["Width"]) {
             map.set(
               "Video - Resolution",
-              propertiesToString(
-                formatResolution(propertyMap, videoStreamCount)
-              )
+              propertiesToString(formatResolution(videoPropertyMaps))
             );
           }
-          if (propertyMap.has("Video/0/BitRate")) {
+          if (videoPropertyMaps[0].propertyMap["BitRate"]) {
             map.set(
               "Video - BitRate",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.Video,
-                  videoStreamCount,
-                  "BitRate",
-                  transformBitRate
-                )
+                formatProperty(videoPropertyMaps, "BitRate", transformBitRate)
               )
             );
           }
-          if (propertyMap.has("Video/0/StreamSize")) {
+          if (videoPropertyMaps[0].propertyMap["StreamSize"]) {
             map.set(
               "Video - StreamSize",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.Video,
-                  videoStreamCount,
-                  "StreamSize",
-                  transformSize
-                )
+                formatProperty(videoPropertyMaps, "StreamSize", transformSize)
               )
             );
           }
           ["Format", "FrameRate", "Language", "ScanType"].forEach(
             (property) => {
-              if (propertyMap.has(`Video/0/${property}`)) {
+              if (videoPropertyMaps[0].propertyMap[property]) {
                 map.set(
                   `Video - ${property}`,
                   propertiesToString(
-                    formatProperty(
-                      propertyMap,
-                      Protocol.StreamKind.Video,
-                      videoStreamCount,
-                      property
-                    )
+                    formatProperty(videoPropertyMaps, property)
                   )
                 );
               }
             }
           );
         }
-        if (audioStreamCount > 0) {
-          if (propertyMap.has("Audio/0/BitRate")) {
+        if (audioPropertyMaps.length > 0) {
+          if (audioPropertyMaps[0].propertyMap["BitRate"]) {
             map.set(
               "Audio - BitRate",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.Audio,
-                  audioStreamCount,
-                  "BitRate",
-                  transformBitRate
-                )
+                formatProperty(audioPropertyMaps, "BitRate", transformBitRate)
               )
             );
           }
-          if (propertyMap.has("Audio/0/StreamSize")) {
+          if (audioPropertyMaps[0].propertyMap["StreamSize"]) {
             map.set(
               "Audio - StreamSize",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.Audio,
-                  audioStreamCount,
-                  "StreamSize",
-                  transformSize
-                )
+                formatProperty(audioPropertyMaps, "StreamSize", transformSize)
               )
             );
           }
           ["Format", "BitRate_Mode", "Language"].forEach((property) => {
-            if (propertyMap.has(`Audio/0/${property}`)) {
+            if (audioPropertyMaps[0].propertyMap[property]) {
               map.set(
                 `Audio - ${property}`,
-                propertiesToString(
-                  formatProperty(
-                    propertyMap,
-                    Protocol.StreamKind.Audio,
-                    audioStreamCount,
-                    property
-                  )
-                )
+                propertiesToString(formatProperty(audioPropertyMaps, property))
               );
             }
           });
         }
-        if (textStreamCount > 0) {
-          if (propertyMap.has("Text/0/BitRate")) {
+        if (textPropertyMaps.length > 0) {
+          if (textPropertyMaps[0].propertyMap["BitRate"]) {
             map.set(
               "Text - BitRate",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.Text,
-                  textStreamCount,
-                  "BitRate",
-                  transformBitRate
-                )
+                formatProperty(textPropertyMaps, "BitRate", transformBitRate)
               )
             );
           }
-          if (propertyMap.has("Text/0/StreamSize")) {
+          if (textPropertyMaps[0].propertyMap["StreamSize"]) {
             map.set(
               "Text - StreamSize",
               propertiesToString(
-                formatProperty(
-                  propertyMap,
-                  Protocol.StreamKind.Text,
-                  textStreamCount,
-                  "StreamSize",
-                  transformSize
-                )
+                formatProperty(textPropertyMaps, "StreamSize", transformSize)
               )
             );
           }
           ["Format", "Language"].forEach((property) => {
-            if (propertyMap.has(`Text/0/${property}`)) {
+            if (textPropertyMaps[0].propertyMap[property]) {
               map.set(
                 `Text - ${property}`,
-                propertiesToString(
-                  formatProperty(
-                    propertyMap,
-                    Protocol.StreamKind.Text,
-                    textStreamCount,
-                    property
-                  )
-                )
+                propertiesToString(formatProperty(textPropertyMaps, property))
               );
             }
           });
@@ -452,7 +373,7 @@
       }
     });
     if (!fileToAllPropertiesMap.has(file)) {
-      getAllProperties(file)
+      getPropertiesMap(file, null)
         .then((value) => {
           mediaFileToAllPropertiesMap.update((map) => {
             map.set(file, value);
@@ -476,20 +397,14 @@
   function pushProperties(
     properties: Array<Protocol.StreamProperty>,
     stream: Protocol.StreamKind,
-    streamCount: number,
     keys: string[]
   ) {
-    if (streamCount > 0) {
-      for (let i = 0; i < streamCount; i++) {
-        keys.forEach((key) => {
-          properties.push({
-            stream: stream,
-            num: i,
-            property: key,
-          });
-        });
-      }
-    }
+    keys.forEach((key) => {
+      properties.push({
+        stream: stream,
+        property: key,
+      });
+    });
   }
 </script>
 
