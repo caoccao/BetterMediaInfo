@@ -28,12 +28,16 @@ use serde::{Deserialize, Serialize};
 use std::os::raw;
 use std::path::{Path, PathBuf};
 use std::usize;
+use widestring::WideCString;
 
 use crate::streams::*;
 
 type mi_kind = raw::c_int;
 type mi_void = raw::c_void;
+#[cfg(target_os = "windows")]
 type mi_wchar = u16;
+#[cfg(target_os = "macos")]
+type mi_wchar = u32;
 
 const DEFAULT_OPTION_VALUE: &str = "";
 
@@ -54,8 +58,8 @@ extern "C" {
   fn MediaInfo_Option(handle: *mut mi_void, option: *const mi_wchar, value: *const mi_wchar) -> *const mi_wchar;
 }
 
-fn to_wchars(s: &str) -> Vec<u16> {
-  s.encode_utf16().chain(Some(0).into_iter()).collect()
+fn to_wchars(s: &str) -> Vec<mi_wchar> {
+  WideCString::from_str_truncate(s).into_vec()
 }
 
 fn from_wchars(pointer: *const mi_wchar) -> String {
@@ -67,8 +71,7 @@ fn from_wchars(pointer: *const mi_wchar) -> String {
     }
     length += 1;
   }
-  let wcstr = unsafe { std::slice::from_raw_parts(pointer, length) };
-  String::from_utf16_lossy(wcstr)
+  unsafe { WideCString::from_ptr_truncate(pointer, length) }.to_string_lossy()
 }
 
 #[derive(Debug, Clone, Copy)]
