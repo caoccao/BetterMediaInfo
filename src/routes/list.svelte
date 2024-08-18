@@ -44,6 +44,18 @@
     name: string;
   }
 
+  function createFormat(
+    name: string,
+    format: (
+      value: any,
+      rowData: string,
+      rowIndex: number
+    ) => string = transformDefault,
+    header: string | null = null
+  ): PropertyFormat {
+    return { format, header, name };
+  }
+
   const BUTTON_CLASSES_ALERT =
     "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-red-500";
   const BUTTON_CLASSES_NORMAL =
@@ -52,43 +64,43 @@
     "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyFormat> = [
-    { format: transformDefault, header: "🆔", name: "@id" },
-    { format: transformDefault, header: "🖺️ Format", name: "Format" },
-    { format: transformSize, header: "🗃️ File Size", name: "FileSize" },
-    { format: transformDuration, header: "⏱️ Duration", name: "Duration" },
-    { format: transformDefault, header: "📖 Title", name: "Title" },
-    { format: transformDefault, header: "Encoded Date", name: "Encoded_Date" },
+    createFormat("@id", transformDefault, "ID"),
+    createFormat("Format"),
+    createFormat("FileSize", transformSize, "File Size"),
+    createFormat("Duration", transformDuration),
+    createFormat("Title"),
+    createFormat("Encoded_Date", transformDefault, "Encoded Date"),
   ];
 
   const COMMON_PROPERTIES_VIDEO: Array<PropertyFormat> = [
-    { format: transformDefault, header: "🆔", name: "@id" },
-    { format: transformDefault, header: "🎞️ Format", name: "Format" },
-    { format: transformDefault, header: "🌐 Language", name: "Language" },
-    { format: transformDefault, header: "📖 Title", name: "Title" },
-    { format: transformDefault, header: "🖥️ Resolution", name: "Resolution" },
-    { format: transformDefault, header: "Frame Rate", name: "FrameRate" },
-    { format: transformBitRate, header: "Bit Rate", name: "BitRate" },
-    { format: transformSize, header: "💽 Stream Size", name: "StreamSize" },
-    { format: transformDefault, header: "Scan Type", name: "ScanType" },
+    createFormat("@id", transformDefault, "ID"),
+    createFormat("Format"),
+    createFormat("Language"),
+    createFormat("Title"),
+    createFormat("Resolution"),
+    createFormat("ScanType", transformDefault, "Scan Type"),
+    createFormat("FrameRate", transformDefault, "Frame Rate"),
+    createFormat("BitRate", transformBitRate, "Bit Rate"),
+    createFormat("StreamSize", transformSize, "Stream Size"),
   ];
 
   const COMMON_PROPERTIES_AUDIO: Array<PropertyFormat> = [
-    { format: transformDefault, header: "🆔", name: "@id" },
-    { format: transformDefault, header: "🎵 Format", name: "Format" },
-    { format: transformDefault, header: "🌐 Language", name: "Language" },
-    { format: transformDefault, header: "📖 Title", name: "Title" },
-    { format: transformDefault, header: "Bit Rate Mode", name: "BitRate_Mode" },
-    { format: transformBitRate, header: "Bit Rate", name: "BitRate" },
-    { format: transformSize, header: "💽 Stream Size", name: "StreamSize" },
+    createFormat("@id", transformDefault, "ID"),
+    createFormat("Format"),
+    createFormat("Language"),
+    createFormat("Title"),
+    createFormat("BitRate_Mode", transformDefault, "Bit Rate Mode"),
+    createFormat("BitRate", transformBitRate, "Bit Rate"),
+    createFormat("StreamSize", transformSize, "Stream Size"),
   ];
 
   const COMMON_PROPERTIES_TEXT: Array<PropertyFormat> = [
-    { format: transformDefault, header: "🆔", name: "@id" },
-    { format: transformDefault, header: "🖹 Format", name: "Format" },
-    { format: transformDefault, header: "🌐 Language", name: "Language" },
-    { format: transformDefault, header: "📖 Title", name: "Title" },
-    { format: transformBitRate, header: "Bit Rate", name: "BitRate" },
-    { format: transformSize, header: "💽 Stream Size", name: "StreamSize" },
+    createFormat("@id", transformDefault, "ID"),
+    createFormat("Format"),
+    createFormat("Language"),
+    createFormat("Title"),
+    createFormat("BitRate", transformBitRate, "Bit Rate"),
+    createFormat("StreamSize", transformSize, "Stream Size"),
   ];
 
   const COMMON_PROPERTIES_MAP = new Map<
