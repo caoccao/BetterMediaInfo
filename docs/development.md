@@ -65,8 +65,17 @@ move zlib-1.3.1 ZLib
 del zlib.zip
 ```
 
+* Build ZLib.
+
+```sh
+cd ZLib
+md build
+cd build
+cmake -A x64 ..\
+cmake --build . --config Release
+```
+
 * Open `MediaInfoLib\Project\MSVC2022\MediaInfoLib.sln` in Visual Studio 2022 and build the release version.
-* The release version is at `MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll`.
 
 ## Generate bindings.rs on Windows
 

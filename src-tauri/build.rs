@@ -94,7 +94,6 @@ fn main() {
       source_path: "ZLib".to_owned(),
     };
     z_lib.link(root_path);
-    z_lib.deploy(root_path);
 
     let zen_lib = ExternalLib {
       is_static: true,
@@ -103,18 +102,9 @@ fn main() {
       source_path: "ZenLib/Project/GNU/Library/.libs".to_owned(),
     };
     zen_lib.link(root_path);
-    zen_lib.deploy(root_path);
 
     println!("cargo:rustc-link-lib=c++");
   }
-
-  #[cfg(target_os = "windows")]
-  let media_info_lib = ExternalLib {
-    is_static: false,
-    file_name: "MediaInfo.dll".to_owned(),
-    lib_name: "MediaInfo".to_owned(),
-    source_path: "MediaInfoLib\\Project\\MSVC2022\\x64\\Release".to_owned(),
-  };
 
   #[cfg(target_os = "macos")]
   let media_info_lib = ExternalLib {
@@ -122,6 +112,14 @@ fn main() {
     file_name: "libmediainfo.a".to_owned(),
     lib_name: "mediainfo".to_owned(),
     source_path: "MediaInfoLib/Project/GNU/Library/.libs".to_owned(),
+  };
+
+  #[cfg(target_os = "windows")]
+  let media_info_lib = ExternalLib {
+    is_static: false,
+    file_name: "MediaInfo.dll".to_owned(),
+    lib_name: "MediaInfo".to_owned(),
+    source_path: "MediaInfoLib\\Project\\MSVC2022\\x64\\Release".to_owned(),
   };
 
   media_info_lib.link(root_path);
