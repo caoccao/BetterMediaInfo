@@ -64,7 +64,6 @@
     "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyFormat> = [
-    createFormat("@id", transformDefault, "ID"),
     createFormat("Format"),
     createFormat("FileSize", transformSize, "File Size"),
     createFormat("Duration", transformDuration),
@@ -73,7 +72,7 @@
   ];
 
   const COMMON_PROPERTIES_VIDEO: Array<PropertyFormat> = [
-    createFormat("@id", transformDefault, "ID"),
+    createFormat("ID"),
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
@@ -85,7 +84,7 @@
   ];
 
   const COMMON_PROPERTIES_AUDIO: Array<PropertyFormat> = [
-    createFormat("@id", transformDefault, "ID"),
+    createFormat("ID"),
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
@@ -95,7 +94,7 @@
   ];
 
   const COMMON_PROPERTIES_TEXT: Array<PropertyFormat> = [
-    createFormat("@id", transformDefault, "ID"),
+    createFormat("ID"),
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
@@ -358,11 +357,7 @@
                   data={fileToPropertyMap
                     .get(file)
                     ?.filter((map) => map.stream === commonPropertiesEntry[0])
-                    ?.map((map) => map.propertyMap)
-                    ?.map((map, index) => {
-                      map["@id"] = `${index + 1}`;
-                      return map;
-                    })}
+                    ?.map((map) => map.propertyMap)}
                   columns={commonPropertiesEntry[1].map((property) => {
                     return {
                       name: property.name,

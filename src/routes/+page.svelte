@@ -246,9 +246,23 @@
 
   function onKeyUp(event: KeyboardEvent) {
     if (event.ctrlKey && !event.altKey && !event.shiftKey) {
-      if (event.key === "w") {
+      if (event.key >= "1" && event.key <= "9") {
+        const newTabIndex = parseInt(event.key) - 1;
+        if (newTabIndex >= 0 && newTabIndex < tabControls.length) {
+          event.stopPropagation();
+          tabIndex = newTabIndex;
+        }
+      } else if (event.key === "w") {
         event.stopPropagation();
         closeTab(tabIndex);
+      } else if (event.key === "Tab") {
+        event.stopPropagation();
+        tabIndex = tabIndex >= tabControls.length - 1 ? 0 : tabIndex + 1;
+      }
+    } else if (event.ctrlKey && !event.altKey && event.shiftKey) {
+      if (event.key === "Tab") {
+        event.stopPropagation();
+        tabIndex = tabIndex > 0 ? tabIndex - 1 : tabControls.length - 1;
       }
     }
   }
@@ -324,11 +338,7 @@
 >
   <div slot="title">{dialogTitle}</div>
   <div slot="actions">
-    <Button
-      variant="fill-light"
-      color="primary"
-      classes={{ root: "w-24" }}
-    >
+    <Button variant="fill-light" color="primary" classes={{ root: "w-24" }}>
       Close
     </Button>
   </div>
