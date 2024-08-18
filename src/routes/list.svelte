@@ -157,6 +157,10 @@
         }
         if (!fileToCommonPropertyMap.has(file)) {
           const properties = [...COMMON_PROPERTIES_MAP.entries()]
+            .filter(
+              ([stream, _propertyFormat]) =>
+                (streamCountMap.get(stream)?.count ?? 0) > 0
+            )
             .map(([stream, propertyFormat]) =>
               propertyFormat.map((property) => {
                 return {
@@ -168,16 +172,20 @@
             .flat();
           if (properties.length > 0) {
             try {
-              properties.push(
-                {
-                  stream: Protocol.StreamKind.Video,
-                  property: "Width",
-                },
-                {
-                  stream: Protocol.StreamKind.Video,
-                  property: "Height",
-                }
-              );
+              if (
+                (streamCountMap.get(Protocol.StreamKind.Video)?.count ?? 0) > 0
+              ) {
+                properties.push(
+                  {
+                    stream: Protocol.StreamKind.Video,
+                    property: "Width",
+                  },
+                  {
+                    stream: Protocol.StreamKind.Video,
+                    property: "Height",
+                  }
+                );
+              }
               const commonPropertyMap = await getPropertiesMap(
                 file,
                 properties
