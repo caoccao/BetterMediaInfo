@@ -168,6 +168,16 @@
             .flat();
           if (properties.length > 0) {
             try {
+              properties.push(
+                {
+                  stream: Protocol.StreamKind.Video,
+                  property: "Width",
+                },
+                {
+                  stream: Protocol.StreamKind.Video,
+                  property: "Height",
+                }
+              );
               const commonPropertyMap = await getPropertiesMap(
                 file,
                 properties
@@ -175,6 +185,7 @@
               commonPropertyMap
                 .filter((map) => map.stream === Protocol.StreamKind.Video)
                 .forEach((map) => {
+                  console.log(map);
                   if (map.propertyMap["Height"] && map.propertyMap["Width"]) {
                     map.propertyMap["Resolution"] =
                       `${map.propertyMap["Width"]}x${map.propertyMap["Height"]}`;

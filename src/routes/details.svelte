@@ -31,13 +31,6 @@
     mediaFileToAllPropertiesMap,
     mediaFileToStreamCountMap,
   } from "../lib/store";
-  import {
-    formatProperty,
-    formatResolution,
-    transformBitRate,
-    transformDuration,
-    transformSize,
-  } from "../lib/format";
 
   export let file: string;
 
