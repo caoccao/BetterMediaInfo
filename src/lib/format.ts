@@ -17,37 +17,6 @@
 
 import * as Protocol from "../lib/protocol";
 
-export function formatProperty(
-  propertyMaps: Array<Protocol.StreamPropertyMap>,
-  key: string,
-  transformer: ((value: string) => string) | undefined = undefined
-): string[] {
-  return propertyMaps
-    .filter((propertyMap) => propertyMap.propertyMap[key])
-    .map((propertyMap) => {
-      const value = propertyMap.propertyMap[key];
-      if (transformer) {
-        return transformer(value);
-      }
-      return value;
-    });
-}
-
-export function formatResolution(
-  propertyMaps: Array<Protocol.StreamPropertyMap>
-): string[] {
-  const widths = formatProperty(propertyMaps, "Width");
-  const heights = formatProperty(propertyMaps, "Height");
-  let results: Array<string> = [];
-  const length = Math.max(widths.length, heights.length);
-  for (let i = 0; i < length; ++i) {
-    const width = i < widths.length ? widths[i] : "0";
-    const height = i < heights.length ? heights[i] : "0";
-    results.push(`${width}x${height}`);
-  }
-  return results;
-}
-
 export function formatStreamCount(
   streamCountMap: Map<string, Protocol.StreamCount> | undefined
 ): string {
@@ -68,7 +37,10 @@ export function shrinkFileName(fileName: string, maxLength: number): string {
   return fileName;
 }
 
-export function transformBitRate(value: string): string {
+export function transformBitRate(value: string | undefined | null): string {
+  if (!value) {
+    return "";
+  }
   const bitRate = parseInt(value);
   if (bitRate > 1000000) {
     return `${trimFractionZeros((bitRate / 1000000.0).toFixed(2))}Mbps`;
@@ -79,7 +51,14 @@ export function transformBitRate(value: string): string {
   return `${value}bps`;
 }
 
-export function transformDuration(value: string): string {
+export function transformDefault(value: string | undefined | null): string {
+  return value ? value : "";
+}
+
+export function transformDuration(value: string | undefined | null): string {
+  if (!value) {
+    return "";
+  }
   const items: Array<string> = [];
   const duration = parseInt(value);
   const totalSeconds = Math.floor(duration / 1000.0);
@@ -103,7 +82,10 @@ export function transformDuration(value: string): string {
   return items.join(", ");
 }
 
-export function transformSize(value: string): string {
+export function transformSize(value: string | undefined | null): string {
+  if (!value) {
+    return "";
+  }
   const size = parseInt(value);
   if (size > 1 << 30) {
     return `${trimFractionZeros((size / (1 << 30)).toFixed(2))}GB`;

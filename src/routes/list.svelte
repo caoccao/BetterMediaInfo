@@ -17,7 +17,7 @@
     */
 
   import { onMount } from "svelte";
-  import { Button, Card, Header, TextField, Tooltip } from "svelte-ux";
+  import { Button, Card, Header, Table, TextField, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     deleteMediaFile,
@@ -29,18 +29,20 @@
     mediaFileToStreamCountMap,
   } from "../lib/store";
   import * as Protocol from "../lib/protocol";
+  import { getPropertiesMap, getStreamCountMap } from "../lib/service";
   import {
-    getPropertiesMap,
-    getStreamCountMap,
-  } from "../lib/service";
-  import {
-    formatProperty,
-    formatResolution,
     formatStreamCount,
     transformBitRate,
+    transformDefault,
     transformDuration,
     transformSize,
   } from "../lib/format";
+
+  interface PropertyFormat {
+    format: (value: any, rowData: string, rowIndex: number) => string;
+    header: string | null;
+    name: string;
+  }
 
   const BUTTON_CLASSES_ALERT =
     "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-red-500";
@@ -49,42 +51,49 @@
   const BUTTON_CLASSES_TOOLBAR =
     "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
-  const COMMON_PROPERTIES_GENERAL: Record<string, string> = {
-    "General - Format": "newsmode",
-    "General - FileSize": "hard_drive",
-    "General - Duration": "schedule",
-    "General - Title": "title",
-    "General - Encoded_Date": "calendar_month",
-  };
+  const COMMON_PROPERTIES_GENERAL: Array<PropertyFormat> = [
+    { format: transformDefault, header: "🆔", name: "@id" },
+    { format: transformDefault, header: "🖺️ Format", name: "Format" },
+    { format: transformSize, header: "🗃️ File Size", name: "FileSize" },
+    { format: transformDuration, header: "⏱️ Duration", name: "Duration" },
+    { format: transformDefault, header: "📖 Title", name: "Title" },
+    { format: transformDefault, header: "Encoded Date", name: "Encoded_Date" },
+  ];
 
-  const COMMON_PROPERTIES_VIDEO: Record<string, string> = {
-    "Video - Format": "wallpaper",
-    "Video - Language": "language",
-    "Video - Resolution": "movie",
-    "Video - FrameRate": "acute",
-    "Video - BitRate": "health_metrics",
-    "Video - StreamSize": "hard_drive",
-    "Video - ScanType": "satellite",
-  };
+  const COMMON_PROPERTIES_VIDEO: Array<PropertyFormat> = [
+    { format: transformDefault, header: "🆔", name: "@id" },
+    { format: transformDefault, header: "🎞️ Format", name: "Format" },
+    { format: transformDefault, header: "🌐 Language", name: "Language" },
+    { format: transformDefault, header: "📖 Title", name: "Title" },
+    { format: transformDefault, header: "🖥️ Resolution", name: "Resolution" },
+    { format: transformDefault, header: "Frame Rate", name: "FrameRate" },
+    { format: transformBitRate, header: "Bit Rate", name: "BitRate" },
+    { format: transformSize, header: "💽 Stream Size", name: "StreamSize" },
+    { format: transformDefault, header: "Scan Type", name: "ScanType" },
+  ];
 
-  const COMMON_PROPERTIES_AUDIO: Record<string, string> = {
-    "Audio - Format": "volume_up",
-    "Audio - Language": "language",
-    "Audio - BitRate_Mode": "newsmode",
-    "Audio - BitRate": "health_metrics",
-    "Audio - StreamSize": "hard_drive",
-  };
+  const COMMON_PROPERTIES_AUDIO: Array<PropertyFormat> = [
+    { format: transformDefault, header: "🆔", name: "@id" },
+    { format: transformDefault, header: "🎵 Format", name: "Format" },
+    { format: transformDefault, header: "🌐 Language", name: "Language" },
+    { format: transformDefault, header: "📖 Title", name: "Title" },
+    { format: transformDefault, header: "Bit Rate Mode", name: "BitRate_Mode" },
+    { format: transformBitRate, header: "Bit Rate", name: "BitRate" },
+    { format: transformSize, header: "💽 Stream Size", name: "StreamSize" },
+  ];
 
-  const COMMON_PROPERTIES_TEXT: Record<string, string> = {
-    "Text - Format": "subtitles",
-    "Text - Language": "language",
-    "Text - BitRate": "health_metrics",
-    "Text - StreamSize": "hard_drive",
-  };
+  const COMMON_PROPERTIES_TEXT: Array<PropertyFormat> = [
+    { format: transformDefault, header: "🆔", name: "@id" },
+    { format: transformDefault, header: "🖹 Format", name: "Format" },
+    { format: transformDefault, header: "🌐 Language", name: "Language" },
+    { format: transformDefault, header: "📖 Title", name: "Title" },
+    { format: transformBitRate, header: "Bit Rate", name: "BitRate" },
+    { format: transformSize, header: "💽 Stream Size", name: "StreamSize" },
+  ];
 
   const COMMON_PROPERTIES_MAP = new Map<
     Protocol.StreamKind,
-    Record<string, string>
+    Array<PropertyFormat>
   >([
     [Protocol.StreamKind.General, COMMON_PROPERTIES_GENERAL],
     [Protocol.StreamKind.Video, COMMON_PROPERTIES_VIDEO],
@@ -147,43 +156,30 @@
           }
         }
         if (!fileToCommonPropertyMap.has(file)) {
-          const properties: Array<Protocol.StreamProperty> = [];
-          pushProperties(properties, Protocol.StreamKind.General, [
-            "Duration",
-            "Format",
-            "FileSize",
-            "Title",
-            "Encoded_Date",
-          ]);
-          pushProperties(properties, Protocol.StreamKind.Video, [
-            "BitRate",
-            "Format",
-            "FrameRate",
-            "Height",
-            "Language",
-            "ScanType",
-            "StreamSize",
-            "Width",
-          ]);
-          pushProperties(properties, Protocol.StreamKind.Audio, [
-            "BitRate",
-            "BitRate_Mode",
-            "Format",
-            "Language",
-            "StreamSize",
-          ]);
-          pushProperties(properties, Protocol.StreamKind.Text, [
-            "BitRate",
-            "Format",
-            "Language",
-            "StreamSize",
-          ]);
+          const properties = [...COMMON_PROPERTIES_MAP.entries()]
+            .map(([stream, propertyFormat]) =>
+              propertyFormat.map((property) => {
+                return {
+                  stream: stream,
+                  property: property.name,
+                };
+              })
+            )
+            .flat();
           if (properties.length > 0) {
             try {
               const commonPropertyMap = await getPropertiesMap(
                 file,
                 properties
               );
+              commonPropertyMap
+                .filter((map) => map.stream === Protocol.StreamKind.Video)
+                .forEach((map) => {
+                  if (map.propertyMap["Height"] && map.propertyMap["Width"]) {
+                    map.propertyMap["Resolution"] =
+                      `${map.propertyMap["Width"]}x${map.propertyMap["Height"]}`;
+                  }
+                });
               fileToCommonPropertyMap.set(file, commonPropertyMap);
               mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
             } catch (error) {
@@ -204,160 +200,29 @@
     files: string[],
     streamCountMap: Map<string, Map<Protocol.StreamKind, Protocol.StreamCount>>,
     commonPropertyMap: Map<string, Array<Protocol.StreamPropertyMap>>
-  ): Map<string, Map<string, string>> {
-    const fileMap = new Map<string, Map<string, string>>();
+  ): Map<string, Array<Protocol.StreamPropertyMap>> {
+    const fileMap = new Map<string, Array<Protocol.StreamPropertyMap>>();
     files
       .filter((file) => streamCountMap.has(file) && commonPropertyMap.has(file))
       .forEach((file) => {
-        const map = new Map<string, string>();
-        const propertyMaps = commonPropertyMap.get(
+        const maps = commonPropertyMap.get(
           file
         ) as Array<Protocol.StreamPropertyMap>;
-        const generalPropertyMaps = propertyMaps.filter(
-          (propertyMap) => propertyMap.stream === Protocol.StreamKind.General
-        );
-        const videoPropertyMaps = propertyMaps.filter(
-          (propertyMap) => propertyMap.stream === Protocol.StreamKind.Video
-        );
-        const audioPropertyMaps = propertyMaps.filter(
-          (propertyMap) => propertyMap.stream === Protocol.StreamKind.Audio
-        );
-        const textPropertyMaps = propertyMaps.filter(
-          (propertyMap) => propertyMap.stream === Protocol.StreamKind.Text
-        );
-        if (generalPropertyMaps.length > 0) {
-          if (generalPropertyMaps[0].propertyMap["Duration"]) {
-            map.set(
-              "General - Duration",
-              propertiesToString(
-                formatProperty(
-                  generalPropertyMaps,
-                  "Duration",
-                  transformDuration
-                )
-              )
-            );
-          }
-          if (generalPropertyMaps[0].propertyMap["FileSize"]) {
-            map.set(
-              "General - FileSize",
-              propertiesToString(
-                formatProperty(generalPropertyMaps, "FileSize", transformSize)
-              )
-            );
-          }
-          ["Format", "Title", "Encoded_Date"].forEach((property) => {
-            if (generalPropertyMaps[0].propertyMap[property]) {
-              map.set(
-                `General - ${property}`,
-                propertiesToString(
-                  formatProperty(generalPropertyMaps, property)
-                )
-              );
-            }
-          });
-        }
-        if (videoPropertyMaps.length > 0) {
-          if (videoPropertyMaps[0].propertyMap["Width"]) {
-            map.set(
-              "Video - Resolution",
-              propertiesToString(formatResolution(videoPropertyMaps))
-            );
-          }
-          if (videoPropertyMaps[0].propertyMap["BitRate"]) {
-            map.set(
-              "Video - BitRate",
-              propertiesToString(
-                formatProperty(videoPropertyMaps, "BitRate", transformBitRate)
-              )
-            );
-          }
-          if (videoPropertyMaps[0].propertyMap["StreamSize"]) {
-            map.set(
-              "Video - StreamSize",
-              propertiesToString(
-                formatProperty(videoPropertyMaps, "StreamSize", transformSize)
-              )
-            );
-          }
-          ["Format", "FrameRate", "Language", "ScanType"].forEach(
-            (property) => {
-              if (videoPropertyMaps[0].propertyMap[property]) {
-                map.set(
-                  `Video - ${property}`,
-                  propertiesToString(
-                    formatProperty(videoPropertyMaps, property)
-                  )
-                );
-              }
-            }
-          );
-        }
-        if (audioPropertyMaps.length > 0) {
-          if (audioPropertyMaps[0].propertyMap["BitRate"]) {
-            map.set(
-              "Audio - BitRate",
-              propertiesToString(
-                formatProperty(audioPropertyMaps, "BitRate", transformBitRate)
-              )
-            );
-          }
-          if (audioPropertyMaps[0].propertyMap["StreamSize"]) {
-            map.set(
-              "Audio - StreamSize",
-              propertiesToString(
-                formatProperty(audioPropertyMaps, "StreamSize", transformSize)
-              )
-            );
-          }
-          ["Format", "BitRate_Mode", "Language"].forEach((property) => {
-            if (audioPropertyMaps[0].propertyMap[property]) {
-              map.set(
-                `Audio - ${property}`,
-                propertiesToString(formatProperty(audioPropertyMaps, property))
-              );
-            }
-          });
-        }
-        if (textPropertyMaps.length > 0) {
-          if (textPropertyMaps[0].propertyMap["BitRate"]) {
-            map.set(
-              "Text - BitRate",
-              propertiesToString(
-                formatProperty(textPropertyMaps, "BitRate", transformBitRate)
-              )
-            );
-          }
-          if (textPropertyMaps[0].propertyMap["StreamSize"]) {
-            map.set(
-              "Text - StreamSize",
-              propertiesToString(
-                formatProperty(textPropertyMaps, "StreamSize", transformSize)
-              )
-            );
-          }
-          ["Format", "Language"].forEach((property) => {
-            if (textPropertyMaps[0].propertyMap[property]) {
-              map.set(
-                `Text - ${property}`,
-                propertiesToString(formatProperty(textPropertyMaps, property))
-              );
-            }
-          });
-        }
         let hit = false;
         if (query && query.length > 0) {
-          for (const value of map.values()) {
-            if (value.toLowerCase().includes(query.toLowerCase())) {
-              hit = true;
-              break;
+          for (const map of maps) {
+            for (const value of Object.values(map.propertyMap)) {
+              if (value.toLowerCase().includes(query.toLowerCase())) {
+                hit = true;
+                break;
+              }
             }
           }
         } else {
           hit = true;
         }
         if (hit) {
-          fileMap.set(file, map);
+          fileMap.set(file, maps);
         }
       });
     return fileMap;
@@ -387,23 +252,6 @@
           });
         });
     }
-  }
-
-  function propertiesToString(properties: string[]): string {
-    return properties.join(" | ");
-  }
-
-  function pushProperties(
-    properties: Array<Protocol.StreamProperty>,
-    stream: Protocol.StreamKind,
-    keys: string[]
-  ) {
-    keys.forEach((key) => {
-      properties.push({
-        stream: stream,
-        property: key,
-      });
-    });
   }
 </script>
 
@@ -466,32 +314,35 @@
           </Header>
           <div slot="contents">
             {#each [...COMMON_PROPERTIES_MAP.entries()] as commonPropertiesEntry}
-              {#if (fileToStreamCountMap
+              {#if fileToPropertyMap
                 .get(file)
-                ?.get(commonPropertiesEntry[0])?.count ?? 0) > 0}
-                <div
-                  class="flex flex-wrap gap-3 mb-1 py-1 border-b border-dashed"
-                >
-                  {#each Object.entries(commonPropertiesEntry[1]) as commonProperty}
-                    {#if fileToPropertyMap.get(file)?.has(commonProperty[0])}
-                      <Tooltip title={commonProperty[0]} offset={6}>
-                        <div class="flex gap-2">
-                          <div class="material-symbols-outlined h6">
-                            {commonProperty[1]}
-                          </div>
-                          <div class="h-6 text-wrap">
-                            {fileToPropertyMap
-                              .get(file)
-                              ?.get(commonProperty[0])}
-                          </div>
-                        </div>
-                      </Tooltip>
-                    {/if}
-                  {/each}
-                </div>
+                ?.some((map) => map.stream === commonPropertiesEntry[0])}
+                <Table
+                  classes={{
+                    table: "border-collapse border border-slate-500 mb-1",
+                    th: "border border-slate-600 px-1 bg-lime-50",
+                    td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
+                  }}
+                  data={fileToPropertyMap
+                    .get(file)
+                    ?.filter((map) => map.stream === commonPropertiesEntry[0])
+                    ?.map((map) => map.propertyMap)
+                    ?.map((map, index) => {
+                      map["@id"] = `${index + 1}`;
+                      return map;
+                    })}
+                  columns={commonPropertiesEntry[1].map((property) => {
+                    return {
+                      name: property.name,
+                      header: property.header ? property.header : property.name,
+                      align: "left",
+                      format: property.format,
+                    };
+                  })}
+                />
               {/if}
             {/each}
-            <div class="pb-4"></div>
+            <div class="pb-3"></div>
           </div>
         </Card>
       {/if}

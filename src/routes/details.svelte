@@ -21,9 +21,7 @@
     Button,
     Card,
     Checkbox,
-    ExpansionPanel,
     Header,
-    sort,
     Table,
     TextField,
     Tooltip,
@@ -174,8 +172,8 @@
                 .toSorted((a, b) => a.property.localeCompare(b.property))}
               classes={{
                 table: "border-collapse border border-slate-500 mb-4",
-                th: "border border-slate-600 p-2 bg-lime-50",
-                td: "border border-slate-700 p-2 font-mono whitespace-pre-wrap",
+                th: "border border-slate-600 px-1 bg-lime-50",
+                td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
               }}
               columns={[
                 {

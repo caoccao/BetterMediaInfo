@@ -119,6 +119,7 @@
     let classes: Array<string> = [];
     if (dialogType) {
       classes.push("justify-self-center");
+      classes.push("text-wrap");
       switch (dialogType) {
         case Protocol.DialogType.Error:
           classes.push("text-red-600");
@@ -318,6 +319,7 @@
   classes={{
     root: "rounded-lg border-gray-200 drop-shadow-lg",
     title: dialogTitleClasses,
+    actions: "justify-center",
   }}
 >
   <div slot="title">{dialogTitle}</div>
@@ -325,9 +327,9 @@
     <Button
       variant="fill-light"
       color="primary"
-      classes={{ root: "w-24 justify-self-center" }}
+      classes={{ root: "w-24" }}
     >
-      close
+      Close
     </Button>
   </div>
 </Dialog>
