@@ -229,9 +229,10 @@
         ) as Array<Protocol.StreamPropertyMap>;
         let hit = false;
         if (query && query.length > 0) {
+          const lowerCasedQuery = query.toLowerCase();
           for (const map of maps) {
             for (const value of Object.values(map.propertyMap)) {
-              if (value.toLowerCase().includes(query.toLowerCase())) {
+              if (value.toLowerCase().includes(lowerCasedQuery)) {
                 hit = true;
                 break;
               }
