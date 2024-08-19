@@ -65,7 +65,7 @@
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyFormat> = [
     createFormat("Format"),
-    createFormat("FileSize", transformSize, "File Size"),
+    createFormat("FileSize", transformSize, "Size"),
     createFormat("Duration", transformDuration),
     createFormat("Title"),
     createFormat("Encoded_Date", transformDefault, "Encoded Date"),
@@ -78,11 +78,11 @@
     createFormat("Title"),
     createFormat("Resolution"),
     createFormat("ScanType", transformDefault, "Scan Type"),
-    createFormat("Default"),
-    createFormat("Forced"),
-    createFormat("FrameRate", transformDefault, "Frame Rate"),
+    createFormat("Default", transformDefault, "D"),
+    createFormat("Forced", transformDefault, "F"),
+    createFormat("FrameRate", transformDefault, "FPS"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
-    createFormat("StreamSize", transformSize, "Stream Size"),
+    createFormat("StreamSize", transformSize, "Size"),
   ];
 
   const COMMON_PROPERTIES_AUDIO: Array<PropertyFormat> = [
@@ -91,11 +91,11 @@
     createFormat("Language"),
     createFormat("Title"),
     createFormat("Channel(s)", transformDefault, "CH"),
-    createFormat("Default"),
-    createFormat("Forced"),
-    createFormat("BitRate_Mode", transformDefault, "Bit Rate Mode"),
+    createFormat("Default", transformDefault, "D"),
+    createFormat("Forced", transformDefault, "F"),
+    createFormat("BitRate_Mode", transformDefault, "Mode"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
-    createFormat("StreamSize", transformSize, "Stream Size"),
+    createFormat("StreamSize", transformSize, "Size"),
   ];
 
   const COMMON_PROPERTIES_TEXT: Array<PropertyFormat> = [
@@ -103,8 +103,8 @@
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
-    createFormat("Default"),
-    createFormat("Forced"),
+    createFormat("Default", transformDefault, "D"),
+    createFormat("Forced", transformDefault, "F"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Stream Size"),
   ];
