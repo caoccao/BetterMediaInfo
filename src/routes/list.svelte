@@ -78,6 +78,8 @@
     createFormat("Title"),
     createFormat("Resolution"),
     createFormat("ScanType", transformDefault, "Scan Type"),
+    createFormat("Default"),
+    createFormat("Forced"),
     createFormat("FrameRate", transformDefault, "Frame Rate"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Stream Size"),
@@ -89,6 +91,8 @@
     createFormat("Language"),
     createFormat("Title"),
     createFormat("Channel(s)", transformDefault, "CH"),
+    createFormat("Default"),
+    createFormat("Forced"),
     createFormat("BitRate_Mode", transformDefault, "Bit Rate Mode"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Stream Size"),
@@ -99,6 +103,8 @@
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
+    createFormat("Default"),
+    createFormat("Forced"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Stream Size"),
   ];
@@ -313,67 +319,75 @@
     </div>
   {:else}
     <TextField placeholder="Filter" bind:value={query} clearable />
-    {#each files as file}
-      {#if fileToPropertyMap.has(file)}
-        <Card>
-          <Header
-            title={file}
-            subheading={formatStreamCount(fileToStreamCountMap.get(file))}
-            slot="header"
-          >
-            <div slot="actions">
-              <Tooltip title="Details" offset={6}>
-                <Button
-                  classes={{ root: BUTTON_CLASSES_NORMAL }}
-                  on:click={() => openDetails(file)}
-                >
-                  <span class="material-symbols-outlined text-3xl">
-                    note_stack
-                  </span>
-                </Button>
-              </Tooltip>
-              <Tooltip title="Delete" offset={6}>
-                <Button
-                  classes={{ root: BUTTON_CLASSES_ALERT }}
-                  on:click={() => deleteMediaFile(file)}
-                >
-                  <span class="material-symbols-outlined text-3xl">
-                    delete
-                  </span>
-                </Button>
-              </Tooltip>
+    {#if fileToPropertyMap.size == 0}
+      <div class="grid place-content-center">
+        <img src="images/empty.gif" alt="Not Found" />
+      </div>
+    {:else}
+      {#each files as file}
+        {#if fileToPropertyMap.has(file)}
+          <Card>
+            <Header
+              title={file}
+              subheading={formatStreamCount(fileToStreamCountMap.get(file))}
+              slot="header"
+            >
+              <div slot="actions">
+                <Tooltip title="Details" offset={6}>
+                  <Button
+                    classes={{ root: BUTTON_CLASSES_NORMAL }}
+                    on:click={() => openDetails(file)}
+                  >
+                    <span class="material-symbols-outlined text-3xl">
+                      note_stack
+                    </span>
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Delete" offset={6}>
+                  <Button
+                    classes={{ root: BUTTON_CLASSES_ALERT }}
+                    on:click={() => deleteMediaFile(file)}
+                  >
+                    <span class="material-symbols-outlined text-3xl">
+                      delete
+                    </span>
+                  </Button>
+                </Tooltip>
+              </div>
+            </Header>
+            <div slot="contents">
+              {#each [...COMMON_PROPERTIES_MAP.entries()] as commonPropertiesEntry}
+                {#if fileToPropertyMap
+                  .get(file)
+                  ?.some((map) => map.stream === commonPropertiesEntry[0])}
+                  <Table
+                    classes={{
+                      table: "border-collapse border border-slate-500 mb-1",
+                      th: "border border-slate-600 px-1 bg-lime-50",
+                      td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
+                    }}
+                    data={fileToPropertyMap
+                      .get(file)
+                      ?.filter((map) => map.stream === commonPropertiesEntry[0])
+                      ?.map((map) => map.propertyMap)}
+                    columns={commonPropertiesEntry[1].map((property) => {
+                      return {
+                        name: property.name,
+                        header: property.header
+                          ? property.header
+                          : property.name,
+                        align: "left",
+                        format: property.format,
+                      };
+                    })}
+                  />
+                {/if}
+              {/each}
+              <div class="pb-3"></div>
             </div>
-          </Header>
-          <div slot="contents">
-            {#each [...COMMON_PROPERTIES_MAP.entries()] as commonPropertiesEntry}
-              {#if fileToPropertyMap
-                .get(file)
-                ?.some((map) => map.stream === commonPropertiesEntry[0])}
-                <Table
-                  classes={{
-                    table: "border-collapse border border-slate-500 mb-1",
-                    th: "border border-slate-600 px-1 bg-lime-50",
-                    td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
-                  }}
-                  data={fileToPropertyMap
-                    .get(file)
-                    ?.filter((map) => map.stream === commonPropertiesEntry[0])
-                    ?.map((map) => map.propertyMap)}
-                  columns={commonPropertiesEntry[1].map((property) => {
-                    return {
-                      name: property.name,
-                      header: property.header ? property.header : property.name,
-                      align: "left",
-                      format: property.format,
-                    };
-                  })}
-                />
-              {/if}
-            {/each}
-            <div class="pb-3"></div>
-          </div>
-        </Card>
-      {/if}
-    {/each}
+          </Card>
+        {/if}
+      {/each}
+    {/if}
   {/if}
 </div>
