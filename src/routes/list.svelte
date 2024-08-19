@@ -77,6 +77,7 @@
     createFormat("Language"),
     createFormat("Title"),
     createFormat("Resolution"),
+    createFormat("HDR_Format_Compatibility", transformDefault, "HDR"),
     createFormat("ScanType", transformDefault, "Scan Type"),
     createFormat("Default", transformDefault, "D"),
     createFormat("Forced", transformDefault, "F"),

@@ -35,6 +35,10 @@
       },
       "globalShortcut": {
         "all": true
+      },
+      "window": {
+        "all": true,
+        "close": true
       }
     },
     "windows": [

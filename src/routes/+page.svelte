@@ -264,6 +264,11 @@
         event.stopPropagation();
         tabIndex = tabIndex > 0 ? tabIndex - 1 : tabControls.length - 1;
       }
+    } else if (!event.ctrlKey && event.altKey && !event.shiftKey) {
+      if (event.key === "x") {
+        event.stopPropagation();
+        appWindow.close();
+      }
     }
   }
 </script>
