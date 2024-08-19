@@ -88,6 +88,7 @@
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
+    createFormat("Channel(s)", transformDefault, "CH"),
     createFormat("BitRate_Mode", transformDefault, "Bit Rate Mode"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Stream Size"),
