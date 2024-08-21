@@ -41,14 +41,10 @@ config.subscribe((value) => {
 });
 
 export async function openDirectoryDialog(append: boolean) {
-  await scanFiles(
-    [
-      (await open({
-        directory: true,
-      })) as string,
-    ],
-    append
-  );
+  const directory = await open({ directory: true });
+  if (directory) {
+    await scanFiles([directory as string], append);
+  }
 }
 
 export async function openFileDialog(append: boolean) {
