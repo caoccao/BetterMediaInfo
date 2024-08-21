@@ -122,7 +122,7 @@
             </Button>
           </Tooltip>
           <div class="flex flex-wrap gap-4 pl-4">
-            {#each Protocol.getStreamKinds() as streamKind}
+            {#each Protocol.STREAM_KINDS as streamKind}
               {#if (streamCountMap.get(streamKind)?.count ?? 0) > 0}
                 <Checkbox bind:group={streamGroup} value={streamKind}>
                   <div class="flex gap-2">
@@ -165,7 +165,7 @@
                 .toSorted((a, b) => a.property.localeCompare(b.property))}
               classes={{
                 table: "border-collapse border border-slate-500 mb-4",
-                th: "border border-slate-600 px-1 bg-lime-50",
+                th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(properties.stream)}-50`,
                 td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
               }}
               columns={[

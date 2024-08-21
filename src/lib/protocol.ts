@@ -134,38 +134,37 @@ export function getConfigDirectoryModes(): ConfigDirectoryMode[] {
   ];
 }
 
-export function getStreamKindIndex(streamKind: StreamKind): number {
-  switch (streamKind) {
-    case StreamKind.General:
-      return 0;
-    case StreamKind.Video:
-      return 1;
-    case StreamKind.Audio:
-      return 2;
-    case StreamKind.Text:
-      return 3;
-    case StreamKind.Other:
-      return 4;
-    case StreamKind.Image:
-      return 5;
-    case StreamKind.Menu:
-      return 6;
-    case StreamKind.Max:
-      return 7;
-    default:
-      return 0;
-  }
-}
+const streamKindToColorMap = new Map<StreamKind, string>();
+streamKindToColorMap.set(StreamKind.General, "lime");
+streamKindToColorMap.set(StreamKind.Video, "orange");
+streamKindToColorMap.set(StreamKind.Audio, "amber");
+streamKindToColorMap.set(StreamKind.Text, "emerald");
+streamKindToColorMap.set(StreamKind.Other, "neutral");
+streamKindToColorMap.set(StreamKind.Image, "sky");
+streamKindToColorMap.set(StreamKind.Menu, "indigo");
+streamKindToColorMap.set(StreamKind.Max, "lime");
 
-export function getStreamKinds(): StreamKind[] {
-  return [
-    StreamKind.General,
-    StreamKind.Video,
-    StreamKind.Audio,
-    StreamKind.Text,
-    StreamKind.Other,
-    StreamKind.Image,
-    StreamKind.Menu,
-    StreamKind.Max,
-  ];
-}
+export const STREAM_KIND_TO_COLOR_MAP = Object.freeze(streamKindToColorMap);
+
+const streamKindToIndexMap = new Map<StreamKind, number>();
+streamKindToIndexMap.set(StreamKind.General, 0);
+streamKindToIndexMap.set(StreamKind.Video, 1);
+streamKindToIndexMap.set(StreamKind.Audio, 2);
+streamKindToIndexMap.set(StreamKind.Text, 3);
+streamKindToIndexMap.set(StreamKind.Other, 4);
+streamKindToIndexMap.set(StreamKind.Image, 5);
+streamKindToIndexMap.set(StreamKind.Menu, 6);
+streamKindToIndexMap.set(StreamKind.Max, 7);
+
+export const STREAM_KIND_TO_INDEX_MAP = Object.freeze(streamKindToIndexMap);
+
+export const STREAM_KINDS = Object.freeze([
+  StreamKind.General,
+  StreamKind.Video,
+  StreamKind.Audio,
+  StreamKind.Text,
+  StreamKind.Other,
+  StreamKind.Image,
+  StreamKind.Menu,
+  StreamKind.Max,
+]);

@@ -17,14 +17,7 @@
     */
 
   import { onMount } from "svelte";
-  import {
-    Button,
-    Card,
-    Header,
-    Table,
-    TextField,
-    Tooltip,
-  } from "svelte-ux";
+  import { Button, Card, Header, Table, TextField, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     deleteMediaFile,
@@ -375,7 +368,7 @@
                   <Table
                     classes={{
                       table: "border-collapse border border-slate-500 mb-1",
-                      th: "border border-slate-600 px-1 bg-lime-50",
+                      th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(commonPropertiesEntry[0])}-50`,
                       td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
                     }}
                     data={fileToPropertyMap

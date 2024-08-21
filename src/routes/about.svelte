@@ -138,3 +138,11 @@
     />
   </Paginate>
 </div>
+<div class="bg-lime-50"></div>
+<div class="bg-orange-50"></div>
+<div class="bg-amber-50"></div>
+<div class="bg-emerald-50"></div>
+<div class="bg-neutral-50"></div>
+<div class="bg-sky-50"></div>
+<div class="bg-indigo-50"></div>
+<div class="bg-lime-50"></div>
