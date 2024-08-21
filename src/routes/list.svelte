@@ -40,21 +40,42 @@
   } from "../lib/format";
 
   interface PropertyFormat {
-    calculate: ((map: Record<string, string>) => void) | null;
-    format: ((value: any, rowData: string, rowIndex: number) => string) | null;
+    format:
+      | ((
+          value: any,
+          rowData: Record<string, string>,
+          rowIndex: number
+        ) => string)
+      | undefined;
     header: string | null;
     name: string;
+    virtual: boolean;
   }
 
   function createFormat(
     name: string,
     format:
-      | ((value: any, rowData: string, rowIndex: number) => string)
-      | null = transformDefault,
+      | ((
+          value: any,
+          rowData: Record<string, string>,
+          rowIndex: number
+        ) => string)
+      | undefined = undefined,
     header: string | null = null,
-    calculate: ((map: Record<string, string>) => void) | null = null
+    virtual: boolean = false
   ): PropertyFormat {
-    return { calculate, format, header, name };
+    return { format, header, name, virtual };
+  }
+
+  function formatResolution(
+    _value: any,
+    rowData: Record<string, string>,
+    _rowIndex: number
+  ) {
+    if (rowData["Height"] && rowData["Width"]) {
+      return `${rowData["Width"]}x${rowData["Height"]}`;
+    }
+    return "";
   }
 
   const BUTTON_CLASSES_ALERT =
@@ -65,23 +86,19 @@
     "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyFormat> = [
-    createFormat("Format"),
+    createFormat("Format", transformDefault),
     createFormat("FileSize", transformSize, "Size"),
-    createFormat("Duration", transformDuration),
-    createFormat("Title"),
+    createFormat("Duration", transformDuration, "Duration"),
+    createFormat("Title", transformDefault),
     createFormat("Encoded_Date", transformDefault, "Encoded Date"),
   ];
 
   const COMMON_PROPERTIES_VIDEO: Array<PropertyFormat> = [
-    createFormat("ID"),
-    createFormat("Format"),
-    createFormat("Language"),
-    createFormat("Title"),
-    createFormat("Resolution", transformDefault, "Resolution", (map) => {
-      if (map["Height"] && map["Width"]) {
-        map["Resolution"] = `${map["Width"]}x${map["Height"]}`;
-      }
-    }),
+    createFormat("ID", transformDefault),
+    createFormat("Format", transformDefault),
+    createFormat("Language", transformDefault),
+    createFormat("Title", transformDefault),
+    createFormat("Resolution", formatResolution, "Resolution", true),
     createFormat("HDR_Format_Compatibility", transformDefault, "HDR"),
     createFormat("ScanType", transformDefault, "Scan Type"),
     createFormat("Default", transformDefault, "D"),
@@ -89,15 +106,15 @@
     createFormat("FrameRate", transformDefault, "FPS"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Size"),
-    createFormat("Width", null),
-    createFormat("Height", null),
+    createFormat("Width"),
+    createFormat("Height"),
   ];
 
   const COMMON_PROPERTIES_AUDIO: Array<PropertyFormat> = [
-    createFormat("ID"),
+    createFormat("ID", transformDefault),
     createFormat("Format_Commercial", transformDefault, "Format"),
-    createFormat("Language"),
-    createFormat("Title"),
+    createFormat("Language", transformDefault),
+    createFormat("Title", transformDefault),
     createFormat("Channel(s)", transformDefault, "CH"),
     createFormat("BitDepth", transformDefault, "Depth"),
     createFormat("SamplingRate", transformSamplingRate, "Sampling"),
@@ -109,10 +126,10 @@
   ];
 
   const COMMON_PROPERTIES_TEXT: Array<PropertyFormat> = [
-    createFormat("ID"),
-    createFormat("Format"),
-    createFormat("Language"),
-    createFormat("Title"),
+    createFormat("ID", transformDefault),
+    createFormat("Format", transformDefault),
+    createFormat("Language", transformDefault),
+    createFormat("Title", transformDefault),
     createFormat("Default", transformDefault, "D"),
     createFormat("Forced", transformDefault, "F"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
@@ -191,7 +208,7 @@
             )
             .map(([stream, propertyFormats]) =>
               propertyFormats
-                .filter((property) => property.calculate === null)
+                .filter((property) => !property.virtual)
                 .map((property) => {
                   return {
                     stream: stream,
@@ -206,22 +223,6 @@
                 file,
                 properties
               );
-              [...COMMON_PROPERTIES_MAP.entries()]
-                .filter(
-                  ([stream, _propertyFormats]) =>
-                    (streamCountMap.get(stream)?.count ?? 0) > 0
-                )
-                .forEach(([stream, propertyFormats]) => {
-                  propertyFormats
-                    .filter((property) => property.calculate !== null)
-                    .forEach((property) => {
-                      [...commonPropertyMap.values()]
-                        .filter((properties) => properties.stream === stream)
-                        .forEach((properties) => {
-                          property.calculate!(properties.propertyMap);
-                        });
-                    });
-                });
               fileToCommonPropertyMap.set(file, commonPropertyMap);
               mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
             } catch (error) {
@@ -376,7 +377,7 @@
                       ?.filter((map) => map.stream === commonPropertiesEntry[0])
                       ?.map((map) => map.propertyMap)}
                     columns={commonPropertiesEntry[1]
-                      .filter((property) => property.format !== null)
+                      .filter((property) => property.format !== undefined)
                       .map((property) => {
                         return {
                           name: property.name,
@@ -384,7 +385,7 @@
                             ? property.header
                             : property.name,
                           align: "left",
-                          format: property.format ?? transformDefault,
+                          format: property.format,
                         };
                       })}
                   />
