@@ -17,7 +17,15 @@
     */
 
   import { onMount } from "svelte";
-  import { Button, Card, Header, Table, TextField, Tooltip } from "svelte-ux";
+  import {
+    Button,
+    Card,
+    format,
+    Header,
+    Table,
+    TextField,
+    Tooltip,
+  } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     deleteMediaFile,
@@ -35,25 +43,26 @@
     transformBitRate,
     transformDefault,
     transformDuration,
+    transformSamplingRate,
     transformSize,
   } from "../lib/format";
 
   interface PropertyFormat {
-    format: (value: any, rowData: string, rowIndex: number) => string;
+    calculate: ((map: Record<string, string>) => void) | null;
+    format: ((value: any, rowData: string, rowIndex: number) => string) | null;
     header: string | null;
     name: string;
   }
 
   function createFormat(
     name: string,
-    format: (
-      value: any,
-      rowData: string,
-      rowIndex: number
-    ) => string = transformDefault,
-    header: string | null = null
+    format:
+      | ((value: any, rowData: string, rowIndex: number) => string)
+      | null = transformDefault,
+    header: string | null = null,
+    calculate: ((map: Record<string, string>) => void) | null = null
   ): PropertyFormat {
-    return { format, header, name };
+    return { calculate, format, header, name };
   }
 
   const BUTTON_CLASSES_ALERT =
@@ -76,7 +85,11 @@
     createFormat("Format"),
     createFormat("Language"),
     createFormat("Title"),
-    createFormat("Resolution"),
+    createFormat("Resolution", transformDefault, "Resolution", (map) => {
+      if (map["Height"] && map["Width"]) {
+        map["Resolution"] = `${map["Width"]}x${map["Height"]}`;
+      }
+    }),
     createFormat("HDR_Format_Compatibility", transformDefault, "HDR"),
     createFormat("ScanType", transformDefault, "Scan Type"),
     createFormat("Default", transformDefault, "D"),
@@ -84,14 +97,18 @@
     createFormat("FrameRate", transformDefault, "FPS"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
     createFormat("StreamSize", transformSize, "Size"),
+    createFormat("Width", null),
+    createFormat("Height", null),
   ];
 
   const COMMON_PROPERTIES_AUDIO: Array<PropertyFormat> = [
     createFormat("ID"),
-    createFormat("Format"),
+    createFormat("Format_Commercial", transformDefault, "Format"),
     createFormat("Language"),
     createFormat("Title"),
     createFormat("Channel(s)", transformDefault, "CH"),
+    createFormat("BitDepth", transformDefault, "Depth"),
+    createFormat("SamplingRate", transformSamplingRate, "Sampling"),
     createFormat("Default", transformDefault, "D"),
     createFormat("Forced", transformDefault, "F"),
     createFormat("BitRate_Mode", transformDefault, "Mode"),
@@ -177,46 +194,41 @@
         if (!fileToCommonPropertyMap.has(file)) {
           const properties = [...COMMON_PROPERTIES_MAP.entries()]
             .filter(
-              ([stream, _propertyFormat]) =>
+              ([stream, _propertyFormats]) =>
                 (streamCountMap.get(stream)?.count ?? 0) > 0
             )
-            .map(([stream, propertyFormat]) =>
-              propertyFormat.map((property) => {
-                return {
-                  stream: stream,
-                  property: property.name,
-                };
-              })
+            .map(([stream, propertyFormats]) =>
+              propertyFormats
+                .filter((property) => property.calculate === null)
+                .map((property) => {
+                  return {
+                    stream: stream,
+                    property: property.name,
+                  };
+                })
             )
             .flat();
           if (properties.length > 0) {
             try {
-              if (
-                (streamCountMap.get(Protocol.StreamKind.Video)?.count ?? 0) > 0
-              ) {
-                properties.push(
-                  {
-                    stream: Protocol.StreamKind.Video,
-                    property: "Width",
-                  },
-                  {
-                    stream: Protocol.StreamKind.Video,
-                    property: "Height",
-                  }
-                );
-              }
               const commonPropertyMap = await getPropertiesMap(
                 file,
                 properties
               );
-              commonPropertyMap
-                .filter((map) => map.stream === Protocol.StreamKind.Video)
-                .forEach((map) => {
-                  console.log(map);
-                  if (map.propertyMap["Height"] && map.propertyMap["Width"]) {
-                    map.propertyMap["Resolution"] =
-                      `${map.propertyMap["Width"]}x${map.propertyMap["Height"]}`;
-                  }
+              [...COMMON_PROPERTIES_MAP.entries()]
+                .filter(
+                  ([stream, _propertyFormats]) =>
+                    (streamCountMap.get(stream)?.count ?? 0) > 0
+                )
+                .forEach(([stream, propertyFormats]) => {
+                  propertyFormats
+                    .filter((property) => property.calculate !== null)
+                    .forEach((property) => {
+                      [...commonPropertyMap.values()]
+                        .filter((properties) => properties.stream === stream)
+                        .forEach((properties) => {
+                          property.calculate!(properties.propertyMap);
+                        });
+                    });
                 });
               fileToCommonPropertyMap.set(file, commonPropertyMap);
               mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
@@ -371,16 +383,18 @@
                       .get(file)
                       ?.filter((map) => map.stream === commonPropertiesEntry[0])
                       ?.map((map) => map.propertyMap)}
-                    columns={commonPropertiesEntry[1].map((property) => {
-                      return {
-                        name: property.name,
-                        header: property.header
-                          ? property.header
-                          : property.name,
-                        align: "left",
-                        format: property.format,
-                      };
-                    })}
+                    columns={commonPropertiesEntry[1]
+                      .filter((property) => property.format !== null)
+                      .map((property) => {
+                        return {
+                          name: property.name,
+                          header: property.header
+                            ? property.header
+                            : property.name,
+                          align: "left",
+                          format: property.format ?? transformDefault,
+                        };
+                      })}
                   />
                 {/if}
               {/each}

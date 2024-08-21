@@ -82,6 +82,16 @@ export function transformDuration(value: string | undefined | null): string {
   return items.join(", ");
 }
 
+export function transformSamplingRate(
+  value: string | undefined | null
+): string {
+  if (!value) {
+    return "";
+  }
+  const rate = parseInt(value);
+  return `${trimFractionZeros((rate / 1000).toFixed(3))}KHz`;
+}
+
 export function transformSize(value: string | undefined | null): string {
   if (!value) {
     return "";
