@@ -319,7 +319,7 @@
   {/each}
   <svelte:fragment slot="content" let:value={tabIndex}>
     {#each tabControls as tabControl}
-      {#if tabControl.index === tabIndex}
+      <div class={tabControl.index === tabIndex ? "block" : "hidden"}>
         {#if tabControl.type === Protocol.TabType.About}
           <About />
         {:else if tabControl.type === Protocol.TabType.Config}
@@ -329,7 +329,7 @@
         {:else if tabControl.type === Protocol.TabType.Details}
           <Details file={tabControl.value ?? ""} />
         {/if}
-      {/if}
+      </div>
     {/each}
   </svelte:fragment>
 </Tabs>
