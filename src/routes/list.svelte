@@ -21,6 +21,7 @@
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     deleteMediaFile,
+    dialogJsonCode,
     dialogNotification,
     mediaFileToAllPropertiesMap,
     mediaDetailedFiles,
@@ -272,6 +273,13 @@
     return fileMap;
   }
 
+  function openDialogJsonCode(file: string) {
+    dialogJsonCode.set({
+      title: file,
+      jsonCode: fileToCommonPropertyMap.get(file) ?? null,
+    });
+  }
+
   function openDetails(file: string) {
     mediaDetailedFiles.update((detailedFiles) => {
       if (detailedFiles.includes(file)) {
@@ -339,6 +347,16 @@
               slot="header"
             >
               <div slot="actions">
+                <Tooltip title="Json" offset={6}>
+                  <Button
+                    classes={{ root: BUTTON_CLASSES_NORMAL }}
+                    on:click={() => openDialogJsonCode(file)}
+                  >
+                    <span class="material-symbols-outlined text-3xl">
+                      javascript
+                    </span>
+                  </Button>
+                </Tooltip>
                 <Tooltip title="Details" offset={6}>
                   <Button
                     classes={{ root: BUTTON_CLASSES_NORMAL }}

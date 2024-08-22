@@ -53,12 +53,23 @@ export function deleteMediaFile(file: string) {
   });
 }
 
-export const dialogNotification = Store.writable<Protocol.DialogNotification | null>(null, (set) => {
-  set(null);
-  return () => {
+export const dialogJsonCode = Store.writable<Protocol.DialogJsonCode | null>(
+  null,
+  (set) => {
     set(null);
-  };
-});
+    return () => {
+      set(null);
+    };
+  }
+);
+
+export const dialogNotification =
+  Store.writable<Protocol.DialogNotification | null>(null, (set) => {
+    set(null);
+    return () => {
+      set(null);
+    };
+  });
 
 export const isConfigDirty = Store.writable<boolean>(false, (set) => {
   set(false);

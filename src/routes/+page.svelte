@@ -18,8 +18,11 @@
   import { appWindow } from "@tauri-apps/api/window";
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
   import type { FileDropEvent } from "@tauri-apps/api/window";
+  import { writeText } from "@tauri-apps/api/clipboard";
   import { afterUpdate, onDestroy, onMount } from "svelte";
   import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
+  import { CodeBlock } from "svhighlight";
+  import "highlight.js/styles/github-dark.min.css";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import Config from "./config.svelte";
@@ -27,6 +30,7 @@
   import * as Protocol from "../lib/protocol";
   import {
     config,
+    dialogJsonCode,
     dialogNotification,
     mediaDetailedFiles,
     tabAboutStatus,
@@ -36,6 +40,9 @@
   import { shrinkFileName } from "../lib/format";
 
   let appendOnFileDrop: boolean = true;
+  let dialogJsonCodeOpen = false;
+  let dialogJsonCodeString: string | null;
+  let dialogJsonCodeTitle: string | null = null;
   let dialogNotificationOpen = false;
   let dialogNotificationTitle: string | null = null;
   let dialogNotificationType: Protocol.DialogNotificationType | null = null;
@@ -76,6 +83,14 @@
       if (value) {
         appendOnFileDrop = value.appendOnFileDrop;
       }
+    });
+
+    dialogJsonCode.subscribe((value) => {
+      dialogJsonCodeOpen = value !== null;
+      dialogJsonCodeTitle = value?.title ?? null;
+      dialogJsonCodeString = value?.jsonCode
+        ? JSON.stringify(value?.jsonCode, null, 2)
+        : null;
     });
 
     dialogNotification.subscribe((value) => {
@@ -244,6 +259,13 @@
     }
   }
 
+  function onClickCopyJsonCode(event: MouseEvent) {
+    event.stopPropagation();
+    if (dialogJsonCodeString) {
+      writeText(dialogJsonCodeString);
+    }
+  }
+
   function onKeyUp(event: KeyboardEvent) {
     if (event.ctrlKey && !event.altKey && !event.shiftKey) {
       if (event.key >= "1" && event.key <= "9") {
@@ -343,8 +365,46 @@
 >
   <div slot="title">{dialogNotificationTitle}</div>
   <div slot="actions">
-    <Button variant="fill-light" color="primary" classes={{ root: "w-24" }}>
+    <Button variant="fill-light" color="default" classes={{ root: "w-24" }}>
       Close
     </Button>
+  </div>
+</Dialog>
+<Dialog
+  bind:open={dialogJsonCodeOpen}
+  classes={{
+    root: "rounded-lg border-gray-200 drop-shadow-lg",
+    dialog: "w-4/5",
+    actions: "justify-center",
+  }}
+>
+  <div slot="title">{dialogJsonCodeTitle}</div>
+  <div slot="default">
+    <div class="overflow-auto h-[calc(80vh)]">
+      <CodeBlock
+        language="json"
+        code={dialogJsonCodeString ?? ""}
+        showHeader={false}
+        showLineNumbers={true}
+      />
+    </div>
+  </div>
+  <div slot="actions">
+    <div class="grid grid-flow-col gap-2">
+      <Button
+        variant="fill-light"
+        color="primary"
+        classes={{ root: "w-24" }}
+        on:click={onClickCopyJsonCode}
+      >
+        Copy
+      </Button>
+      <Button variant="fill-light" color="primary" classes={{ root: "w-24" }}>
+        Save
+      </Button>
+      <Button variant="fill-light" color="default" classes={{ root: "w-24" }}>
+        Close
+      </Button>
+    </div>
   </div>
 </Dialog>

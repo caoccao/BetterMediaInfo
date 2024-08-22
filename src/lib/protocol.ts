@@ -50,6 +50,11 @@ export enum ControlStatus {
   Visible,
 }
 
+export interface DialogJsonCode {
+  title: string;
+  jsonCode: Array<StreamPropertyMap> | null;
+}
+
 export interface DialogNotification {
   title: string;
   type: DialogNotificationType;

@@ -7,6 +7,7 @@ export default {
   content: [
     "./src/**/*.{html,js,svelte,ts}",
     "./node_modules/svelte-ux/**/*.{svelte,js}",
+    "./node_modules/svhighlight/**/*.svelte",
   ],
 
   theme: {
