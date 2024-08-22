@@ -22,7 +22,7 @@
   import { afterUpdate, onDestroy, onMount } from "svelte";
   import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
   import { CodeBlock } from "svhighlight";
-  import "highlight.js/styles/github-dark.min.css";
+  import "highlight.js/styles/intellij-light.css";
   import About from "./about.svelte";
   import List from "./list.svelte";
   import Config from "./config.svelte";
@@ -424,14 +424,14 @@
 >
   <div slot="title">{dialogJsonCodeTitle}</div>
   <div slot="default">
-    <div class="overflow-auto h-[calc(80vh)]">
-      <CodeBlock
-        language="json"
-        code={dialogJsonCodeString ?? ""}
-        showHeader={false}
-        showLineNumbers={true}
-      />
-    </div>
+    <CodeBlock
+      language="json"
+      code={dialogJsonCodeString ?? ""}
+      codeTextClasses="text-neutral-800 bg-white overflow-auto w-full h-[calc(80vh)]"
+      lineNumberTextClasses="text-neutral-800"
+      showHeader={false}
+      showLineNumbers={true}
+    />
   </div>
   <div slot="actions">
     <div class="grid grid-flow-col gap-2">

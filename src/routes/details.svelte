@@ -28,11 +28,15 @@
   } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
   import {
+    dialogJsonCode,
     mediaFileToAllPropertiesMap,
     mediaFileToStreamCountMap,
   } from "../lib/store";
 
   export let file: string;
+
+  const BUTTON_CLASSES_NORMAL =
+    "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-blue-500";
 
   let allProperties: Array<Protocol.StreamPropertyMap> = [];
 
@@ -95,11 +99,29 @@
   function onClickSelectNone() {
     streamGroup = [];
   }
+
+  function openDialogJsonCode(file: string) {
+    dialogJsonCode.set({
+      title: `${file} (All Properties)`,
+      jsonCode: allProperties ?? null,
+    });
+  }
 </script>
 
 <div class="grid gap-2">
   <Card>
-    <Header title={file} slot="header" />
+    <Header title={file} slot="header">
+      <div slot="actions">
+        <Tooltip title="Json" offset={6}>
+          <Button
+            classes={{ root: BUTTON_CLASSES_NORMAL }}
+            on:click={() => openDialogJsonCode(file)}
+          >
+            <span class="material-symbols-outlined text-3xl"> javascript </span>
+          </Button>
+        </Tooltip>
+      </div>
+    </Header>
     <div slot="actions">
       <div class="grid gap-2 px-2 pb-2">
         <div class="flex flex-wrap gap-2">
