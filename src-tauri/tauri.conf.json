@@ -14,31 +14,26 @@
     "allowlist": {
       "all": false,
       "clipboard": {
-        "all": true,
-        "writeText": true,
-        "readText": true
+        "all": true
       },
       "shell": {
-        "all": false,
-        "open": true
+        "all": false
+      },
+      "fs": {
+        "all": true,
+        "scope": ["*"]
       },
       "os": {
         "all": true
       },
       "dialog": {
-        "all": true,
-        "ask": true,
-        "confirm": true,
-        "message": true,
-        "open": true,
-        "save": true
+        "all": true
       },
       "globalShortcut": {
         "all": true
       },
       "window": {
-        "all": true,
-        "close": true
+        "all": true
       }
     },
     "windows": [

@@ -27,9 +27,7 @@ export async function getConfig(): Promise<Protocol.Config> {
 }
 
 export async function getFiles(files: string[]): Promise<string[]> {
-  return await invoke<string[]>("get_files", {
-    files: files,
-  });
+  return await invoke<string[]>("get_files", { files });
 }
 
 export async function getParameters(): Promise<Array<Protocol.Parameter>> {
@@ -41,8 +39,8 @@ export async function getPropertiesMap(
   properties: Array<Protocol.StreamProperty> | null
 ): Promise<Array<Protocol.StreamPropertyMap>> {
   return await invoke<Array<Protocol.StreamPropertyMap>>("get_properties", {
-    file: file,
-    properties: properties,
+    file,
+    properties,
   });
 }
 
@@ -52,9 +50,7 @@ export async function getStreamCountMap(
   const streamCountMap = new Map<Protocol.StreamKind, Protocol.StreamCount>();
   const streamCounts = await invoke<Protocol.StreamCount[]>(
     "get_stream_count",
-    {
-      file: file,
-    }
+    { file }
   );
   streamCounts.forEach((streamCount) => {
     streamCountMap.set(streamCount.stream, streamCount);
@@ -65,5 +61,9 @@ export async function getStreamCountMap(
 export async function setConfig(
   config: Protocol.Config
 ): Promise<Protocol.Config> {
-  return await invoke<Protocol.Config>("set_config", { config: config });
+  return await invoke<Protocol.Config>("set_config", { config });
+}
+
+export async function writeTextFile(file: string, text: string): Promise<void> {
+  return await invoke<void>("write_text_file", { file, text });
 }

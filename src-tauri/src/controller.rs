@@ -19,6 +19,8 @@ use anyhow::Result;
 use once_cell::sync::Lazy;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
+use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use crate::config;
@@ -194,6 +196,13 @@ pub async fn get_properties(file: String, properties: Option<Vec<StreamProperty>
 pub async fn set_config(config: config::Config) -> Result<config::Config> {
   config::set_config(config)?;
   Ok(config::get_config())
+}
+
+pub async fn write_text_file(file: String, text: String) -> Result<()> {
+  let path = Path::new(file.as_str());
+  let mut file = File::create(path)?;
+  file.write_all(text.as_bytes())?;
+  Ok(())
 }
 
 fn validate_path_as_file(path: &Path) -> Result<()> {

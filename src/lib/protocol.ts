@@ -61,7 +61,7 @@ export interface DialogNotification {
 }
 
 export enum DialogNotificationType {
-  Notification,
+  Info,
   Error,
 }
 

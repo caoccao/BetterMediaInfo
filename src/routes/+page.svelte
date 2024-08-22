@@ -36,6 +36,8 @@
     tabAboutStatus,
     tabSettingsStatus,
   } from "../lib/store";
+  import { writeTextFile } from "../lib/service";
+  import { openSaveJsonCodeFileDialog } from "../lib/dialog";
   import { scanFiles } from "../lib/fs";
   import { shrinkFileName } from "../lib/format";
 
@@ -259,11 +261,51 @@
     }
   }
 
-  function onClickCopyJsonCode(event: MouseEvent) {
+  async function onClickCopyJsonCode(event: MouseEvent) {
     event.stopPropagation();
     if (dialogJsonCodeString) {
-      writeText(dialogJsonCodeString);
+      try {
+        await writeText(dialogJsonCodeString);
+        dialogNotification.set({
+          title: `Json code is copied to clipboard.`,
+          type: Protocol.DialogNotificationType.Info,
+        });
+      } catch (error) {
+        dialogNotification.set({
+          title: `Failed to copy to clipboard with error: ${error}.`,
+          type: Protocol.DialogNotificationType.Error,
+        });
+      }
     }
+  }
+
+  async function onClickSaveJsonCode(event: MouseEvent) {
+    event.stopPropagation();
+    if (dialogJsonCodeString) {
+      const filePath = (await openSaveJsonCodeFileDialog()) as string | null;
+      if (filePath) {
+        try {
+          await writeTextFile(filePath, dialogJsonCodeString);
+          dialogNotification.set({
+            title: `Json code is saved to ${filePath}.`,
+            type: Protocol.DialogNotificationType.Info,
+          });
+        } catch (error) {
+          dialogNotification.set({
+            title: `Failed to save to ${filePath} with error: ${error}.`,
+            type: Protocol.DialogNotificationType.Error,
+          });
+        }
+      }
+    }
+  }
+
+  function onCloseDialogJsonCode() {
+    dialogJsonCode.set(null);
+  }
+
+  function onCloseDialogNotification() {
+    dialogNotification.set(null);
   }
 
   function onKeyUp(event: KeyboardEvent) {
@@ -357,6 +399,7 @@
 </Tabs>
 <Dialog
   bind:open={dialogNotificationOpen}
+  on:close={onCloseDialogNotification}
   classes={{
     root: "rounded-lg border-gray-200 drop-shadow-lg",
     title: dialogTitleClasses,
@@ -372,6 +415,7 @@
 </Dialog>
 <Dialog
   bind:open={dialogJsonCodeOpen}
+  on:close={onCloseDialogJsonCode}
   classes={{
     root: "rounded-lg border-gray-200 drop-shadow-lg",
     dialog: "w-4/5",
@@ -399,7 +443,12 @@
       >
         Copy
       </Button>
-      <Button variant="fill-light" color="primary" classes={{ root: "w-24" }}>
+      <Button
+        variant="fill-light"
+        color="primary"
+        classes={{ root: "w-24" }}
+        on:click={onClickSaveJsonCode}
+      >
         Save
       </Button>
       <Button variant="fill-light" color="default" classes={{ root: "w-24" }}>

@@ -75,6 +75,12 @@ async fn set_config(config: config::Config) -> Result<config::Config, String> {
   controller::set_config(config).await.map_err(convert_error)
 }
 
+#[tauri::command]
+async fn write_text_file(file: String, text: String) -> Result<(), String> {
+  log::debug!("write_text_file({})", file);
+  controller::write_text_file(file, text).await.map_err(convert_error)
+}
+
 fn main() {
   env_logger::init();
   tauri::Builder::default()
@@ -85,7 +91,8 @@ fn main() {
       get_parameters,
       get_properties,
       get_stream_count,
-      set_config
+      set_config,
+      write_text_file
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

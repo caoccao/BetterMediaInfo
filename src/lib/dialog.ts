@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { open } from "@tauri-apps/api/dialog";
+import { open, save } from "@tauri-apps/api/dialog";
 import type { DialogFilter } from "@tauri-apps/api/dialog";
 import { config } from "./store";
 import { scanFiles } from "./fs";
@@ -55,4 +55,10 @@ export async function openFileDialog(append: boolean) {
   if (files) {
     await scanFiles(files as string[], append);
   }
+}
+
+export async function openSaveJsonCodeFileDialog() {
+  return await save({
+    filters: [{ name: "JSON", extensions: ["json"] }],
+  });
 }

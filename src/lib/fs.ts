@@ -31,7 +31,10 @@ export async function scanFiles(files: string[], append: boolean) {
         mediaFiles.set(newFiles);
       }
     } catch (error) {
-      dialogNotification.set({ title: error as string, type: Protocol.DialogNotificationType.Error });
+      dialogNotification.set({
+        title: error as string,
+        type: Protocol.DialogNotificationType.Error,
+      });
     }
   }
 }

@@ -182,7 +182,6 @@
       fileToCommonPropertyMap = value;
     });
     mediaFiles.subscribe((value) => {
-      dialogNotification.set(null);
       files = value;
       files.forEach(async (file) => {
         let streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount>;
@@ -275,7 +274,7 @@
 
   function openDialogJsonCode(file: string) {
     dialogJsonCode.set({
-      title: file,
+      title: `${file} (Common Properties)`,
       jsonCode: fileToCommonPropertyMap.get(file) ?? null,
     });
   }
@@ -295,7 +294,6 @@
             map.set(file, value);
             return map;
           });
-          dialogNotification.set(null);
         })
         .catch((error) => {
           dialogNotification.set({

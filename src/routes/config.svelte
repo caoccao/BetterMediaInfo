@@ -101,7 +101,7 @@
       config.set(await setConfig(createConfig()));
       dialogNotification.set({
         title: "Settings saved.",
-        type: Protocol.DialogNotificationType.Notification,
+        type: Protocol.DialogNotificationType.Info,
       });
     } catch (error) {
       dialogNotification.set({
