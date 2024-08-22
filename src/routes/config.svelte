@@ -26,7 +26,7 @@
   } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
   import { setConfig } from "../lib/service";
-  import { config, dialog, isConfigDirty } from "../lib/store";
+  import { config, dialogNotification, isConfigDirty } from "../lib/store";
 
   const CSS_CLASS_H1 = "text-lg font-bold py-2 border-b-2 border-b-lime-400";
   const CSS_CLASS_H2 = "text-base font-medium py-2 border-b border-b-lime-300";
@@ -99,14 +99,14 @@
     event.stopPropagation();
     try {
       config.set(await setConfig(createConfig()));
-      dialog.set({
+      dialogNotification.set({
         title: "Settings saved.",
-        type: Protocol.DialogType.Notification,
+        type: Protocol.DialogNotificationType.Notification,
       });
     } catch (error) {
-      dialog.set({
+      dialogNotification.set({
         title: error ? error.toString() : "Failed to save with unknown error.",
-        type: Protocol.DialogType.Error,
+        type: Protocol.DialogNotificationType.Error,
       });
     }
   }

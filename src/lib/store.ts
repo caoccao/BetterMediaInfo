@@ -53,7 +53,7 @@ export function deleteMediaFile(file: string) {
   });
 }
 
-export const dialog = Store.writable<Protocol.Dialog | null>(null, (set) => {
+export const dialogNotification = Store.writable<Protocol.DialogNotification | null>(null, (set) => {
   set(null);
   return () => {
     set(null);

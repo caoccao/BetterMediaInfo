@@ -21,7 +21,7 @@
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
   import {
     deleteMediaFile,
-    dialog,
+    dialogNotification,
     mediaFileToAllPropertiesMap,
     mediaDetailedFiles,
     mediaFiles,
@@ -181,7 +181,7 @@
       fileToCommonPropertyMap = value;
     });
     mediaFiles.subscribe((value) => {
-      dialog.set(null);
+      dialogNotification.set(null);
       files = value;
       files.forEach(async (file) => {
         let streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount>;
@@ -193,9 +193,9 @@
             fileToStreamCountMap.set(file, streamCountMap);
             mediaFileToStreamCountMap.set(fileToStreamCountMap);
           } catch (error) {
-            dialog.set({
+            dialogNotification.set({
               title: error as string,
-              type: Protocol.DialogType.Error,
+              type: Protocol.DialogNotificationType.Error,
             });
             return;
           }
@@ -226,9 +226,9 @@
               fileToCommonPropertyMap.set(file, commonPropertyMap);
               mediaFileToCommonPropertyMap.set(fileToCommonPropertyMap);
             } catch (error) {
-              dialog.set({
+              dialogNotification.set({
                 title: error as string,
-                type: Protocol.DialogType.Error,
+                type: Protocol.DialogNotificationType.Error,
               });
               return;
             }
@@ -287,12 +287,12 @@
             map.set(file, value);
             return map;
           });
-          dialog.set(null);
+          dialogNotification.set(null);
         })
         .catch((error) => {
-          dialog.set({
+          dialogNotification.set({
             title: error as string,
-            type: Protocol.DialogType.Error,
+            type: Protocol.DialogNotificationType.Error,
           });
         });
     }

@@ -14,7 +14,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@tauri-apps/api": "^1",
-    "svelte-ux": "^0.73.3"
+    "highlight.js": "^11.10.0",
+    "svelte-ux": "^0.73.3",
+    "svhighlight": "^0.7.1"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.1",

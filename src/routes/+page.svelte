@@ -27,7 +27,7 @@
   import * as Protocol from "../lib/protocol";
   import {
     config,
-    dialog,
+    dialogNotification,
     mediaDetailedFiles,
     tabAboutStatus,
     tabSettingsStatus,
@@ -36,9 +36,9 @@
   import { shrinkFileName } from "../lib/format";
 
   let appendOnFileDrop: boolean = true;
-  let dialogOpen = false;
-  let dialogTitle: string | null = null;
-  let dialogType: Protocol.DialogType | null = null;
+  let dialogNotificationOpen = false;
+  let dialogNotificationTitle: string | null = null;
+  let dialogNotificationType: Protocol.DialogNotificationType | null = null;
   let detailedFiles: string[] = [];
   let statusTabAbout: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
   let statusTabSettings: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
@@ -78,10 +78,10 @@
       }
     });
 
-    dialog.subscribe((value) => {
-      dialogOpen = value !== null;
-      dialogTitle = value?.title ?? null;
-      dialogType = value?.type ?? null;
+    dialogNotification.subscribe((value) => {
+      dialogNotificationOpen = value !== null;
+      dialogNotificationTitle = value?.title ?? null;
+      dialogNotificationType = value?.type ?? null;
     });
 
     mediaDetailedFiles.subscribe((value) => {
@@ -105,7 +105,7 @@
     };
   });
 
-  $: dialogTitleClasses = getDialogTitleClasses(dialogType);
+  $: dialogTitleClasses = getDialogTitleClasses(dialogNotificationType);
 
   $: tabControls = getTabControls(
     statusTabAbout,
@@ -114,14 +114,14 @@
   );
 
   function getDialogTitleClasses(
-    dialogType: Protocol.DialogType | null
+    dialogType: Protocol.DialogNotificationType | null
   ): string {
     let classes: Array<string> = [];
     if (dialogType) {
       classes.push("justify-self-center");
       classes.push("text-wrap");
       switch (dialogType) {
-        case Protocol.DialogType.Error:
+        case Protocol.DialogNotificationType.Error:
           classes.push("text-red-600");
           break;
         default:
@@ -334,14 +334,14 @@
   </svelte:fragment>
 </Tabs>
 <Dialog
-  bind:open={dialogOpen}
+  bind:open={dialogNotificationOpen}
   classes={{
     root: "rounded-lg border-gray-200 drop-shadow-lg",
     title: dialogTitleClasses,
     actions: "justify-center",
   }}
 >
-  <div slot="title">{dialogTitle}</div>
+  <div slot="title">{dialogNotificationTitle}</div>
   <div slot="actions">
     <Button variant="fill-light" color="primary" classes={{ root: "w-24" }}>
       Close

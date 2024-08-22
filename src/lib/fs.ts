@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { dialog, mediaFiles } from "./store";
+import { dialogNotification, mediaFiles } from "./store";
 import * as Protocol from "../lib/protocol";
 import { getFiles } from "../lib/service";
 
@@ -31,7 +31,7 @@ export async function scanFiles(files: string[], append: boolean) {
         mediaFiles.set(newFiles);
       }
     } catch (error) {
-      dialog.set({ title: error as string, type: Protocol.DialogType.Error });
+      dialogNotification.set({ title: error as string, type: Protocol.DialogNotificationType.Error });
     }
   }
 }

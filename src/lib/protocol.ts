@@ -50,12 +50,12 @@ export enum ControlStatus {
   Visible,
 }
 
-export interface Dialog {
+export interface DialogNotification {
   title: string;
-  type: DialogType;
+  type: DialogNotificationType;
 }
 
-export enum DialogType {
+export enum DialogNotificationType {
   Notification,
   Error,
 }
