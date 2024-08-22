@@ -133,7 +133,7 @@
     createFormat("Default", transformDefault, "D"),
     createFormat("Forced", transformDefault, "F"),
     createFormat("BitRate", transformBitRate, "Bit Rate"),
-    createFormat("StreamSize", transformSize, "Stream Size"),
+    createFormat("StreamSize", transformSize, "Size"),
   ];
 
   const COMMON_PROPERTIES_MAP = new Map<
