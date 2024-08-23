@@ -427,7 +427,7 @@
     <CodeBlock
       language="json"
       code={dialogJsonCodeString ?? ""}
-      codeTextClasses="text-neutral-800 bg-white overflow-auto w-full h-[calc(80vh)]"
+      codeTextClasses="text-neutral-800 bg-white overflow-auto w-full h-[calc(80vh-100px)]"
       lineNumberTextClasses="text-neutral-800"
       showHeader={false}
       showLineNumbers={true}
