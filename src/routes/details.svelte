@@ -116,6 +116,7 @@
           <Button
             classes={{ root: BUTTON_CLASSES_NORMAL }}
             on:click={() => openDialogJsonCode(file)}
+            disabled={allProperties.length === 0}
           >
             <span class="material-symbols-outlined text-3xl"> javascript </span>
           </Button>
