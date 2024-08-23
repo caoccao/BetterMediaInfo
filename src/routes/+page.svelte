@@ -136,6 +136,7 @@
     let classes: Array<string> = [];
     if (dialogType) {
       classes.push("justify-self-center");
+      classes.push("break-words");
       classes.push("text-wrap");
       switch (dialogType) {
         case Protocol.DialogNotificationType.Error:
@@ -402,6 +403,7 @@
   on:close={onCloseDialogNotification}
   classes={{
     root: "rounded-lg border-gray-200 drop-shadow-lg",
+    dialog: "max-w-screen-lg",
     title: dialogTitleClasses,
     actions: "justify-center",
   }}

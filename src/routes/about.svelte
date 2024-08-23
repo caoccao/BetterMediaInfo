@@ -158,5 +158,5 @@
 <div class="bg-sky-50"></div>
 <div class="bg-indigo-50"></div>
 <div class="bg-lime-50"></div>
-<div class="text-green-600 text-wrap justify-self-center"></div>
+<div class="text-green-600 text-wrap break-words justify-self-center"></div>
 <div class="text-red-600"></div>
