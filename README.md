@@ -15,6 +15,11 @@ BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/M
 
 ## TODO List
 
-* Support Json
+* Media Compare
 * Support Linux (low priority)
 * Support Customization (low priority)
+
+## Documentation
+
+* [Installation](docs/installation.md)
+* [Development](docs/development.md)

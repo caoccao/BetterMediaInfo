@@ -116,8 +116,8 @@ set RUST_LOG=debug
 
 ```sh
 pnpm install
-pnpm run tauri dev
-pnpm run tauri build
+pnpm tauri dev
+pnpm tauri build
 ```
 
 ## UI

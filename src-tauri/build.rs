@@ -17,7 +17,7 @@
 
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 trait Lib {
   fn deploy(&self, root_path: &Path);
@@ -35,6 +35,8 @@ impl Lib for ExternalLib {
   fn deploy(&self, root_path: &Path) {
     if !self.is_static {
       let source_lib_path_buf = root_path.join(self.source_path.as_str()).join(self.file_name.as_str());
+      let mut target_lib_path_bufs = Vec::new();
+
       let out_dir = env::var("OUT_DIR").unwrap();
       let out_path = Path::new(out_dir.as_str())
         .parent()
@@ -43,24 +45,17 @@ impl Lib for ExternalLib {
         .unwrap()
         .parent()
         .unwrap();
-      let target_lib_path_buf = out_path.join(self.file_name.as_str());
-      let is_copy = if target_lib_path_buf.exists() {
-        let source_metadata = fs::metadata(source_lib_path_buf.clone())
-          .expect(format!("Failed to get metadata of {}", source_lib_path_buf.to_str().unwrap()).as_str());
-        let target_metadata = fs::metadata(target_lib_path_buf.clone())
-          .expect(format!("Failed to get metadata of {}", target_lib_path_buf.to_str().unwrap()).as_str());
-        source_metadata.modified().unwrap() != target_metadata.modified().unwrap()
-      } else {
-        true
-      };
-      if is_copy {
-        fs::copy(source_lib_path_buf.clone(), target_lib_path_buf.clone()).unwrap();
-        println!(
-          "cargo::warning=Copy from {} to {}",
-          source_lib_path_buf.to_str().unwrap(),
-          target_lib_path_buf.to_str().unwrap()
-        );
-      }
+      target_lib_path_bufs.push(out_path.join(self.file_name.as_str()));
+      target_lib_path_bufs.push(
+        root_path
+          .join("BetterMediaInfo")
+          .join("src-tauri")
+          .join(self.file_name.as_str()),
+      );
+
+      target_lib_path_bufs.into_iter().for_each(|target_lib_path_buf| {
+        copy(source_lib_path_buf.clone(), target_lib_path_buf);
+      });
     }
   }
 
@@ -77,6 +72,26 @@ impl Lib for ExternalLib {
       println!("cargo::warning=Dynamic link {}", self.lib_name);
       println!("cargo:rustc-link-lib={}", self.lib_name);
     }
+  }
+}
+
+fn copy(source_lib_path_buf: PathBuf, target_lib_path_buf: PathBuf) {
+  let is_copy = if target_lib_path_buf.exists() {
+    let source_metadata = fs::metadata(source_lib_path_buf.clone())
+      .expect(format!("Failed to get metadata of {}", source_lib_path_buf.to_str().unwrap()).as_str());
+    let target_metadata = fs::metadata(target_lib_path_buf.clone())
+      .expect(format!("Failed to get metadata of {}", target_lib_path_buf.to_str().unwrap()).as_str());
+    source_metadata.modified().unwrap() != target_metadata.modified().unwrap()
+  } else {
+    true
+  };
+  if is_copy {
+    fs::copy(source_lib_path_buf.clone(), target_lib_path_buf.clone()).unwrap();
+    println!(
+      "cargo::warning=Copy from {} to {}",
+      source_lib_path_buf.to_str().unwrap(),
+      target_lib_path_buf.to_str().unwrap()
+    );
   }
 }
 
@@ -124,6 +139,18 @@ fn main() {
 
   media_info_lib.link(root_path);
   media_info_lib.deploy(root_path);
+
+  #[cfg(target_os = "windows")]
+  {
+    let system_root_path = env::var("SystemRoot").expect("Failed to get SystemRoot");
+    ["msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"]
+      .into_iter()
+      .for_each(|file_name| {
+        let source_lib_path_buf = Path::new(system_root_path.as_str()).join("System32").join(file_name);
+        let target_lib_path_buf = root_path.join("BetterMediaInfo").join("src-tauri").join(file_name);
+        copy(source_lib_path_buf, target_lib_path_buf);
+      });
+  }
 
   tauri_build::build()
 }

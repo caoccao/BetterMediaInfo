@@ -70,6 +70,17 @@
         "icons/128x128@2x.png",
         "icons/icon.icns",
         "icons/icon.ico"
+      ],
+      "windows": {
+        "webviewInstallMode": {
+          "type": "skip"
+        }
+      },
+      "resources": [
+        "MediaInfo.dll",
+        "msvcp140.dll",
+        "vcruntime140.dll",
+        "vcruntime140_1.dll"
       ]
     }
   }
