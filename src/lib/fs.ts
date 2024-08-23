@@ -19,7 +19,7 @@ import { dialogNotification, mediaFiles } from "./store";
 import * as Protocol from "../lib/protocol";
 import { getFiles } from "../lib/service";
 
-export async function scanFiles(files: string[], append: boolean) {
+export async function scanFiles(files: string[], append: boolean = false) {
   if (files.length > 0) {
     try {
       const newFiles = await getFiles(files);

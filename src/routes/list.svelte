@@ -16,6 +16,7 @@
     *   limitations under the License.
     */
 
+  import { getMatches } from "@tauri-apps/api/cli";
   import { onMount } from "svelte";
   import { Button, Card, Header, Table, TextField, Tooltip } from "svelte-ux";
   import { openDirectoryDialog, openFileDialog } from "../lib/dialog";
@@ -30,6 +31,7 @@
     mediaFileToStreamCountMap,
   } from "../lib/store";
   import * as Protocol from "../lib/protocol";
+  import { scanFiles } from "../lib/fs";
   import { getPropertiesMap, getStreamCountMap } from "../lib/service";
   import {
     formatStreamCount,
@@ -235,6 +237,15 @@
           }
         }
       });
+    });
+    getMatches().then((matches) => {
+      const argMatch = matches.args["fileOrDirectory"];
+      if (argMatch) {
+        const fileOrDirectory = argMatch.value;
+        if (fileOrDirectory && typeof fileOrDirectory === "string") {
+          scanFiles([fileOrDirectory as string]);
+        }
+      }
     });
   });
 

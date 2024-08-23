@@ -46,6 +46,17 @@
         "minHeight": 450
       }
     ],
+    "cli": {
+      "description": "Better Media Info",
+      "longDescription": "Better Media Info",
+      "args": [
+        {
+          "name": "fileOrDirectory",
+          "index": 1,
+          "takesValue": true
+        }
+      ]
+    },
     "security": {
       "csp": null
     },
