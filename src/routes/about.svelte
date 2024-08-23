@@ -63,11 +63,13 @@
 </script>
 
 <div class="grid">
-  <div>
-    <p>{APP_NAME} - v{about.appVersion}</p>
-    <p>{about.mediaInfoVersion}</p>
-    <p>
-      Author -
+  <div class="grid grid-cols-[auto,1fr] gap-2">
+    <div class="text-right">{APP_NAME}</div>
+    <div>v{about.appVersion}</div>
+    <div class="text-right">MediaInfoLib</div>
+    <div>v{about.mediaInfoVersion.replaceAll(/[^0-9\.]+/g, "")}</div>
+    <div class="text-right">Author</div>
+    <div>
       <a
         href="https://github.com/caoccao"
         target="_blank"
@@ -75,7 +77,17 @@
       >
         Sam Cao
       </a>
-    </p>
+    </div>
+    <div class="text-right">Github</div>
+    <div>
+      <a
+        href="https://github.com/caoccao/BetterMediaInfo"
+        target="_blank"
+        class="text-blue-600 visited:text-purple-600 underline underline-offset-auto"
+      >
+        https://github.com/caoccao/BetterMediaInfo
+      </a>
+    </div>
   </div>
   <div class="my-3 grid grid-flow-col grid-cols-[auto,1fr] gap-2">
     <MenuField
@@ -97,8 +109,8 @@
       data={pagedParameters}
       classes={{
         table: "border-collapse border border-slate-500",
-        th: "border border-slate-600 p-2 bg-lime-50",
-        td: "border border-slate-700 p-2",
+        th: "border border-slate-600 p-1 bg-lime-50",
+        td: "border border-slate-700 p-1",
       }}
       columns={[
         {

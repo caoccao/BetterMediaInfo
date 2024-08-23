@@ -32,7 +32,6 @@ pub struct Config {
   pub directory_mode: ConfigDirectoryMode,
   #[serde(rename = "fileExtensions")]
   pub file_extensions: ConfigFileExtensions,
-  pub streams: ConfigStreams,
 }
 
 impl Default for Config {
@@ -41,7 +40,6 @@ impl Default for Config {
       append_on_file_drop: true,
       directory_mode: Default::default(),
       file_extensions: Default::default(),
-      streams: Default::default(),
     }
   }
 }
@@ -140,32 +138,6 @@ impl Default for ConfigFileExtensions {
         "wmv".to_owned(),
         "flv".to_owned(),
         "webm".to_owned(),
-      ],
-    }
-  }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ConfigStreams {
-  pub general: Vec<String>,
-}
-
-impl Default for ConfigStreams {
-  fn default() -> Self {
-    Self {
-      general: vec![
-        "CompleteName".to_owned(),
-        "Duration".to_owned(),
-        "Encoded_Application".to_owned(),
-        "Encoded_Date".to_owned(),
-        "Encoded_Library".to_owned(),
-        "FileSize".to_owned(),
-        "Format".to_owned(),
-        "FrameRate".to_owned(),
-        "Movie".to_owned(),
-        "OverallBitRate".to_owned(),
-        "Title".to_owned(),
-        "UniqueID".to_owned(),
       ],
     }
   }

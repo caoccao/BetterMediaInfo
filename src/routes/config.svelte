@@ -38,7 +38,6 @@
   let fileExtensionsAudio: string = "";
   let fileExtensionsImage: string = "";
   let fileExtensionsVideo: string = "";
-  let generalStreams: string[] = [];
   let isDirty = false;
 
   onDestroy(() => {
@@ -58,7 +57,6 @@
         fileExtensionsAudio = value.fileExtensions.audio.join(", ");
         fileExtensionsImage = value.fileExtensions.image.join(", ");
         fileExtensionsVideo = value.fileExtensions.video.join(", ");
-        generalStreams = [...value.streams.general];
       }
     });
     isConfigDirty.subscribe((value) => {
@@ -75,9 +73,6 @@
         image: convertFileExtensions(fileExtensionsImage),
         video: convertFileExtensions(fileExtensionsVideo),
       },
-      streams: {
-        general: [...generalStreams],
-      },
     };
   }
 
@@ -87,11 +82,7 @@
       .filter((extension) => extension.length > 0);
   }
 
-  function onChange(_value: CustomEvent<any>) {
-    isConfigDirty.set(true);
-  }
-
-  function onChangeAppendOnFileDrop() {
+  function onChange() {
     isConfigDirty.set(true);
   }
 
@@ -99,13 +90,16 @@
     event.stopPropagation();
     try {
       config.set(await setConfig(createConfig()));
+      isConfigDirty.set(false);
       dialogNotification.set({
         title: "Settings saved.",
         type: Protocol.DialogNotificationType.Info,
       });
     } catch (error) {
       dialogNotification.set({
-        title: error ? error.toString() : "Failed to save with unknown error.",
+        title: error
+          ? error.toString()
+          : "Failed to save settings with unknown error.",
         type: Protocol.DialogNotificationType.Error,
       });
     }
@@ -123,7 +117,7 @@
           name="appendOnFileDrop"
           bind:group={appendOnFileDrop}
           value={true}
-          on:change={onChangeAppendOnFileDrop}
+          on:change={onChange}
         >
           Append
         </Radio>
@@ -131,7 +125,7 @@
           name="appendOnFileDrop"
           bind:group={appendOnFileDrop}
           value={false}
-          on:change={onChangeAppendOnFileDrop}
+          on:change={onChange}
         >
           Do not append
         </Radio>

@@ -24,7 +24,6 @@ export interface Config {
   appendOnFileDrop: boolean;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
-  streams: ConfigStreams;
 }
 
 export enum ConfigDirectoryMode {
@@ -38,10 +37,6 @@ export interface ConfigFileExtensions {
   audio: string[];
   image: string[];
   video: string[];
-}
-
-export interface ConfigStreams {
-  general: string[];
 }
 
 export enum ControlStatus {
