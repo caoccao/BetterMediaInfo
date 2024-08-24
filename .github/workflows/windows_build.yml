@@ -21,6 +21,7 @@ jobs:
     name: Build for Windows x86_64
     runs-on: windows-latest
 
+    steps:
     - name: Checkout the code
       uses: actions/checkout@v4
 
