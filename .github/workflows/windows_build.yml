@@ -70,10 +70,6 @@ jobs:
       run: |
         cd ..
         git clone https://github.com/MediaArea/ZenLib.git
-        cd ZenLib/Project/GNU/Library
-        ./autogen.sh
-        ./configure --enable-static
-        make -j 4
 
     - name: Build MediaInfoLib
       run: |
