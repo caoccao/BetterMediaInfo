@@ -53,19 +53,18 @@ jobs:
       with:
         cmake-version: '3.28.x'
 
-    - name: Build ZLib
+    - name: Build zlib
       run: |
         cd ..
         curl -o zlib.zip https://www.zlib.net/zlib131.zip
         7z x zlib.zip
-        move zlib-1.3.1 ZLib
+        move zlib-1.3.1 zlib
         del zlib.zip
-        cd ZLib
+        cd zlib
         md build
         cd build
         cmake -A x64 ..\
         cmake --build . --config Release
-        copy zconf.h ..\
 
     - name: Download ZenLib
       run: |

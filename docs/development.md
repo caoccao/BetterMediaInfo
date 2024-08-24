@@ -24,14 +24,14 @@ brew install autoconf automake libtool pkg-config zlib wxwidgets
 ```sh
 curl -o zlib.tar.gz https://www.zlib.net/zlib-1.3.1.tar.gz
 tar -xzvf zlib.tar.gz
-mv zlib-1.3.1 ZLib
+mv zlib-1.3.1 zlib
 rm zlib.tar.gz
 ```
 
-* Build ZLib.
+* Build zlib.
 
 ```sh
-cd ZLib
+cd zlib
 ./configure --static
 make -j`nproc`
 ```
@@ -61,14 +61,14 @@ make -j`nproc`
 ```sh
 curl -o zlib.zip https://www.zlib.net/zlib131.zip
 7z x zlib.zip
-move zlib-1.3.1 ZLib
+move zlib-1.3.1 zlib
 del zlib.zip
 ```
 
-* Build ZLib.
+* Build zlib.
 
 ```sh
-cd ZLib
+cd zlib
 md build
 cd build
 cmake -A x64 ..\
