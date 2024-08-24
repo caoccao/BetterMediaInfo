@@ -56,7 +56,9 @@ jobs:
         move zlib-1.3.1 zlib
         del zlib.zip
         cd zlib
-        cmake -A x64 .
+        md build
+        cd build
+        cmake -A x64 ..\
         cmake --build . --config Release
 
     - name: Download ZenLib
@@ -67,7 +69,7 @@ jobs:
     - name: Build MediaInfoLib
       run: |
         cd ..
-        git clone https://github.com/MediaArea/MediaInfoLib.git
+        git clone https://github.com/caoccao/MediaInfoLib.git
         cd MediaInfoLib\Project\MSVC2022
         msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release
 
