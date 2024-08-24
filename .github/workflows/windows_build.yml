@@ -21,12 +21,6 @@ jobs:
     name: Build for Windows x86_64
     runs-on: windows-latest
 
-    steps:
-    - name: Set git to use LF
-      run: |
-        git config --global core.autocrlf false
-        git config --global core.eol lf
-
     - name: Checkout the code
       uses: actions/checkout@v4
 
