@@ -71,8 +71,8 @@ jobs:
       run: |
         cd ..
         git clone https://github.com/MediaArea/MediaInfoLib.git
-        cd MediaInfoLib
-        msbuild Project\MSVC2022\MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release
+        cd MediaInfoLib\Project\MSVC2022
+        msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release
 
     - name: Build Better Media Info
       run: |
