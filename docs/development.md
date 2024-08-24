@@ -75,7 +75,12 @@ cmake -A x64 ..\
 cmake --build . --config Release
 ```
 
-* Open `MediaInfoLib\Project\MSVC2022\MediaInfoLib.sln` in Visual Studio 2022 and build the release version.
+* Build MediaInfoLib in Visual Studio 2022.
+
+```sh
+cd MediaInfoLib\Project\MSVC2022
+msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release
+```
 
 ## Generate bindings.rs on Windows
 
