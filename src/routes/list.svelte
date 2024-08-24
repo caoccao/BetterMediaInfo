@@ -38,8 +38,10 @@
     transformBitRate,
     transformDefault,
     transformDuration,
+    transformResolution,
     transformSamplingRate,
     transformSize,
+    transformTime,
   } from "../lib/format";
 
   interface PropertyFormat {
@@ -70,17 +72,6 @@
     return { format, header, name, virtual };
   }
 
-  function formatResolution(
-    _value: any,
-    rowData: Record<string, string>,
-    _rowIndex: number
-  ) {
-    if (rowData["Height"] && rowData["Width"]) {
-      return `${rowData["Width"]}x${rowData["Height"]}`;
-    }
-    return "";
-  }
-
   const BUTTON_CLASSES_ALERT =
     "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-red-500";
   const BUTTON_CLASSES_NORMAL =
@@ -91,7 +82,8 @@
   const COMMON_PROPERTIES_GENERAL: Array<PropertyFormat> = [
     createFormat("Format", transformDefault),
     createFormat("FileSize", transformSize, "Size"),
-    createFormat("Duration", transformDuration, "Duration"),
+    createFormat("Duration", transformDuration),
+    createFormat("Time", transformTime, null, true),
     createFormat("Title", transformDefault),
     createFormat("Encoded_Date", transformDefault, "Encoded Date"),
   ];
@@ -101,7 +93,7 @@
     createFormat("Format", transformDefault),
     createFormat("Language", transformDefault),
     createFormat("Title", transformDefault),
-    createFormat("Resolution", formatResolution, "Resolution", true),
+    createFormat("Resolution", transformResolution, null, true),
     createFormat("HDR_Format_Compatibility", transformDefault, "HDR"),
     createFormat("ScanType", transformDefault, "Scan Type"),
     createFormat("Default", transformDefault, "D"),
