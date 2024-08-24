@@ -35,8 +35,6 @@ impl Lib for ExternalLib {
   fn deploy(&self, root_path: &Path) {
     if !self.is_static {
       let source_lib_path_buf = root_path.join(self.source_path.as_str()).join(self.file_name.as_str());
-      let mut target_lib_path_bufs = Vec::new();
-
       let out_dir = env::var("OUT_DIR").unwrap();
       let out_path = Path::new(out_dir.as_str())
         .parent()
@@ -45,17 +43,8 @@ impl Lib for ExternalLib {
         .unwrap()
         .parent()
         .unwrap();
-      target_lib_path_bufs.push(out_path.join(self.file_name.as_str()));
-      target_lib_path_bufs.push(
-        root_path
-          .join("BetterMediaInfo")
-          .join("src-tauri")
-          .join(self.file_name.as_str()),
-      );
-
-      target_lib_path_bufs.into_iter().for_each(|target_lib_path_buf| {
-        copy(source_lib_path_buf.clone(), target_lib_path_buf);
-      });
+      let target_lib_path_buf = out_path.join(self.file_name.as_str());
+      copy(source_lib_path_buf, target_lib_path_buf);
     }
   }
 
@@ -143,11 +132,19 @@ fn main() {
   #[cfg(target_os = "windows")]
   {
     let system_root_path = env::var("SystemRoot").expect("Failed to get SystemRoot");
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let out_path = Path::new(out_dir.as_str())
+      .parent()
+      .unwrap()
+      .parent()
+      .unwrap()
+      .parent()
+      .unwrap();
     ["msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"]
       .into_iter()
       .for_each(|file_name| {
         let source_lib_path_buf = Path::new(system_root_path.as_str()).join("System32").join(file_name);
-        let target_lib_path_buf = root_path.join("BetterMediaInfo").join("src-tauri").join(file_name);
+        let target_lib_path_buf = out_path.join(file_name);
         copy(source_lib_path_buf, target_lib_path_buf);
       });
   }
