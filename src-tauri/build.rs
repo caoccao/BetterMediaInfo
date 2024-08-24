@@ -95,7 +95,7 @@ fn main() {
       is_static: true,
       file_name: "libz.a".to_owned(),
       lib_name: "z".to_owned(),
-      source_path: "ZLib".to_owned(),
+      source_path: "zlib".to_owned(),
     };
     z_lib.link(root_path);
 
