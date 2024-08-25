@@ -134,7 +134,7 @@ pnpm tauri build
 
 ```sh
 copy /y MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll BetterMediaInfo\src-tauri\
-copy /y %SystemRoot%\System32\msvp140.dll BetterMediaInfo\src-tauri\
+copy /y %SystemRoot%\System32\msvcp140.dll BetterMediaInfo\src-tauri\
 copy /y %SystemRoot%\System32\vcruntime140.dll BetterMediaInfo\src-tauri\
 copy /y %SystemRoot%\System32\vcruntime140_1.dll BetterMediaInfo\src-tauri\
 ```

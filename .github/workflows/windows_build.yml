@@ -80,11 +80,7 @@ jobs:
 
     - name: Copy DLLs
       run: |
-        cd ..
-        Copy-Item "MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll" -Destination "BetterMediaInfo\src-tauri\"
-        Copy-Item "C:\Windows\System32\msvp140.dll" -Destination "BetterMediaInfo\src-tauri\"
-        Copy-Item "C:\Windows\System32\vcruntime140.dll" -Destination "BetterMediaInfo\src-tauri\"
-        Copy-Item "C:\Windows\System32\vcruntime140_1.dll" -Destination "BetterMediaInfo\src-tauri\"
+        node src-tauri\patches\copy_dlls.cjs
 
     - name: Patch tauri.conf.json
       run: |
