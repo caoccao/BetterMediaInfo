@@ -84,7 +84,7 @@ jobs:
 
     - name: Patch tauri.conf.json
       run: |
-        git apply < src-tauri\patches\tauri.conf.json.patch
+        git apply src-tauri\patches\tauri.conf.json.patch
 
     - name: Build Better Media Info
       run: |
