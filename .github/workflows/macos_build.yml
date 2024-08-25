@@ -5,13 +5,15 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - .github/**
-      - '!.github/workflows/macos_build.yml'
+      - "!.github/workflows/macos_build.yml"
       - "**.md"
       - "docs/**"
   push:
     branches:
       - main
     paths-ignore:
+      - .github/**
+      - "!.github/workflows/macos_build.yml"
       - "**.md"
       - "docs/**"
 

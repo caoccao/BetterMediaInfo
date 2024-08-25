@@ -5,13 +5,15 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - .github/**
-      - '!.github/workflows/windows_build.yml'
+      - "!.github/workflows/windows_build.yml"
       - "**.md"
       - "docs/**"
   push:
     branches:
       - main
     paths-ignore:
+      - .github/**
+      - "!.github/workflows/windows_build.yml"
       - "**.md"
       - "docs/**"
 
@@ -79,10 +81,10 @@ jobs:
     - name: Copy DLLs
       run: |
         cd ..
-        copy /y MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll BetterMediaInfo\src-tauri\
-        copy /y ${{ env.SystemRoot }}\System32\msvp140.dll BetterMediaInfo\src-tauri\
-        copy /y ${{ env.SystemRoot }}\System32\vcruntime140.dll BetterMediaInfo\src-tauri\
-        copy /y ${{ env.SystemRoot }}\System32\vcruntime140_1.dll BetterMediaInfo\src-tauri\
+        Copy-Item "MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll" -Destination "BetterMediaInfo\src-tauri\"
+        Copy-Item "${{ env.SystemRoot }}\System32\msvp140.dll" -Destination "BetterMediaInfo\src-tauri\"
+        Copy-Item "${{ env.SystemRoot }}\System32\vcruntime140.dll" -Destination "BetterMediaInfo\src-tauri\"
+        Copy-Item "${{ env.SystemRoot }}\System32\vcruntime140_1.dll" -Destination "BetterMediaInfo\src-tauri\"
 
     - name: Patch tauri.conf.json
       run: |
