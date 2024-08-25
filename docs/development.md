@@ -73,6 +73,7 @@ md build
 cd build
 cmake -A x64 ..\
 cmake --build . --config Release
+copy zconf.h ..\
 ```
 
 * Build MediaInfoLib in Visual Studio 2022.
