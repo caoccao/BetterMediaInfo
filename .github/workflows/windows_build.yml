@@ -76,6 +76,18 @@ jobs:
         cd MediaInfoLib\Project\MSVC2022
         msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
 
+    - name: Copy DLLs
+      run: |
+        cd ..
+        copy /y MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll BetterMediaInfo\src-tauri\
+        copy /y ${{ env.SystemRoot }}\System32\msvp140.dll BetterMediaInfo\src-tauri\
+        copy /y ${{ env.SystemRoot }}\System32\vcruntime140.dll BetterMediaInfo\src-tauri\
+        copy /y ${{ env.SystemRoot }}\System32\vcruntime140_1.dll BetterMediaInfo\src-tauri\
+
+    - name: Patch tauri.conf.json
+      run: |
+        git apply < src-tauri\patches\tauri.conf.json.patch
+
     - name: Build Better Media Info
       run: |
         pnpm install
@@ -87,3 +99,10 @@ jobs:
         name: Better_Media_Info-windows-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}-msi
         path: |
           src-tauri/target/release/bundle/msi/*.msi
+
+    - name: Upload the nsis
+      uses: actions/upload-artifact@v4
+      with:
+        name: Better_Media_Info-windows-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}-nsis
+        path: |
+          src-tauri/target/release/bundle/nsis/*.exe

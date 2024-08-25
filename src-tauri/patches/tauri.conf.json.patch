@@ -1,0 +1,17 @@
+diff --git a/src-tauri/tauri.conf.json b/src-tauri/tauri.conf.json
+index 8559245..a26699f 100644
+--- a/src-tauri/tauri.conf.json
++++ b/src-tauri/tauri.conf.json
+@@ -71,6 +71,12 @@
+         "icons/icon.icns",
+         "icons/icon.ico"
+       ],
++      "resources": [
++        "MediaInfo.dll",
++        "msvcp140.dll",
++        "vcruntime140.dll",
++        "vcruntime140_1.dll"
++      ],
+       "windows": {
+         "webviewInstallMode": {
+           "type": "downloadBootstrapper"
