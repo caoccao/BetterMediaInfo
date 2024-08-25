@@ -80,11 +80,11 @@ jobs:
 
     - name: Copy DLLs
       run: |
-        node src-tauri\patches\copy_dlls.cjs
+        node src-tauri\scripts\copy_dlls.cjs
 
     - name: Patch tauri.conf.json
       run: |
-        git apply src-tauri\patches\tauri.conf.json.patch
+        node src-tauri\scripts\patch_tauri_conf.cjs
 
     - name: Build Better Media Info
       run: |

@@ -130,30 +130,11 @@ pnpm tauri build
 
 ### Build NSIS Installer
 
-* Copy the following files to `src-tauri`.
+* Run the commands as follows.
 
 ```sh
-copy /y MediaInfoLib\Project\MSVC2022\x64\Release\MediaInfo.dll BetterMediaInfo\src-tauri\
-copy /y %SystemRoot%\System32\msvcp140.dll BetterMediaInfo\src-tauri\
-copy /y %SystemRoot%\System32\vcruntime140.dll BetterMediaInfo\src-tauri\
-copy /y %SystemRoot%\System32\vcruntime140_1.dll BetterMediaInfo\src-tauri\
-```
-
-* Append the following to `tauri.conf.json`.
-
-```json
-{
-  "tauri": {
-    "bundle": {
-      "resources": [
-        "MediaInfo.dll",
-        "msvcp140.dll",
-        "vcruntime140.dll",
-        "vcruntime140_1.dll"
-      ]
-    }
-  }
-}
+node BetterMediaInfo\src-tauri\scripts\copy_dlls.cjs
+node BetterMediaInfo\src-tauri\scripts\patch_tauri_conf.cjs
 ```
 
 ## UI
