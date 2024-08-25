@@ -6,7 +6,7 @@
 
 ```sh
 git clone https://github.com/caoccao/BetterMediaInfo.git
-git clone https://github.com/caoccao/MediaInfoLib.git
+git clone https://github.com/MediaArea/MediaInfoLib.git
 git clone https://github.com/MediaArea/ZenLib.git
 ```
 

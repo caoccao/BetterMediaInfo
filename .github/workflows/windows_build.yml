@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
+      - .github/**
+      - '!.github/workflows/windows_build.yml'
       - "**.md"
       - "docs/**"
   push:
@@ -70,7 +72,7 @@ jobs:
     - name: Build MediaInfoLib
       run: |
         cd ..
-        git clone https://github.com/caoccao/MediaInfoLib.git
+        git clone https://github.com/MediaArea/MediaInfoLib.git
         cd MediaInfoLib\Project\MSVC2022
         msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
 
@@ -79,9 +81,9 @@ jobs:
         pnpm install
         pnpm tauri build
 
-    - name: Upload the Artifact
+    - name: Upload the msi
       uses: actions/upload-artifact@v4
       with:
-        name: Better_Media_Info-windows-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}
+        name: Better_Media_Info-windows-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}-msi
         path: |
           src-tauri/target/release/bundle/msi/*.msi

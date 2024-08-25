@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
+      - .github/**
+      - '!.github/workflows/macos_build.yml'
       - "**.md"
       - "docs/**"
   push:
