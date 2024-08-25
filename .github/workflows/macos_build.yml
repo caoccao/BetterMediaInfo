@@ -84,7 +84,7 @@ jobs:
     - name: Build MediaInfoLib
       run: |
         cd ..
-        git clone https://github.com/caoccao/MediaInfoLib.git
+        git clone https://github.com/MediaArea/MediaInfoLib.git
         cd MediaInfoLib/Project/GNU/Library
         ./autogen.sh
         ./configure --enable-static
