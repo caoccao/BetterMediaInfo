@@ -71,6 +71,9 @@ export function transformResolution(
   if (rowData["Height"] && rowData["Width"]) {
     return `${rowData["Width"]}x${rowData["Height"]}`;
   }
+  if (rowData["Video:Height"] && rowData["Video:Width"]) {
+    return `${rowData["Video:Width"]}x${rowData["Video:Height"]}`;
+  }
   return "";
 }
 
@@ -106,8 +109,10 @@ export function transformTime(
   rowData: Record<string, string>,
   _rowIndex: number
 ): string {
-  if (rowData["Duration"]) {
-    const duration = parseInt(rowData["Duration"]);
+  if (rowData["Duration"] || rowData["General:Duration"]) {
+    const duration = parseInt(
+      rowData["Duration"] ?? rowData["General:Duration"]
+    );
     const totalSeconds = Math.floor(duration / 1000.0);
     const totalMinutes = Math.floor(totalSeconds / 60.0);
     const totalHours = Math.floor(totalMinutes / 60.0);
