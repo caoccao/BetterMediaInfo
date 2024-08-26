@@ -25,3 +25,4 @@ BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/M
 
 * [Installation](docs/installation.md)
 * [Development](docs/development.md)
+* [Release Notes](docs/release_notes.md)
