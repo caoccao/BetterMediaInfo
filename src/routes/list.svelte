@@ -48,7 +48,6 @@
     transformBitRate,
     transformDefault,
     transformDuration,
-    transformFilePath,
     transformResolution,
     transformSamplingRate,
     transformSize,
@@ -369,7 +368,7 @@
       name: "FilePath",
       header: "File Path",
       align: "left",
-      format: transformFilePath,
+      format: transformDefault,
     } as ColumnDef<Record<string, string>>,
   ].concat(
     [...COMMON_PROPERTIES_MAP.entries()]
