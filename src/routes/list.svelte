@@ -25,6 +25,7 @@
     type ColumnDef,
     Header,
     Table,
+    tableOrderStore,
     TextField,
     Tooltip,
   } from "svelte-ux";
@@ -47,6 +48,7 @@
     transformBitRate,
     transformDefault,
     transformDuration,
+    transformFilePath,
     transformResolution,
     transformSamplingRate,
     transformSize,
@@ -311,6 +313,8 @@
     [Protocol.StreamKind.Text, COMMON_PROPERTIES_TEXT],
   ]);
 
+  const tableOrderStoreForListView = tableOrderStore();
+
   let files: string[] = [];
   let query: string | null = null;
   let viewType: ViewType = ViewType.Card;
@@ -357,25 +361,34 @@
           });
           return newProperty;
         })
-        .reduce((acc, cur) => ({ ...acc, ...cur }), {})
+        .reduce((acc, cur) => ({ ...acc, ...cur }), { FilePath: file })
   );
 
-  $: columnsOfListView = [...COMMON_PROPERTIES_MAP.entries()]
-    .map(([stream, commonProperties]) =>
-      commonProperties.map((propertyDefinition) => {
-        return { stream, propertyDefinition };
+  $: columnsOfListView = [
+    {
+      name: "FilePath",
+      header: "File Path",
+      align: "left",
+      format: transformFilePath,
+    } as ColumnDef<Record<string, string>>,
+  ].concat(
+    [...COMMON_PROPERTIES_MAP.entries()]
+      .map(([stream, commonProperties]) =>
+        commonProperties.map((propertyDefinition) => {
+          return { stream, propertyDefinition };
+        })
+      )
+      .flatMap((streamAndPropertyDefinition) => streamAndPropertyDefinition)
+      .filter(({ stream, propertyDefinition }) => propertyDefinition.inListView)
+      .map(({ stream, propertyDefinition }) => {
+        return {
+          name: `${stream}:${propertyDefinition.name}`,
+          header: propertyDefinition.getHeaderForListView(),
+          align: "left",
+          format: propertyDefinition.format,
+        } as ColumnDef<Record<string, string>>;
       })
-    )
-    .flatMap((streamAndPropertyDefinition) => streamAndPropertyDefinition)
-    .filter(({ stream, propertyDefinition }) => propertyDefinition.inListView)
-    .map(({ stream, propertyDefinition }) => {
-      return {
-        name: `${stream}:${propertyDefinition.name}`,
-        header: propertyDefinition.getHeaderForListView(),
-        align: "left",
-        format: propertyDefinition.format,
-      } as ColumnDef<Record<string, string>>;
-    });
+  );
 
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
@@ -625,7 +638,7 @@
                     classes={{
                       table: "border-collapse border border-slate-500 mb-1",
                       th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(commonPropertiesEntry[0])}-50`,
-                      td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
+                      td: "border border-slate-700 px-1",
                     }}
                     data={fileToPropertyMaps
                       .get(file)
@@ -654,10 +667,11 @@
         classes={{
           table: "border-collapse border border-slate-500 mb-1",
           th: "border border-slate-600 p-1 bg-lime-50",
-          td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
+          td: "border border-slate-700 px-1 text-nowrap",
         }}
-        data={dataOfListView}
+        data={dataOfListView.sort($tableOrderStoreForListView.handler)}
         columns={columnsOfListView}
+        order={tableOrderStoreForListView}
       />
     {/if}
   {/if}

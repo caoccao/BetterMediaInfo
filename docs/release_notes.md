@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.2.0
+
+* Supported media file comparison view
+
 ## 0.1.0
 
 * Supported MediaInfoLib v24.6
