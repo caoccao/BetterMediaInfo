@@ -15,14 +15,13 @@ BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/M
 * First class duration, stream size, bit rate, scan type
 * Precise duration
 
-## TODO List
-
-* Media Comparisons View
-* Support Linux (low priority)
-* Support Customization (low priority)
-
 ## Documentation
 
 * [Installation](docs/installation.md)
 * [Development](docs/development.md)
+* [TODOs](docs/todos.md)
 * [Release Notes](docs/release_notes.md)
+
+## License
+
+[APACHE LICENSE, VERSION 2.0](LICENSE)
