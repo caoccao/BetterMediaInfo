@@ -63,6 +63,13 @@ export function transformDuration(value: string | undefined | null): string {
   return "";
 }
 
+export function transformFPS(value: string | undefined | null): string {
+  if (value) {
+    return trimFractionZeros(value);
+  }
+  return "";
+}
+
 export function transformResolution(
   _value: any,
   rowData: Record<string, string>,

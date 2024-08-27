@@ -48,6 +48,7 @@
     transformBitRate,
     transformDefault,
     transformDuration,
+    transformFPS,
     transformResolution,
     transformSamplingRate,
     transformSize,
@@ -60,6 +61,7 @@
   }
 
   class PropertyDefinition {
+    align: "left" | "right" | "center" | "justify";
     format: (
       value: any,
       rowData: Record<string, string>,
@@ -67,10 +69,10 @@
     ) => string;
     headerForCardView: string | null;
     headerForListView: string | null;
-    name: string;
-    virtual: boolean;
     inCardView: boolean;
     inListView: boolean;
+    name: string;
+    virtual: boolean;
 
     constructor(
       name: string,
@@ -82,6 +84,7 @@
       headerForCardView: string | null = null,
       headerForListView: string | null = null
     ) {
+      this.align = "left";
       this.format = format;
       this.headerForCardView = headerForCardView;
       this.headerForListView = headerForListView;
@@ -97,6 +100,21 @@
 
     getHeaderForListView(): string {
       return this.headerForListView ?? this.name;
+    }
+
+    setAlignCenter(): PropertyDefinition {
+      this.align = "center";
+      return this;
+    }
+
+    setAlignLeft(): PropertyDefinition {
+      this.align = "left";
+      return this;
+    }
+
+    setAlignRight(): PropertyDefinition {
+      this.align = "right";
+      return this;
     }
 
     setHeaderForCardView(header: string | null): PropertyDefinition {
@@ -128,7 +146,7 @@
       return {
         name: this.name,
         header: this.getHeaderForCardView(),
-        align: "left",
+        align: this.align,
         format: this.format,
       };
     }
@@ -139,7 +157,7 @@
       return {
         name: `${stream}:${this.name}`,
         header: this.getHeaderForListView(),
-        align: "left",
+        align: this.align,
         format: this.format,
       };
     }
@@ -165,12 +183,15 @@
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("FileSize", transformSize, "Size", "File Size")
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Duration", transformDuration)
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Time", transformTime)
+      .setAlignRight()
       .setVirtual()
       .setInCardView()
       .setInListView(),
@@ -216,11 +237,13 @@
     new PropertyDefinition("Default").setHeaderForCardView("D"),
     new PropertyDefinition("Forced").setHeaderForCardView("F"),
     new PropertyDefinition("BitDepth")
+      .setAlignRight()
       .setHeaderForCardView("Depth")
       .setHeaderForListView("Video Bit Depth")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("FrameRate")
+    new PropertyDefinition("FrameRate", transformFPS)
+      .setAlignRight()
       .setHeaderForCardView("FPS")
       .setHeaderForListView("FPS")
       .setInCardView()
@@ -231,9 +254,11 @@
       "Bit Rate",
       "Video Bit Rate"
     )
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("StreamSize", transformSize, "Size", "Video Size")
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Width"),
@@ -256,11 +281,13 @@
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Channel(s)")
+      .setAlignRight()
       .setHeaderForCardView("CH")
       .setHeaderForListView("CH")
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("BitDepth")
+      .setAlignRight()
       .setHeaderForCardView("Depth")
       .setHeaderForListView("Audio Bit Depth")
       .setInCardView()
@@ -271,6 +298,7 @@
       "Sampling",
       "Audio Sampling Rate"
     )
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Default").setHeaderForCardView("D").setInCardView(),
@@ -286,9 +314,11 @@
       "Bit Rate",
       "Audio Bit Rate"
     )
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("StreamSize", transformSize, "Size", "Audio Size")
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
   ];
@@ -315,9 +345,11 @@
       "Bit Rate",
       "Text Bit Rate"
     )
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("StreamSize", transformSize, "Size", "Text Size")
+      .setAlignRight()
       .setInCardView()
       .setInListView(),
   ];
