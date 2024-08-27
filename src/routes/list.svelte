@@ -80,18 +80,15 @@
         rowIndex: number
       ) => string = transformDefault,
       headerForCardView: string | null = null,
-      headerForListView: string | null = null,
-      virtual: boolean = false,
-      inCardView: boolean = false,
-      inListView: boolean = false
+      headerForListView: string | null = null
     ) {
       this.format = format;
       this.headerForCardView = headerForCardView;
       this.headerForListView = headerForListView;
       this.name = name;
-      this.inCardView = inCardView;
-      this.inListView = inListView;
-      this.virtual = virtual;
+      this.inCardView = false;
+      this.inListView = false;
+      this.virtual = false;
     }
 
     getHeaderForCardView(): string {
@@ -126,6 +123,26 @@
       this.virtual = virtual;
       return this;
     }
+
+    toColumnsOfCardView(): ColumnDef<Record<string, string>> {
+      return {
+        name: this.name,
+        header: this.getHeaderForCardView(),
+        align: "left",
+        format: this.format,
+      };
+    }
+
+    toColumnsOfListView(
+      stream: Protocol.StreamKind
+    ): ColumnDef<Record<string, string>> {
+      return {
+        name: `${stream}:${this.name}`,
+        header: this.getHeaderForListView(),
+        align: "left",
+        format: this.format,
+      };
+    }
   }
 
   const BUTTON_CLASSES_SIDE_ALERT =
@@ -140,6 +157,9 @@
     "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyDefinition> = [
+    new PropertyDefinition("CompleteName")
+      .setHeaderForListView("File Path")
+      .setInListView(),
     new PropertyDefinition("Format")
       .setHeaderForListView("File Format")
       .setInCardView()
@@ -360,34 +380,20 @@
           });
           return newProperty;
         })
-        .reduce((acc, cur) => ({ ...acc, ...cur }), { FilePath: file })
+        .reduce((acc, cur) => ({ ...acc, ...cur }), {})
   );
 
-  $: columnsOfListView = [
-    {
-      name: "FilePath",
-      header: "File Path",
-      align: "left",
-      format: transformDefault,
-    } as ColumnDef<Record<string, string>>,
-  ].concat(
-    [...COMMON_PROPERTIES_MAP.entries()]
-      .map(([stream, commonProperties]) =>
-        commonProperties.map((propertyDefinition) => {
-          return { stream, propertyDefinition };
-        })
-      )
-      .flatMap((streamAndPropertyDefinition) => streamAndPropertyDefinition)
-      .filter(({ stream, propertyDefinition }) => propertyDefinition.inListView)
-      .map(({ stream, propertyDefinition }) => {
-        return {
-          name: `${stream}:${propertyDefinition.name}`,
-          header: propertyDefinition.getHeaderForListView(),
-          align: "left",
-          format: propertyDefinition.format,
-        } as ColumnDef<Record<string, string>>;
+  $: columnsOfListView = [...COMMON_PROPERTIES_MAP.entries()]
+    .map(([stream, commonProperties]) =>
+      commonProperties.map((propertyDefinition) => {
+        return { stream, propertyDefinition };
       })
-  );
+    )
+    .flatMap((streamAndPropertyDefinition) => streamAndPropertyDefinition)
+    .filter(({ stream, propertyDefinition }) => propertyDefinition.inListView)
+    .map(({ stream, propertyDefinition }) =>
+      propertyDefinition.toColumnsOfListView(stream)
+    );
 
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
@@ -645,14 +651,7 @@
                       ?.map((map) => map.propertyMap)}
                     columns={commonPropertiesEntry[1]
                       .filter((property) => property.inCardView)
-                      .map((property) => {
-                        return {
-                          name: property.name,
-                          header: property.getHeaderForCardView(),
-                          align: "left",
-                          format: property.format,
-                        };
-                      })}
+                      .map((property) => property.toColumnsOfCardView())}
                   />
                 {/if}
               {/each}
