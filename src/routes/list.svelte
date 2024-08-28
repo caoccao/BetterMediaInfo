@@ -241,6 +241,26 @@
       .setHeader("Encoded Date")
       .setInCardView()
       .setInListView(),
+    new PropertyDefinition("Video:Count")
+      .setOrderByNumber()
+      .setHeader("V")
+      .setInListView(),
+    new PropertyDefinition("Audio:Count")
+      .setOrderByNumber()
+      .setHeader("A")
+      .setInListView(),
+    new PropertyDefinition("Text:Count")
+      .setOrderByNumber()
+      .setHeader("T")
+      .setInListView(),
+    new PropertyDefinition("Image:Count")
+      .setOrderByNumber()
+      .setHeader("I")
+      .setInListView(),
+    new PropertyDefinition("Menu:Count")
+      .setOrderByNumber()
+      .setHeader("M")
+      .setInListView(),
   ];
 
   const COMMON_PROPERTIES_VIDEO: Array<PropertyDefinition> = [
@@ -400,8 +420,8 @@
   );
 
   $: dataOfListView = [...fileToPropertyMaps.entries()].map(
-    ([file, propertyMaps]) =>
-      propertyMaps
+    ([file, propertyMaps]) => {
+      const newPropertyMap = propertyMaps
         .filter((map) => map.num == 0)
         .map((map) => {
           const newProperty: Record<string, string> = {};
@@ -410,7 +430,13 @@
           });
           return newProperty;
         })
-        .reduce((acc, cur) => ({ ...acc, ...cur }), {})
+        .reduce((acc, cur) => ({ ...acc, ...cur }), {});
+      fileToStreamCountMap.get(file)?.forEach((streamCount, stream) => {
+        newPropertyMap[`General:${stream}:Count`] =
+          streamCount.count.toString();
+      });
+      return newPropertyMap;
+    }
   );
 
   $: columnsOfListView = [...COMMON_PROPERTIES_MAP.entries()]
