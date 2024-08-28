@@ -55,6 +55,12 @@
     transformTime,
   } from "../lib/format";
 
+  enum OrderByType {
+    None,
+    Number,
+    String,
+  }
+
   enum ViewType {
     Card,
     List,
@@ -72,6 +78,7 @@
     inCardView: boolean;
     inListView: boolean;
     name: string;
+    orderByType: OrderByType;
     virtual: boolean;
 
     constructor(
@@ -88,9 +95,10 @@
       this.format = format;
       this.headerForCardView = headerForCardView;
       this.headerForListView = headerForListView;
-      this.name = name;
       this.inCardView = false;
       this.inListView = false;
+      this.name = name;
+      this.orderByType = OrderByType.String;
       this.virtual = false;
     }
 
@@ -100,6 +108,31 @@
 
     getHeaderForListView(): string {
       return this.headerForListView ?? this.name;
+    }
+
+    getOrderBy(
+      property: string
+    ):
+      | ((a: Record<string, string>, b: Record<string, string>) => number)
+      | boolean {
+      switch (this.orderByType) {
+        case OrderByType.Number:
+          return (a: Record<string, string>, b: Record<string, string>) => {
+            const v1 = a[property] ? parseFloat(a[property]) : 0;
+            const v2 = b[property] ? parseFloat(b[property]) : 0;
+            return sortDirection === "asc" ? v1 - v2 : v2 - v1;
+          };
+        case OrderByType.String:
+          return (a: Record<string, string>, b: Record<string, string>) => {
+            const v1 = a[property] ?? "";
+            const v2 = b[property] ?? "";
+            return sortDirection === "asc"
+              ? v1.localeCompare(v2)
+              : v2.localeCompare(v1);
+          };
+        default:
+          return false;
+      }
     }
 
     setAlignCenter(): PropertyDefinition {
@@ -137,6 +170,21 @@
       return this;
     }
 
+    setOrderByNone(): PropertyDefinition {
+      this.orderByType = OrderByType.None;
+      return this;
+    }
+
+    setOrderByNumber(): PropertyDefinition {
+      this.orderByType = OrderByType.Number;
+      return this;
+    }
+
+    setOrderByString(): PropertyDefinition {
+      this.orderByType = OrderByType.String;
+      return this;
+    }
+
     setVirtual(virtual: boolean = true): PropertyDefinition {
       this.virtual = virtual;
       return this;
@@ -154,11 +202,13 @@
     toColumnsOfListView(
       stream: Protocol.StreamKind
     ): ColumnDef<Record<string, string>> {
+      const name = `${stream}:${this.name}`;
       return {
-        name: `${stream}:${this.name}`,
+        name,
         header: this.getHeaderForListView(),
         align: this.align,
         format: this.format,
+        orderBy: this.getOrderBy(name),
       };
     }
   }
@@ -183,14 +233,17 @@
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("FileSize", transformSize, "Size", "File Size")
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Duration", transformDuration)
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Time", transformTime)
+      .setOrderByNone()
       .setAlignRight()
       .setVirtual()
       .setInCardView()
@@ -221,6 +274,7 @@
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Resolution", transformResolution)
+      .setOrderByNone()
       .setVirtual()
       .setInCardView()
       .setInListView(),
@@ -237,12 +291,14 @@
     new PropertyDefinition("Default").setHeaderForCardView("D"),
     new PropertyDefinition("Forced").setHeaderForCardView("F"),
     new PropertyDefinition("BitDepth")
+      .setOrderByNumber()
       .setAlignRight()
       .setHeaderForCardView("Depth")
       .setHeaderForListView("Video Bit Depth")
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("FrameRate", transformFPS)
+      .setOrderByNumber()
       .setAlignRight()
       .setHeaderForCardView("FPS")
       .setHeaderForListView("FPS")
@@ -254,10 +310,12 @@
       "Bit Rate",
       "Video Bit Rate"
     )
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("StreamSize", transformSize, "Size", "Video Size")
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
@@ -281,12 +339,14 @@
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("Channel(s)")
+      .setOrderByNumber()
       .setAlignRight()
       .setHeaderForCardView("CH")
       .setHeaderForListView("CH")
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("BitDepth")
+      .setOrderByNumber()
       .setAlignRight()
       .setHeaderForCardView("Depth")
       .setHeaderForListView("Audio Bit Depth")
@@ -298,6 +358,7 @@
       "Sampling",
       "Audio Sampling Rate"
     )
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
@@ -314,10 +375,12 @@
       "Bit Rate",
       "Audio Bit Rate"
     )
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("StreamSize", transformSize, "Size", "Audio Size")
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
@@ -345,10 +408,12 @@
       "Bit Rate",
       "Text Bit Rate"
     )
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("StreamSize", transformSize, "Size", "Text Size")
+      .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
@@ -368,6 +433,7 @@
 
   let files: string[] = [];
   let query: string | null = null;
+  let sortDirection: "asc" | "desc" = "asc";
   let viewType: ViewType = ViewType.Card;
 
   let fileToAllPropertiesMap: Map<
@@ -500,6 +566,9 @@
           scanFiles([fileOrDirectory as string]);
         }
       }
+    });
+    tableOrderStoreForListView.subscribe((value) => {
+      sortDirection = value.direction;
     });
   });
 
