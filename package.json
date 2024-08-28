@@ -1,7 +1,7 @@
 {
   "name": "bettermi",
   "version": "0.2.0",
-  "description": "Better Media Info",
+  "description": "BetterMediaInfo",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

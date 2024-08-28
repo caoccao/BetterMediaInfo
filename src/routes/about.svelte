@@ -21,7 +21,7 @@
   import * as Protocol from "../lib/protocol";
   import { mediaInfoAbout, mediaInfoParameters } from "../lib/store";
 
-  const APP_NAME = "Better Media Info";
+  const APP_NAME = "BetterMediaInfo";
   let about = { appVersion: "", mediaInfoVersion: "" };
   let filteredParameters: Array<Protocol.Parameter> = [];
   let parameters: Array<Protocol.Parameter> = [];

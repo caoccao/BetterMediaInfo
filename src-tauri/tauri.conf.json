@@ -7,7 +7,7 @@
     "distDir": "../build"
   },
   "package": {
-    "productName": "Better Media Info",
+    "productName": "BetterMediaInfo",
     "version": "0.2.0"
   },
   "tauri": {
@@ -38,7 +38,7 @@
     },
     "windows": [
       {
-        "title": "Better Media Info",
+        "title": "BetterMediaInfo",
         "theme": "Light",
         "width": 1200,
         "height": 900,
@@ -47,8 +47,8 @@
       }
     ],
     "cli": {
-      "description": "Better Media Info",
-      "longDescription": "Better Media Info",
+      "description": "BetterMediaInfo",
+      "longDescription": "BetterMediaInfo",
       "args": [
         {
           "name": "fileOrDirectory",

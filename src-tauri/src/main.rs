@@ -18,6 +18,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri::Manager;
+
 mod config;
 mod controller;
 mod media_info;
@@ -84,6 +86,11 @@ async fn write_text_file(file: String, text: String) -> Result<(), String> {
 fn main() {
   env_logger::init();
   tauri::Builder::default()
+    .setup(|app| {
+      let window = app.get_window("main").unwrap();
+      let _ = window.set_title("BetterMediaInfo v0.2.0");
+      Ok(())
+    })
     .invoke_handler(tauri::generate_handler![
       get_about,
       get_config,

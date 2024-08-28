@@ -61,7 +61,7 @@ impl Config {
 
   fn get_path_buf() -> PathBuf {
     let mut config_path_buf = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
-    config_path_buf.push("Better Media Info.json");
+    config_path_buf.push("BetterMediaInfo.json");
     config_path_buf
   }
 
