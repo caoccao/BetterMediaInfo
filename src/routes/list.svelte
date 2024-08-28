@@ -281,8 +281,8 @@
       .setHeader("Scan Type")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("Default").setHeader("D"),
-    new PropertyDefinition("Forced").setHeader("F"),
+    new PropertyDefinition("Default").setHeader("D").setInCardView(),
+    new PropertyDefinition("Forced").setHeader("F").setInCardView(),
     new PropertyDefinition("BitDepth")
       .setOrderByNumber()
       .setAlignRight()
