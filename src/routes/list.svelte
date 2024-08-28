@@ -24,6 +24,7 @@
     Card,
     type ColumnDef,
     Header,
+    Overflow,
     Table,
     tableOrderStore,
     TextField,
@@ -720,16 +721,18 @@
         {/if}
       {/each}
     {:else if viewType == ViewType.List}
-      <Table
-        classes={{
-          table: "border-collapse border border-slate-500 mb-1",
-          th: "border border-slate-600 p-1 bg-lime-50",
-          td: "border border-slate-700 px-1 text-nowrap",
-        }}
-        data={dataOfListView.sort($tableOrderStoreForListView.handler)}
-        columns={columnsOfListView}
-        order={tableOrderStoreForListView}
-      />
+      <Overflow class="pb-2 overflow-auto">
+        <Table
+          classes={{
+            table: "border-collapse border border-slate-500 mb-1",
+            th: "border border-slate-600 p-1 bg-lime-50",
+            td: "border border-slate-700 px-1 text-nowrap",
+          }}
+          data={dataOfListView.sort($tableOrderStoreForListView.handler)}
+          columns={columnsOfListView}
+          order={tableOrderStoreForListView}
+        />
+      </Overflow>
     {/if}
   {/if}
 </div>
