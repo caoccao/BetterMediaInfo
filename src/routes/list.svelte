@@ -73,8 +73,7 @@
       rowData: Record<string, string>,
       rowIndex: number
     ) => string;
-    headerForCardView: string | null;
-    headerForListView: string | null;
+    header: string | null;
     inCardView: boolean;
     inListView: boolean;
     name: string;
@@ -88,13 +87,11 @@
         rowData: Record<string, string>,
         rowIndex: number
       ) => string = transformDefault,
-      headerForCardView: string | null = null,
-      headerForListView: string | null = null
+      headerForCardView: string | null = null
     ) {
       this.align = "left";
       this.format = format;
-      this.headerForCardView = headerForCardView;
-      this.headerForListView = headerForListView;
+      this.header = headerForCardView;
       this.inCardView = false;
       this.inListView = false;
       this.name = name;
@@ -102,12 +99,8 @@
       this.virtual = false;
     }
 
-    getHeaderForCardView(): string {
-      return this.headerForCardView ?? this.name;
-    }
-
-    getHeaderForListView(): string {
-      return this.headerForListView ?? this.name;
+    getHeader(): string {
+      return this.header ?? this.name;
     }
 
     getOrderBy(
@@ -150,13 +143,8 @@
       return this;
     }
 
-    setHeaderForCardView(header: string | null): PropertyDefinition {
-      this.headerForCardView = header;
-      return this;
-    }
-
-    setHeaderForListView(header: string | null): PropertyDefinition {
-      this.headerForListView = header;
+    setHeader(header: string | null): PropertyDefinition {
+      this.header = header;
       return this;
     }
 
@@ -193,7 +181,7 @@
     toColumnsOfCardView(): ColumnDef<Record<string, string>> {
       return {
         name: this.name,
-        header: this.getHeaderForCardView(),
+        header: this.getHeader(),
         align: this.align,
         format: this.format,
       };
@@ -205,10 +193,13 @@
       const name = `${stream}:${this.name}`;
       return {
         name,
-        header: this.getHeaderForListView(),
+        header: this.getHeader(),
         align: this.align,
         format: this.format,
         orderBy: this.getOrderBy(name),
+        classes: {
+          th: `border border-slate-600 p-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-50`,
+        },
       };
     }
   }
@@ -226,13 +217,10 @@
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyDefinition> = [
     new PropertyDefinition("CompleteName")
-      .setHeaderForListView("File Path")
+      .setHeader("File Path")
       .setInListView(),
-    new PropertyDefinition("Format")
-      .setHeaderForListView("File Format")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("FileSize", transformSize, "Size", "File Size")
+    new PropertyDefinition("Format").setInCardView().setInListView(),
+    new PropertyDefinition("FileSize", transformSize, "Size")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
@@ -248,73 +236,51 @@
       .setVirtual()
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("Title")
-      .setHeaderForListView("File Title")
-      .setInCardView()
-      .setInListView(),
+    new PropertyDefinition("Title").setInCardView().setInListView(),
     new PropertyDefinition("Encoded_Date")
-      .setHeaderForCardView("Encoded Date")
-      .setHeaderForListView("Encoded Date")
+      .setHeader("Encoded Date")
       .setInCardView()
       .setInListView(),
   ];
 
   const COMMON_PROPERTIES_VIDEO: Array<PropertyDefinition> = [
     new PropertyDefinition("ID").setInCardView(),
-    new PropertyDefinition("Format")
-      .setHeaderForListView("Video Format")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("Language")
-      .setHeaderForListView("Video Language")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("Title")
-      .setHeaderForListView("Video Title")
-      .setInCardView()
-      .setInListView(),
+    new PropertyDefinition("Format").setInCardView().setInListView(),
+    new PropertyDefinition("Language").setInCardView().setInListView(),
+    new PropertyDefinition("Title").setInCardView().setInListView(),
     new PropertyDefinition("Resolution", transformResolution)
       .setOrderByNone()
       .setVirtual()
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("HDR_Format_Compatibility")
-      .setHeaderForCardView("HDR")
-      .setHeaderForListView("HDR")
+      .setHeader("HDR")
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("ScanType")
-      .setHeaderForCardView("Scan Type")
-      .setHeaderForListView("Scan Type")
+      .setHeader("Scan Type")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("Default").setHeaderForCardView("D"),
-    new PropertyDefinition("Forced").setHeaderForCardView("F"),
+    new PropertyDefinition("Default").setHeader("D"),
+    new PropertyDefinition("Forced").setHeader("F"),
     new PropertyDefinition("BitDepth")
       .setOrderByNumber()
       .setAlignRight()
-      .setHeaderForCardView("Depth")
-      .setHeaderForListView("Video Bit Depth")
+      .setHeader("Depth")
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("FrameRate", transformFPS)
       .setOrderByNumber()
       .setAlignRight()
-      .setHeaderForCardView("FPS")
-      .setHeaderForListView("FPS")
+      .setHeader("FPS")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition(
-      "BitRate",
-      transformBitRate,
-      "Bit Rate",
-      "Video Bit Rate"
-    )
+    new PropertyDefinition("BitRate", transformBitRate, "Bit Rate")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("StreamSize", transformSize, "Size", "Video Size")
+    new PropertyDefinition("StreamSize", transformSize, "Size")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
@@ -326,60 +292,40 @@
   const COMMON_PROPERTIES_AUDIO: Array<PropertyDefinition> = [
     new PropertyDefinition("ID").setInCardView(),
     new PropertyDefinition("Format_Commercial")
-      .setHeaderForCardView("Format")
-      .setHeaderForListView("Audio Format")
+      .setHeader("Format")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("Language")
-      .setHeaderForListView("Audio Language")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("Title")
-      .setHeaderForListView("Audio Title")
-      .setInCardView()
-      .setInListView(),
+    new PropertyDefinition("Language").setInCardView().setInListView(),
+    new PropertyDefinition("Title").setInCardView().setInListView(),
     new PropertyDefinition("Channel(s)")
       .setOrderByNumber()
       .setAlignRight()
-      .setHeaderForCardView("CH")
-      .setHeaderForListView("CH")
+      .setHeader("CH")
       .setInCardView()
       .setInListView(),
     new PropertyDefinition("BitDepth")
       .setOrderByNumber()
       .setAlignRight()
-      .setHeaderForCardView("Depth")
-      .setHeaderForListView("Audio Bit Depth")
+      .setHeader("Depth")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition(
-      "SamplingRate",
-      transformSamplingRate,
-      "Sampling",
-      "Audio Sampling Rate"
-    )
+    new PropertyDefinition("SamplingRate", transformSamplingRate, "Sampling")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("Default").setHeaderForCardView("D").setInCardView(),
-    new PropertyDefinition("Forced").setHeaderForCardView("F").setInCardView(),
+    new PropertyDefinition("Default").setHeader("D").setInCardView(),
+    new PropertyDefinition("Forced").setHeader("F").setInCardView(),
     new PropertyDefinition("BitRate_Mode")
-      .setHeaderForCardView("Mode")
-      .setHeaderForListView("Audio Bit Rate Mode")
+      .setHeader("Mode")
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition(
-      "BitRate",
-      transformBitRate,
-      "Bit Rate",
-      "Audio Bit Rate"
-    )
+    new PropertyDefinition("BitRate", transformBitRate, "Bit Rate")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("StreamSize", transformSize, "Size", "Audio Size")
+    new PropertyDefinition("StreamSize", transformSize, "Size")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
@@ -388,31 +334,17 @@
 
   const COMMON_PROPERTIES_TEXT: Array<PropertyDefinition> = [
     new PropertyDefinition("ID").setInCardView(),
-    new PropertyDefinition("Format")
-      .setHeaderForListView("Text Format")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("Language")
-      .setHeaderForListView("Text Language")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("Title")
-      .setHeaderForListView("Text Title")
-      .setInCardView()
-      .setInListView(),
-    new PropertyDefinition("Default").setHeaderForCardView("D").setInCardView(),
-    new PropertyDefinition("Forced").setHeaderForCardView("F").setInCardView(),
-    new PropertyDefinition(
-      "BitRate",
-      transformBitRate,
-      "Bit Rate",
-      "Text Bit Rate"
-    )
+    new PropertyDefinition("Format").setInCardView().setInListView(),
+    new PropertyDefinition("Language").setInCardView().setInListView(),
+    new PropertyDefinition("Title").setInCardView().setInListView(),
+    new PropertyDefinition("Default").setHeader("D").setInCardView(),
+    new PropertyDefinition("Forced").setHeader("F").setInCardView(),
+    new PropertyDefinition("BitRate", transformBitRate, "Bit Rate")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
       .setInListView(),
-    new PropertyDefinition("StreamSize", transformSize, "Size", "Text Size")
+    new PropertyDefinition("StreamSize", transformSize, "Size")
       .setOrderByNumber()
       .setAlignRight()
       .setInCardView()
@@ -736,21 +668,21 @@
               </div>
             </Header>
             <div slot="contents">
-              {#each [...COMMON_PROPERTIES_MAP.entries()] as commonPropertiesEntry}
+              {#each [...COMMON_PROPERTIES_MAP.entries()] as [stream, commonProperties]}
                 {#if fileToPropertyMaps
                   .get(file)
-                  ?.some((map) => map.stream === commonPropertiesEntry[0])}
+                  ?.some((map) => map.stream === stream)}
                   <Table
                     classes={{
                       table: "border-collapse border border-slate-500 mb-1",
-                      th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(commonPropertiesEntry[0])}-50`,
+                      th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-50`,
                       td: "border border-slate-700 px-1",
                     }}
                     data={fileToPropertyMaps
                       .get(file)
-                      ?.filter((map) => map.stream === commonPropertiesEntry[0])
+                      ?.filter((map) => map.stream === stream)
                       ?.map((map) => map.propertyMap)}
-                    columns={commonPropertiesEntry[1]
+                    columns={commonProperties
                       .filter((property) => property.inCardView)
                       .map((property) => property.toColumnsOfCardView())}
                   />
