@@ -15,12 +15,14 @@ BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/M
 * First class duration, stream size, bit rate, scan type
 * Precise duration
 
+![Screenshot](https://github.com/caoccao/BetterMediaInfo/raw/main/docs/screenshots/card_view.png)
+
 ## Documentation
 
 * [Installation](docs/installation.md)
 * [Development](docs/development.md)
-* [TODOs](docs/todos.md)
 * [Release Notes](docs/release_notes.md)
+* [TODOs](docs/todos.md)
 
 ## License
 
