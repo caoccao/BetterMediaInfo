@@ -25,6 +25,10 @@ BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/M
 * [Release Notes](docs/release_notes.md)
 * [TODOs](docs/todos.md)
 
+## Blog
+
+* [BetterMediaInfo — A Better GUI for MediaInfo](https://blog.caoccao.com/bettermediainfo-a-better-gui-for-mediainfo-fcd227962002)
+
 ## License
 
 [APACHE LICENSE, VERSION 2.0](LICENSE)
