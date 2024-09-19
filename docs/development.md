@@ -10,6 +10,50 @@ git clone https://github.com/MediaArea/MediaInfoLib.git
 git clone https://github.com/MediaArea/ZenLib.git
 ```
 
+### Build MediaInfoLib for Linux
+
+* Upgrade Ubuntu.
+
+```sh
+sudo apt-get update
+sudo apt-get install -y libsoup2.4-dev libwebkit2gtk-4.0-dev librsvg2-dev
+```
+
+* Download zlib.
+
+```sh
+curl -o zlib.tar.gz https://www.zlib.net/zlib-1.3.1.tar.gz
+tar -xzvf zlib.tar.gz
+mv zlib-1.3.1 zlib
+rm zlib.tar.gz
+```
+
+* Build zlib.
+
+```sh
+cd zlib
+./configure --static
+make -j`nproc`
+```
+
+* Build ZenLib.
+
+```sh
+cd ZenLib/Project/GNU/Library
+./autogen.sh
+./configure --enable-static
+make -j`nproc`
+```
+
+* Build MediaInfoLib.
+
+```sh
+cd MediaInfoLib/Project/GNU/Library
+./autogen.sh
+./configure --enable-static
+make -j`nproc`
+```
+
 ### Build MediaInfoLib for MacOS
 
 * Install XCode.

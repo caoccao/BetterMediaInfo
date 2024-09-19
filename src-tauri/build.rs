@@ -89,7 +89,7 @@ fn main() {
   let better_media_info_path = Path::new(cargo_manifest_dir.as_str());
   let root_path = better_media_info_path.parent().unwrap().parent().unwrap();
 
-  #[cfg(target_os = "macos")]
+  #[cfg(not(target_os = "windows"))]
   {
     let z_lib = ExternalLib {
       is_static: true,
@@ -106,11 +106,15 @@ fn main() {
       source_path: "ZenLib/Project/GNU/Library/.libs".to_owned(),
     };
     zen_lib.link(root_path);
-
-    println!("cargo:rustc-link-lib=c++");
   }
 
+  #[cfg(target_os = "linux")]
+  println!("cargo:rustc-link-lib=libc++");
+
   #[cfg(target_os = "macos")]
+  println!("cargo:rustc-link-lib=c++");
+
+  #[cfg(not(target_os = "windows"))]
   let media_info_lib = ExternalLib {
     is_static: true,
     file_name: "libmediainfo.a".to_owned(),

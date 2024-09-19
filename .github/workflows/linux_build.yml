@@ -1,0 +1,110 @@
+name: Linux Build
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - .github/**
+      - "!.github/workflows/linux_build.yml"
+      - "**.md"
+      - "docs/**"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - .github/**
+      - "!.github/workflows/linux_build.yml"
+      - "**.md"
+      - "docs/**"
+
+env:
+  BETTER_MEDIA_INFO_VERSION: 0.2.0
+
+jobs:
+  build_package:
+    name: Build for Linux x86_64
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set git to use LF
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+
+    - name: Checkout the code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Upgrade Ubuntu
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsoup2.4-dev libwebkit2gtk-4.0-dev librsvg2-dev
+
+    - name: Build zlib
+      run: |
+        cd ..
+        curl -o zlib.tar.gz https://www.zlib.net/zlib-1.3.1.tar.gz
+        tar -xzvf zlib.tar.gz
+        mv zlib-1.3.1 zlib
+        rm zlib.tar.gz
+        cd zlib
+        ./configure --static
+        make -j 4
+
+    - name: Build ZenLib
+      run: |
+        cd ..
+        git clone https://github.com/MediaArea/ZenLib.git
+        cd ZenLib/Project/GNU/Library
+        ./autogen.sh
+        ./configure --enable-static
+        make -j 4
+
+    - name: Build MediaInfoLib
+      run: |
+        cd ..
+        git clone https://github.com/MediaArea/MediaInfoLib.git
+        cd MediaInfoLib/Project/GNU/Library
+        ./autogen.sh
+        ./configure --enable-static
+        make -j 4
+
+    - name: Build BetterMediaInfo
+      run: |
+        pnpm install
+        pnpm tauri build
+
+    - name: Upload the deb
+      uses: actions/upload-artifact@v4
+      with:
+        name: BetterMediaInfo-linux-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}-deb
+        path: |
+          src-tauri/target/release/bundle/deb/*.deb
+
+    - name: Upload the rpm
+      uses: actions/upload-artifact@v4
+      with:
+        name: BetterMediaInfo-linux-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}-rpm
+        path: |
+          src-tauri/target/release/bundle/rpm/*.rpm
+
+    - name: Upload the AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: BetterMediaInfo-linux-x86_64-${{ env.BETTER_MEDIA_INFO_VERSION }}-AppImage
+        path: |
+          src-tauri/target/release/bundle/appimage/*.AppImage

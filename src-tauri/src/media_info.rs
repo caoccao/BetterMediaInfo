@@ -37,7 +37,7 @@ type mi_kind = raw::c_int;
 type mi_void = raw::c_void;
 #[cfg(target_os = "windows")]
 type mi_wchar = u16;
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "windows"))]
 type mi_wchar = u32;
 
 const DEFAULT_OPTION_VALUE: &str = "";
