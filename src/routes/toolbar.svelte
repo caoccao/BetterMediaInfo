@@ -76,7 +76,7 @@
         selectTabSettings();
       }
     } else if (event.ctrlKey && !event.altKey && !event.shiftKey) {
-      if (event.key === "Delete") {
+      if (event.key === "q") {
         event.stopPropagation();
         clearFiles();
       }
@@ -128,7 +128,7 @@
     </Tooltip>
   </ButtonGroup>
   <ButtonGroup variant="outline" color="default">
-    <Tooltip title="Clear (Ctrl + Delete)" offset={6}>
+    <Tooltip title="Clear (Ctrl + Q)" offset={6}>
       <Button
         classes={{ root: BUTTON_CLASSES_NORMAL }}
         on:click={clearFiles}

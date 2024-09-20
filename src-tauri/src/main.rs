@@ -88,7 +88,7 @@ fn main() {
   tauri::Builder::default()
     .setup(|app| {
       let window = app.get_window("main").unwrap();
-      let _ = window.set_title("BetterMediaInfo v0.2.0");
+      let _ = window.set_title("BetterMediaInfo v0.3.0");
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![

@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.3.0
+
+* TBD
+
 ## 0.2.0
 
 * Supported media file comparison view

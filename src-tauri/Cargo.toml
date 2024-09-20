@@ -1,6 +1,6 @@
 [package]
-name = "bettermi"
-version = "0.2.0"
+name = "BetterMediaInfo"
+version = "0.3.0"
 description = "Betterh MediaInfo is a better GUI for MediaInfo"
 authors = ["Sam Cao"]
 edition = "2021"
