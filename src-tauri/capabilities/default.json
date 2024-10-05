@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "clipboard-manager:allow-clear",
+    "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text",
+    "core:default",
+    "dialog:default",
+    "shell:allow-open"
+  ]
+}

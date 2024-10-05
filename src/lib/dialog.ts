@@ -15,8 +15,8 @@
  *   limitations under the License.
  */
 
-import { open, save } from "@tauri-apps/api/dialog";
-import type { DialogFilter } from "@tauri-apps/api/dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import type { DialogFilter } from "@tauri-apps/plugin-dialog";
 import { config } from "./store";
 import { scanFiles } from "./fs";
 

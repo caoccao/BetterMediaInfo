@@ -1,41 +1,15 @@
 {
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "BetterMediaInfo",
+  "version": "0.3.0",
+  "identifier": "com.caoccao.better-media-info",
   "build": {
     "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
-    "withGlobalTauri": true,
-    "devPath": "http://localhost:1421",
-    "distDir": "../build"
+    "frontendDist": "../build"
   },
-  "package": {
-    "productName": "BetterMediaInfo",
-    "version": "0.3.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "clipboard": {
-        "all": true
-      },
-      "shell": {
-        "all": false
-      },
-      "fs": {
-        "all": true,
-        "scope": ["*"]
-      },
-      "os": {
-        "all": true
-      },
-      "dialog": {
-        "all": true
-      },
-      "globalShortcut": {
-        "all": true
-      },
-      "window": {
-        "all": true
-      }
-    },
+  "app": {
     "windows": [
       {
         "title": "BetterMediaInfo",
@@ -46,6 +20,11 @@
         "minHeight": 450
       }
     ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
     "cli": {
       "description": "BetterMediaInfo",
       "longDescription": "BetterMediaInfo",
@@ -56,25 +35,21 @@
           "takesValue": true
         }
       ]
-    },
-    "security": {
-      "csp": null
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.caoccao.bettermi",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "windows": {
-        "webviewInstallMode": {
-          "type": "downloadBootstrapper"
-        }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
       }
     }
   }

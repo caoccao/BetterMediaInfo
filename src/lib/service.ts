@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import * as Protocol from "./protocol";
 
 export async function getAbout(): Promise<Protocol.About> {

@@ -15,10 +15,9 @@
  	 *   See the License for the specific language governing permissions and
  	 *   limitations under the License.
  	 */
-  import { appWindow } from "@tauri-apps/api/window";
+  import { getCurrentWindow, type DragDropEvent } from "@tauri-apps/api/window";
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
-  import type { FileDropEvent } from "@tauri-apps/api/window";
-  import { writeText } from "@tauri-apps/api/clipboard";
+  import { writeText } from "@tauri-apps/plugin-clipboard-manager";
   import { afterUpdate, onDestroy, onMount } from "svelte";
   import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
   import { CodeBlock } from "svhighlight";
@@ -71,8 +70,8 @@
 
   onMount(() => {
     let cancelFileDrop: UnlistenFn | null = null;
-    appWindow
-      .onFileDropEvent((event: Event<FileDropEvent>) => {
+    getCurrentWindow()
+      .onDragDropEvent((event: Event<DragDropEvent>) => {
         if (event.payload.type === "drop") {
           scanFiles(event.payload.paths, appendOnFileDrop);
         }
@@ -332,7 +331,7 @@
     } else if (!event.ctrlKey && event.altKey && !event.shiftKey) {
       if (event.key === "x") {
         event.stopPropagation();
-        appWindow.close();
+        getCurrentWindow().close();
       }
     }
   }

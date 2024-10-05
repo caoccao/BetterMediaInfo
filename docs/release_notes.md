@@ -2,7 +2,7 @@
 
 ## 0.3.0
 
-* TBD
+* Upgraded tauri to v2
 
 ## 0.2.0
 

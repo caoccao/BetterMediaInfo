@@ -16,7 +16,7 @@
     *   limitations under the License.
     */
 
-  import { getMatches } from "@tauri-apps/api/cli";
+  import { getMatches } from "@tauri-apps/plugin-cli";
   import { onMount } from "svelte";
   import {
     Button,
