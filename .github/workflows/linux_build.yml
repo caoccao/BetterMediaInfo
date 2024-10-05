@@ -52,7 +52,7 @@ jobs:
     - name: Upgrade Ubuntu
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsoup2.4-dev libwebkit2gtk-4.0-dev librsvg2-dev
+        sudo apt-get install -y libsoup2.4-dev libwebkit2gtk-4.0-dev librsvg2-dev libjavascriptcoregtk-4.1-0
 
     - name: Build zlib
       run: |
