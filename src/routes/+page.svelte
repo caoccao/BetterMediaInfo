@@ -340,7 +340,7 @@
 <Tabs
   bind:value={tabIndex}
   classes={{
-    content: "border p-2 rounded-b rounded-tr",
+    content: "border p-2 rounded-b rounded-tr min-h-[calc(100vh-180px)]",
     tab: { root: "rounded-t" },
   }}
 >
