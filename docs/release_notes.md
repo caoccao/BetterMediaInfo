@@ -3,6 +3,7 @@
 ## 0.3.0
 
 * Upgraded tauri to v2
+* Upgraded MediaInfoLib to v24.11
 
 ## 0.2.0
 
