@@ -108,5 +108,5 @@ class ChangeVersion {
   }
 }
 
-const changeVersion = new ChangeVersion("0.2.0", "0.3.0");
+const changeVersion = new ChangeVersion("0.3.0", "0.3.0");
 changeVersion.change();
