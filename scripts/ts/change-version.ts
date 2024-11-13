@@ -100,13 +100,13 @@ class ChangeVersion {
       /^version\s*=\s*"(?<version>\d+\.\d+\.\d+)"/gim,
     ]);
     this._change("src-tauri/tauri.conf.json", [
-      /^    "version":\s*"(?<version>\d+\.\d+\.\d+)"/gim,
+      /^  "version":\s*"(?<version>\d+\.\d+\.\d+)"/gim,
     ]);
-    this._change("src-tauri/src/main.rs", [
+    this._change("src-tauri/src/lib.rs", [
       /"BetterMediaInfo v(?<version>\d+\.\d+\.\d+)"/gi,
     ]);
   }
 }
 
-const changeVersion = new ChangeVersion("0.3.0", "0.3.0");
+const changeVersion = new ChangeVersion("0.3.0", "0.4.0");
 changeVersion.change();
