@@ -13,11 +13,11 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@tauri-apps/api": ">=2.0.0",
+    "@tauri-apps/api": ">=2.1.1",
     "@tauri-apps/plugin-cli": "~2",
     "@tauri-apps/plugin-clipboard-manager": "^2.0.0",
-    "@tauri-apps/plugin-dialog": "~2",
-    "@tauri-apps/plugin-shell": ">=2.0.0",
+    "@tauri-apps/plugin-dialog": "~2.0.1",
+    "@tauri-apps/plugin-shell": ">=2.0.1",
     "highlight.js": "^11.10.0",
     "svelte-ux": "^0.73.3",
     "svhighlight": "^0.7.1"
@@ -27,7 +27,7 @@
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@tailwindcss/typography": "^0.5.13",
-    "@tauri-apps/cli": ">=2.0.0",
+    "@tauri-apps/cli": ">=2.1.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "svelte": "^4.2.7",
