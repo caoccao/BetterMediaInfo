@@ -1,6 +1,6 @@
 <script lang="ts">
   /*
-    *   Copyright (c) 2024. caoccao.com Sam Cao
+    *   Copyright (c) 2024-2025. caoccao.com Sam Cao
     *   All rights reserved.
 
     *   Licensed under the Apache License, Version 2.0 (the "License");
