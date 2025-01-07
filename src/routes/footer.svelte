@@ -31,7 +31,7 @@
     </a>
   </div>
   <div>
-    © Copyright 2024
+    © Copyright 2024-2025
     <a href="https://github.com/caoccao" target="_blank" class={LINK_CLASS}>
       Sam Cao
     </a>

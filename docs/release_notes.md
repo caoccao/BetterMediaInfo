@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.4.0
+
+* Upgraded Rust toolchain to v1.82.0
+* Upgraded MediaInfoLib to v24.12
+
 ## 0.3.0
 
 * Upgraded tauri to v2

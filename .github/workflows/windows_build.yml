@@ -19,6 +19,7 @@ on:
 
 env:
   BETTER_MEDIA_INFO_VERSION: 0.4.0
+  MEDIA_INFO_LIB_VERSION: v24.12
 
 jobs:
   build_package:
@@ -74,7 +75,7 @@ jobs:
     - name: Build MediaInfoLib
       run: |
         cd ..
-        git clone https://github.com/MediaArea/MediaInfoLib.git
+        git clone -b ${{ env.MEDIA_INFO_LIB_VERSION }} --depth 1 https://github.com/MediaArea/MediaInfoLib.git
         cd MediaInfoLib\Project\MSVC2022
         msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
 
