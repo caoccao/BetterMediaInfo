@@ -90,6 +90,9 @@ jobs:
     - name: Build BetterMediaInfo
       run: |
         pnpm install
+        cd src-tauri
+        cargo test -r
+        cd ..
         pnpm tauri build
 
     - name: Upload the msi

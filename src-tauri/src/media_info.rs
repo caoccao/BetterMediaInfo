@@ -24,6 +24,7 @@
 )]
 
 use anyhow::{anyhow, Result};
+use encoding::Encoding;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::os::raw;
@@ -60,7 +61,22 @@ extern "C" {
 }
 
 fn to_wchars(s: &str) -> Vec<mi_wchar> {
-  WideCString::from_str_truncate(s).into_vec()
+  let wchars = WideCString::from_str_truncate(s).into_vec();
+  #[cfg(target_os = "windows")]
+  {
+    wchars
+  }
+  #[cfg(not(target_os = "windows"))]
+  if wchars.len() > 0 && wchars.iter().any(|&c| c >= 0x100) {
+    encoding::all::UTF_8
+      .encode(s, encoding::EncoderTrap::Strict)
+      .unwrap()
+      .into_iter()
+      .map(|c| c as mi_wchar)
+      .collect::<Vec<mi_wchar>>()
+  } else {
+    wchars
+  }
 }
 
 fn from_wchars(pointer: *const mi_wchar) -> String {
@@ -335,4 +351,49 @@ impl MediaInfoFile {
       streams,
     }
   }
+}
+
+#[test]
+fn test_ascii_path() {
+  let path = Path::new("./icons/icon.png");
+  let path = std::path::absolute(path).unwrap();
+  if let Some(path) = path.to_str() {
+    let path = to_wchars(path);
+    let handle = unsafe { MediaInfo_New() };
+    let error_code = unsafe { MediaInfo_Open(handle, path.as_ptr()) };
+    assert_eq!(error_code, 1, "Error code should be 1.");
+    let count = unsafe { MediaInfo_Count_Get(handle, MediaInfoStreamKind::General as mi_kind, usize::MAX) };
+    assert_eq!(count, 1, "General stream count should be 1.");
+  } else {
+    assert!(false, "Failed to convert file path to string in MediaInfo::open().");
+  }
+}
+
+#[test]
+fn test_non_ascii_path() {
+  let source_path = Path::new("./icons/icon.png");
+  let source_path = std::path::absolute(source_path).unwrap();
+  let temp_dir = std::env::temp_dir();
+  let target_path = temp_dir.join("bettermi測試.png");
+  if target_path.exists() {
+    let result = std::fs::remove_file(&target_path);
+    assert!(
+      result.is_ok(),
+      "Failed to remove file {}",
+      target_path.to_str().unwrap()
+    );
+  }
+  std::fs::copy(source_path, &target_path).unwrap();
+  let path = to_wchars(target_path.to_str().unwrap());
+  let handle = unsafe { MediaInfo_New() };
+  let error_code = unsafe { MediaInfo_Open(handle, path.as_ptr()) };
+  assert_eq!(error_code, 1, "Error code should be 1.");
+  let count = unsafe { MediaInfo_Count_Get(handle, MediaInfoStreamKind::General as mi_kind, usize::MAX) };
+  let result = std::fs::remove_file(&target_path);
+  assert!(
+    result.is_ok(),
+    "Failed to remove file {}",
+    target_path.to_str().unwrap()
+  );
+  assert_eq!(count, 1, "General stream count should be 1.");
 }
