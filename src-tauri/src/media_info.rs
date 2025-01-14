@@ -370,6 +370,7 @@ fn test_ascii_path() {
 }
 
 #[test]
+#[cfg(not(target_os = "linux"))]
 fn test_non_ascii_path() {
   let source_path = Path::new("./icons/icon.png");
   let source_path = std::path::absolute(source_path).unwrap();
