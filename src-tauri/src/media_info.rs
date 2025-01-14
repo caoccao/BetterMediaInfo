@@ -62,11 +62,11 @@ extern "C" {
 
 fn to_wchars(s: &str) -> Vec<mi_wchar> {
   let wchars = WideCString::from_str_truncate(s).into_vec();
-  #[cfg(target_os = "windows")]
+  #[cfg(not(target_os = "macos"))]
   {
     wchars
   }
-  #[cfg(not(target_os = "windows"))]
+  #[cfg(target_os = "macos")]
   if wchars.len() > 0 && wchars.iter().any(|&c| c >= 0x100) {
     encoding::all::UTF_8
       .encode(s, encoding::EncoderTrap::Strict)
