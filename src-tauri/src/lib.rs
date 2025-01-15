@@ -89,7 +89,7 @@ pub fn run() {
     .plugin(tauri_plugin_clipboard_manager::init())
     .setup(|app| {
       let window = app.get_webview_window("main").unwrap();
-      let _ = window.set_title("BetterMediaInfo v0.4.0");
+      let _ = window.set_title("BetterMediaInfo v0.5.0");
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
