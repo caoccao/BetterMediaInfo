@@ -33,7 +33,7 @@ rm zlib.tar.gz
 ```sh
 cd zlib
 ./configure --static
-make -j`nproc`
+make -j `nproc`
 ```
 
 * Build ZenLib.
@@ -42,7 +42,7 @@ make -j`nproc`
 cd ZenLib/Project/GNU/Library
 ./autogen.sh
 ./configure --enable-static
-make -j`nproc`
+make -j `nproc`
 ```
 
 * Build MediaInfoLib.
@@ -51,7 +51,7 @@ make -j`nproc`
 cd MediaInfoLib/Project/GNU/Library
 ./autogen.sh
 ./configure --enable-static
-make -j`nproc`
+make -j `nproc`
 ```
 
 ### Build MediaInfoLib for MacOS
@@ -77,7 +77,7 @@ rm zlib.tar.gz
 ```sh
 cd zlib
 ./configure --static
-make -j`nproc`
+make -j `nproc`
 ```
 
 * Build ZenLib.
@@ -86,7 +86,7 @@ make -j`nproc`
 cd ZenLib/Project/GNU/Library
 ./autogen.sh
 ./configure --enable-static
-make -j`nproc`
+make -j `nproc`
 ```
 
 * Build MediaInfoLib.
@@ -95,7 +95,7 @@ make -j`nproc`
 cd MediaInfoLib/Project/GNU/Library
 ./autogen.sh
 ./configure --enable-static
-make -j`nproc`
+make -j `nproc`
 ```
 
 ### Build MediaInfoLib for Windows
