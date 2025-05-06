@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.5.0
+
+* Upgraded MediaInfoLib to v25.04
+
 ## 0.4.0
 
 * Upgraded Rust toolchain to v1.82.0
