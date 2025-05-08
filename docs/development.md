@@ -12,11 +12,11 @@ git clone https://github.com/MediaArea/ZenLib.git
 
 ### Build MediaInfoLib for Linux
 
-* Upgrade Ubuntu.
+* Upgrade Ubuntu 24.04.
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y libsoup2.4-dev libwebkit2gtk-4.0-dev librsvg2-dev
+sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
 ```
 
 * Download zlib.
