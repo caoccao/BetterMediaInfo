@@ -114,20 +114,20 @@ fn main() {
   #[cfg(target_os = "macos")]
   println!("cargo:rustc-link-lib=c++");
 
-  #[cfg(not(target_os = "windows"))]
-  let media_info_lib = ExternalLib {
-    is_static: true,
-    file_name: "libmediainfo.a".to_owned(),
-    lib_name: "mediainfo".to_owned(),
-    source_path: "MediaInfoLib/Project/GNU/Library/.libs".to_owned(),
-  };
-
-  #[cfg(target_os = "windows")]
-  let media_info_lib = ExternalLib {
-    is_static: false,
-    file_name: "MediaInfo.dll".to_owned(),
-    lib_name: "MediaInfo".to_owned(),
-    source_path: "MediaInfoLib\\Project\\MSVC2022\\x64\\Release".to_owned(),
+  let media_info_lib = if cfg!(windows) {
+    ExternalLib {
+      is_static: false,
+      file_name: "MediaInfo.dll".to_owned(),
+      lib_name: "MediaInfo".to_owned(),
+      source_path: "MediaInfoLib\\Project\\MSVC2022\\x64\\Release".to_owned(),
+    }
+  } else {
+    ExternalLib {
+      is_static: true,
+      file_name: "libmediainfo.a".to_owned(),
+      lib_name: "mediainfo".to_owned(),
+      source_path: "MediaInfoLib/Project/GNU/Library/.libs".to_owned(),
+    }
   };
 
   media_info_lib.link(root_path);
