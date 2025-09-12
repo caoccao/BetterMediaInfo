@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
   /*
  	 *   Copyright (c) 2024-2025. caoccao.com Sam Cao
@@ -32,13 +34,14 @@
   const CSS_CLASS_H2 = "text-base font-medium py-2 border-b border-b-lime-300";
   const CSS_CLASS_H3 = "text-sm";
 
-  let appendOnFileDrop: boolean = true;
-  let directoryMode: Protocol.ConfigDirectoryMode =
-    Protocol.ConfigDirectoryMode.All;
-  let fileExtensionsAudio: string = "";
-  let fileExtensionsImage: string = "";
-  let fileExtensionsVideo: string = "";
-  let isDirty = false;
+  let appendOnFileDrop = $state<boolean>(true);
+  let directoryMode = $state<Protocol.ConfigDirectoryMode>(
+    Protocol.ConfigDirectoryMode.All
+  );
+  let fileExtensionsAudio = $state<string>("");
+  let fileExtensionsImage = $state<string>("");
+  let fileExtensionsVideo = $state<string>("");
+  let isDirty = $state(false);
 
   onDestroy(() => {
     try {

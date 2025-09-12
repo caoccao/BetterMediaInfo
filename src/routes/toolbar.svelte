@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
   /*
  	 *   Copyright (c) 2024-2025. caoccao.com Sam Cao
@@ -34,10 +36,10 @@
   const BUTTON_CLASSES_NORMAL =
     "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
 
-  let buttonAboutClasses = BUTTON_CLASSES_NORMAL;
-  let buttonSettingsClasses = BUTTON_CLASSES_NORMAL;
+  let buttonAboutClasses = $state(BUTTON_CLASSES_NORMAL);
+  let buttonSettingsClasses = $state(BUTTON_CLASSES_NORMAL);
 
-  let files: string[] = [];
+  let files = $state<string[]>([]);
 
   onDestroy(() => {
     document.removeEventListener("keyup", onKeyUp);

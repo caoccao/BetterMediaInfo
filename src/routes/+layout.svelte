@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /*
    *   Copyright (c) 2024-2025. caoccao.com Sam Cao
    *   All rights reserved.
