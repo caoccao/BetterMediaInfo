@@ -47,6 +47,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
