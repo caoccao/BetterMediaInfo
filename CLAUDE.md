@@ -99,6 +99,6 @@ cd src-tauri && cargo test -r
 External libraries that must be built before BetterMediaInfo:
 - **zlib**: Compression library (static build required)
 - **ZenLib**: MediaArea utility library 
-- **MediaInfoLib**: Core media analysis library (v25.04)
+- **MediaInfoLib**: Core media analysis library (v25.09)
 
 The build process expects these libraries to be available in specific locations relative to the project directory.

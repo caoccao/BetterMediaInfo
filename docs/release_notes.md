@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.6.0
+
+* Upgraded MediaInfoLib to v25.09
+
 ## 0.5.0
 
 * Upgraded MediaInfoLib to v25.04
