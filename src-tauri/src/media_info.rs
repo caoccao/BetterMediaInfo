@@ -47,6 +47,7 @@ extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
   fn MediaInfo_Close(handle: *mut mi_void);
   fn MediaInfo_Count_Get(handle: *mut mi_void, stream_kind: mi_kind, stream_number: usize) -> usize;
+  fn MediaInfo_Delete(handle: *mut mi_void);
   fn MediaInfo_Get(
     handle: *mut mi_void,
     stream_kind: mi_kind,
@@ -317,6 +318,7 @@ impl Drop for MediaInfo {
   fn drop(&mut self) {
     log::debug!("MediaInfo::drop()");
     unsafe {
+      MediaInfo_Delete(self.handle);
       MediaInfo_Close(self.handle);
     }
   }
