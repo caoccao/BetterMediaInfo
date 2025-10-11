@@ -462,6 +462,10 @@
       );
   });
 
+  let sortedDataOfListView = $derived.by(() => {
+    return [...dataOfListView].sort($tableOrderStoreForListView.handler);
+  });
+
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
       fileToAllPropertiesMap = new Map(value);
@@ -740,7 +744,7 @@
             th: "border border-slate-600 p-1 bg-lime-50",
             td: "border border-slate-700 px-1 text-nowrap",
           }}
-          data={dataOfListView.sort($tableOrderStoreForListView.handler)}
+          data={sortedDataOfListView}
           columns={columnsOfListView}
           order={tableOrderStoreForListView}
         />
