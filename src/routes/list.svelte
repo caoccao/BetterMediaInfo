@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
   /*
     *   Copyright (c) 2024-2025. caoccao.com Sam Cao
@@ -384,83 +386,91 @@
 
   const tableOrderStoreForListView = tableOrderStore();
 
-  let files: string[] = [];
-  let query: string | null = null;
-  let sortDirection: "asc" | "desc" = "asc";
-  let viewType: ViewType = ViewType.Card;
+  let files = $state<string[]>([]);
+  let query = $state<string | null>(null);
+  let sortDirection = $state<"asc" | "desc">("asc");
+  let viewType = $state<ViewType>(ViewType.Card);
 
-  let fileToAllPropertiesMap: Map<
+  let fileToAllPropertiesMap = $state<Map<
     string,
     Array<Protocol.StreamPropertyMap>
-  > = new Map();
+  >>(new Map());
 
-  let fileToCommonPropertyMap: Map<
+  let fileToCommonPropertyMap = $state<Map<
     string,
     Array<Protocol.StreamPropertyMap>
-  > = new Map();
-  let fileToStreamCountMap: Map<
+  >>(new Map());
+  let fileToStreamCountMap = $state<Map<
     string,
     Map<Protocol.StreamKind, Protocol.StreamCount>
-  > = new Map();
+  >>(new Map());
 
-  $: buttonCardViewClass =
+  let buttonCardViewClass = $derived(
     viewType == ViewType.Card
       ? BUTTON_CLASSES_TOOLBAR_ACTIVE
-      : BUTTON_CLASSES_TOOLBAR_NORMAL;
+      : BUTTON_CLASSES_TOOLBAR_NORMAL
+  );
 
-  $: buttonListViewClass =
+  let buttonListViewClass = $derived(
     viewType == ViewType.List
       ? BUTTON_CLASSES_TOOLBAR_ACTIVE
-      : BUTTON_CLASSES_TOOLBAR_NORMAL;
-
-  $: fileToPropertyMaps = generateFileToPropertyMaps(
-    query,
-    files,
-    fileToStreamCountMap,
-    fileToCommonPropertyMap
+      : BUTTON_CLASSES_TOOLBAR_NORMAL
   );
 
-  $: dataOfListView = [...fileToPropertyMaps.entries()].map(
-    ([file, propertyMaps]) => {
-      const newPropertyMap = propertyMaps
-        .filter((map) => map.num == 0)
-        .map((map) => {
-          const newProperty: Record<string, string> = {};
-          Object.entries(map.propertyMap).map(([property, value]) => {
-            newProperty[`${map.stream}:${property}`] = value;
-          });
-          return newProperty;
-        })
-        .reduce((acc, cur) => ({ ...acc, ...cur }), {});
-      fileToStreamCountMap.get(file)?.forEach((streamCount, stream) => {
-        newPropertyMap[`General:${stream}:Count`] =
-          streamCount.count.toString();
-      });
-      return newPropertyMap;
-    }
-  );
-
-  $: columnsOfListView = [...COMMON_PROPERTIES_MAP.entries()]
-    .map(([stream, commonProperties]) =>
-      commonProperties.map((propertyDefinition) => {
-        return { stream, propertyDefinition };
-      })
-    )
-    .flatMap((streamAndPropertyDefinition) => streamAndPropertyDefinition)
-    .filter(({ stream, propertyDefinition }) => propertyDefinition.inListView)
-    .map(({ stream, propertyDefinition }) =>
-      propertyDefinition.toColumnsOfListView(stream)
+  let fileToPropertyMaps = $derived.by(() => {
+    return generateFileToPropertyMaps(
+      query,
+      files,
+      fileToStreamCountMap,
+      fileToCommonPropertyMap
     );
+  });
+
+  let dataOfListView = $derived.by(() => {
+    return [...fileToPropertyMaps.entries()].map(
+      ([file, propertyMaps]) => {
+        const newPropertyMap = propertyMaps
+          .filter((map) => map.num == 0)
+          .map((map) => {
+            const newProperty: Record<string, string> = {};
+            Object.entries(map.propertyMap).map(([property, value]) => {
+              newProperty[`${map.stream}:${property}`] = value;
+            });
+            return newProperty;
+          })
+          .reduce((acc, cur) => ({ ...acc, ...cur }), {});
+        fileToStreamCountMap.get(file)?.forEach((streamCount, stream) => {
+          newPropertyMap[`General:${stream}:Count`] =
+            streamCount.count.toString();
+        });
+        return newPropertyMap;
+      }
+    );
+  });
+
+  let columnsOfListView = $derived.by(() => {
+    return [...COMMON_PROPERTIES_MAP.entries()]
+      .map(([stream, commonProperties]) =>
+        commonProperties.map((propertyDefinition) => {
+          return { stream, propertyDefinition };
+        })
+      )
+      .flatMap((streamAndPropertyDefinition) => streamAndPropertyDefinition)
+      .filter(({ stream, propertyDefinition }) => propertyDefinition.inListView)
+      .map(({ stream, propertyDefinition }) =>
+        propertyDefinition.toColumnsOfListView(stream)
+      );
+  });
 
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
-      fileToAllPropertiesMap = value;
+      fileToAllPropertiesMap = new Map(value);
     });
     mediaFileToStreamCountMap.subscribe((value) => {
-      fileToStreamCountMap = value;
+      fileToStreamCountMap = new Map(value);
     });
     mediaFileToCommonPropertyMap.subscribe((value) => {
-      fileToCommonPropertyMap = value;
+      fileToCommonPropertyMap = new Map(value);
     });
     mediaFiles.subscribe((value) => {
       files = value;
@@ -525,6 +535,8 @@
           scanFiles([fileOrDirectory as string]);
         }
       }
+    }).catch((error) => {
+      console.warn("CLI matches not available:", error);
     });
     tableOrderStoreForListView.subscribe((value) => {
       sortDirection = value.direction;

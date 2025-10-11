@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
   /*
  	 *   Copyright (c) 2024-2025. caoccao.com Sam Cao
@@ -22,18 +24,16 @@
   import { mediaInfoAbout, mediaInfoParameters } from "../lib/store";
 
   const APP_NAME = "BetterMediaInfo";
-  let about = { appVersion: "", mediaInfoVersion: "" };
-  let filteredParameters: Array<Protocol.Parameter> = [];
-  let parameters: Array<Protocol.Parameter> = [];
-  let propertyFilter: string | null = null;
-  let streamFilter: string | null = null;
-  let streams: Array<MenuOption> = [];
+  let about = $state({ appVersion: "", mediaInfoVersion: "" });
+  let parameters = $state<Array<Protocol.Parameter>>([]);
+  let propertyFilter = $state<string | null>(null);
+  let streamFilter = $state<string | null>(null);
 
-  $: {
+  let filteredParameters = $derived(() => {
     const propertyFilterLowerCased = propertyFilter
       ? propertyFilter.toLowerCase()
       : null;
-    filteredParameters = parameters.filter((parameter) => {
+    return parameters.filter((parameter) => {
       let hit = true;
       if (streamFilter !== null) {
         hit = parameter.stream === streamFilter;
@@ -45,10 +45,13 @@
       }
       return hit;
     });
-    streams = [
+  });
+
+  let streams = $derived(() => {
+    return [
       ...new Set(parameters.map((parameter) => parameter.stream)).values(),
     ].map((stream) => ({ label: stream, value: stream }));
-  }
+  });
 
   onMount(async () => {
     mediaInfoAbout.subscribe((value) => {
@@ -94,13 +97,13 @@
       classes={{
         root: "min-w-32 max-w-32",
       }}
-      options={[{ label: "All Streams", value: null }, ...streams]}
+      options={[{ label: "All Streams", value: null }, ...streams()]}
       bind:value={streamFilter}
     />
     <TextField placeholder="Property" bind:value={propertyFilter} />
   </div>
   <Paginate
-    data={filteredParameters}
+    data={filteredParameters()}
     perPage={10}
     let:pageData={pagedParameters}
     let:pagination={paginator}

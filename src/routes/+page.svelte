@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
   /*
  	 *   Copyright (c) 2024-2025. caoccao.com Sam Cao
@@ -18,7 +20,7 @@
   import { getCurrentWindow, type DragDropEvent } from "@tauri-apps/api/window";
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
   import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-  import { afterUpdate, onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
   import { CodeBlock } from "svhighlight";
   import "highlight.js/styles/intellij-light.css";
@@ -40,19 +42,52 @@
   import { scanFiles } from "../lib/fs";
   import { shrinkFileName } from "../lib/format";
 
-  let appendOnFileDrop: boolean = true;
-  let dialogJsonCodeOpen = false;
-  let dialogJsonCodeString: string | null;
-  let dialogJsonCodeTitle: string | null = null;
-  let dialogNotificationOpen = false;
-  let dialogNotificationTitle: string | null = null;
-  let dialogNotificationType: Protocol.DialogNotificationType | null = null;
-  let detailedFiles: string[] = [];
-  let statusTabAbout: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
-  let statusTabSettings: Protocol.ControlStatus = Protocol.ControlStatus.Hidden;
-  let tabIndex = 0;
+  let appendOnFileDrop = $state(true);
+  let dialogJsonCodeOpen = $state(false);
+  let dialogJsonCodeString = $state<string | null>(null);
+  let dialogJsonCodeTitle = $state<string | null>(null);
+  let dialogNotificationOpen = $state(false);
+  let dialogNotificationTitle = $state<string | null>(null);
+  let dialogNotificationType = $state<Protocol.DialogNotificationType | null>(null);
+  let detailedFiles = $state<string[]>([]);
+  let statusTabAbout = $state<Protocol.ControlStatus>(Protocol.ControlStatus.Hidden);
+  let statusTabSettings = $state<Protocol.ControlStatus>(Protocol.ControlStatus.Hidden);
+  let tabIndex = $state(0);
+  
+  // Use $state for tabControls and update it in $effect to avoid unsafe mutations
+  let tabControls = $state<Array<Protocol.TabControl>>([
+    { type: Protocol.TabType.List, index: 0, value: null }
+  ]);
 
-  afterUpdate(() => {
+  // Convert reactive statements to derived
+  let dialogTitleClasses = $derived(getDialogTitleClasses(dialogNotificationType));
+
+  // Helper function for shallow comparison of tab controls
+  function tabControlsEqual(a: Array<Protocol.TabControl>, b: Array<Protocol.TabControl>): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((controlA, index) => {
+      const controlB = b[index];
+      return controlA.type === controlB.type && 
+             controlA.index === controlB.index && 
+             controlA.value === controlB.value;
+    });
+  }
+
+  // Use $effect to calculate tabControls and handle side effects
+  $effect(() => {
+    const newTabControls = getTabControls(
+      statusTabAbout,
+      statusTabSettings,
+      detailedFiles,
+      tabControls
+    );
+    
+    // Only update if controls actually changed to avoid infinite loops
+    if (!tabControlsEqual(newTabControls, tabControls)) {
+      tabControls = newTabControls;
+    }
+    
+    // Handle tab index bounds and status updates
     if (tabControls && tabIndex >= tabControls.length) {
       tabIndex = tabControls.length - 1;
     }
@@ -121,13 +156,6 @@
     };
   });
 
-  $: dialogTitleClasses = getDialogTitleClasses(dialogNotificationType);
-
-  $: tabControls = getTabControls(
-    statusTabAbout,
-    statusTabSettings,
-    detailedFiles
-  );
 
   function getDialogTitleClasses(
     dialogType: Protocol.DialogNotificationType | null
@@ -152,10 +180,11 @@
   function getTabControls(
     statusTabAbout: Protocol.ControlStatus,
     statusTabSettings: Protocol.ControlStatus,
-    detailedFiles: string[]
+    detailedFiles: string[],
+    previousTabControls: Array<Protocol.TabControl>
   ): Array<Protocol.TabControl> {
-    let controls = tabControls
-      ? [...tabControls]
+    let controls = previousTabControls
+      ? [...previousTabControls]
       : [{ type: Protocol.TabType.List, index: 0, value: null }];
     const controlTabAbout = controls.find(
       (control) => control.type === Protocol.TabType.About

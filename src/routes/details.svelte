@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
   /*
     *   Copyright (c) 2024-2025. caoccao.com Sam Cao
@@ -33,30 +35,29 @@
     mediaFileToStreamCountMap,
   } from "../lib/store";
 
-  export let file: string;
+  let { file } = $props();
 
   const BUTTON_CLASSES_NORMAL =
     "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-blue-500";
 
-  let allProperties: Array<Protocol.StreamPropertyMap> = [];
+  let allProperties = $state<Array<Protocol.StreamPropertyMap>>([]);
 
-  let fileToAllPropertiesMap: Map<
+  let fileToAllPropertiesMap = $state<Map<
     string,
     Array<Protocol.StreamPropertyMap>
-  > = new Map();
+  >>(new Map());
 
-  let fileToStreamCountMap: Map<
+  let fileToStreamCountMap = $state<Map<
     string,
     Map<Protocol.StreamKind, Protocol.StreamCount>
-  > = new Map();
+  >>(new Map());
 
-  let query: string | null = null;
+  let query = $state<string | null>(null);
 
-  let streamGroup: Protocol.StreamKind[] = [];
-  let streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount> =
-    new Map();
+  let streamGroup = $state<Protocol.StreamKind[]>([]);
+  let streamCountMap = $state<Map<Protocol.StreamKind, Protocol.StreamCount>>(new Map());
 
-  $: filteredAllProperties = allProperties
+  let filteredAllProperties = $derived(allProperties
     .map((properties) => {
       let newProperties = properties;
       if (query && query.length > 0) {
@@ -78,15 +79,15 @@
       }
       return newProperties;
     })
-    .filter((properties) => Object.keys(properties.propertyMap).length > 0);
+    .filter((properties) => Object.keys(properties.propertyMap).length > 0));
 
   onMount(() => {
     mediaFileToAllPropertiesMap.subscribe((value) => {
-      fileToAllPropertiesMap = value;
+      fileToAllPropertiesMap = new Map(value);
       allProperties = fileToAllPropertiesMap.get(file) ?? [];
     });
     mediaFileToStreamCountMap.subscribe((value) => {
-      fileToStreamCountMap = value;
+      fileToStreamCountMap = new Map(value);
       streamCountMap = fileToStreamCountMap.get(file) ?? new Map();
       onClickSelectAll();
     });
