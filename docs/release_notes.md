@@ -4,6 +4,7 @@
 
 * Upgraded MediaInfoLib to v25.09
 * Upgraded Rust toolchain to v1.89.0
+* Upgraded Rust edition to 2024
 * Upgraded tauri to v2.8.5
 
 ## 0.5.0

@@ -43,7 +43,7 @@ type mi_wchar = u32;
 
 const DEFAULT_OPTION_VALUE: &str = "";
 
-extern "C" {
+unsafe extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
   fn MediaInfo_Close(handle: *mut mi_void);
   fn MediaInfo_Count_Get(handle: *mut mi_void, stream_kind: mi_kind, stream_number: usize) -> usize;
