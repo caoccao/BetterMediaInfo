@@ -3,6 +3,8 @@
 ## 0.6.0
 
 * Upgraded MediaInfoLib to v25.09
+* Upgraded Rust toolchain to v1.89.0
+* Upgraded tauri to v2.8.5
 
 ## 0.5.0
 

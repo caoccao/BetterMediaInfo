@@ -16,13 +16,13 @@
 */
 
 use anyhow::{Error, Result};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
+use std::sync::{OnceLock, RwLock};
 
-static mut CONFIG: Lazy<Config> = Lazy::new(|| Config::new());
+static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -154,12 +154,20 @@ pub fn get_active_file_extensions() -> Vec<String> {
 }
 
 pub fn get_config() -> Config {
-  unsafe { CONFIG.to_owned() }
+  CONFIG
+    .get_or_init(|| RwLock::new(Config::new()))
+    .read()
+    .unwrap()
+    .clone()
 }
 
 pub fn set_config(config: Config) -> Result<()> {
   let config_path_buf = Config::get_path_buf();
   let result = config.save(config_path_buf);
-  unsafe { CONFIG.clone_from(&config) };
+  CONFIG
+    .get_or_init(|| RwLock::new(Config::new()))
+    .write()
+    .unwrap()
+    .clone_from(&config);
   result
 }
