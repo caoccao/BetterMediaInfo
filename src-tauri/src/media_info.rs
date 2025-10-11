@@ -319,7 +319,6 @@ impl Drop for MediaInfo {
     log::debug!("MediaInfo::drop()");
     unsafe {
       MediaInfo_Delete(self.handle);
-      MediaInfo_Close(self.handle);
     }
   }
 }
