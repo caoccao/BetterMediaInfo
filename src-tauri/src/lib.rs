@@ -84,13 +84,6 @@ async fn write_text_file(file: String, text: String) -> Result<(), String> {
 pub fn run() {
   env_logger::init();
 
-  // Set WebKit environment variables for Linux to fix rendering issues
-  #[cfg(target_os = "linux")]
-  unsafe {
-    std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
-    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-  }
-
   tauri::Builder::default()
     .plugin(tauri_plugin_cli::init())
     .plugin(tauri_plugin_dialog::init())
