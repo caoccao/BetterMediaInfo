@@ -10,6 +10,8 @@ export default {
     "./node_modules/svhighlight/**/*.svelte",
   ],
 
+  darkMode: "class",
+
   theme: {
     extend: {},
   },

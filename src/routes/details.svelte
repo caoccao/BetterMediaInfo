@@ -38,7 +38,7 @@
   let { file } = $props();
 
   const BUTTON_CLASSES_NORMAL =
-    "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-blue-500";
+    "w-12 h-12 bg-white dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-500 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400";
 
   let allProperties = $state<Array<Protocol.StreamPropertyMap>>([]);
 
@@ -188,9 +188,9 @@
                 })
                 .toSorted((a, b) => a.property.localeCompare(b.property))}
               classes={{
-                table: "border-collapse border border-slate-500 mb-4",
-                th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(properties.stream)}-50`,
-                td: "border border-slate-700 px-1 font-mono whitespace-pre-wrap",
+                table: "border-collapse border border-slate-500 dark:border-slate-600 mb-4",
+                th: `border border-slate-600 dark:border-slate-500 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(properties.stream)}-50 dark:bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(properties.stream)}-900 dark:text-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(properties.stream)}-100`,
+                td: "border border-slate-700 dark:border-slate-600 px-1 font-mono whitespace-pre-wrap",
               }}
               columns={[
                 {

@@ -28,13 +28,14 @@
   } from "svelte-ux";
   import * as Protocol from "../lib/protocol";
   import { setConfig } from "../lib/service";
-  import { config, dialogNotification, isConfigDirty } from "../lib/store";
+  import { config, darkMode, dialogNotification, isConfigDirty } from "../lib/store";
 
   const CSS_CLASS_H1 = "text-lg font-bold py-2 border-b-2 border-b-lime-400";
   const CSS_CLASS_H2 = "text-base font-medium py-2 border-b border-b-lime-300";
   const CSS_CLASS_H3 = "text-sm";
 
   let appendOnFileDrop = $state<boolean>(true);
+  let displayMode = $state<Protocol.DisplayMode>(Protocol.DisplayMode.Auto);
   let directoryMode = $state<Protocol.ConfigDirectoryMode>(
     Protocol.ConfigDirectoryMode.All
   );
@@ -56,6 +57,7 @@
     config.subscribe((value) => {
       if (value) {
         appendOnFileDrop = value.appendOnFileDrop;
+        displayMode = value.displayMode;
         directoryMode = value.directoryMode;
         fileExtensionsAudio = value.fileExtensions.audio.join(", ");
         fileExtensionsImage = value.fileExtensions.image.join(", ");
@@ -69,8 +71,9 @@
 
   function createConfig(): Protocol.Config {
     return {
-      appendOnFileDrop: appendOnFileDrop,
-      directoryMode: directoryMode,
+      appendOnFileDrop,
+      displayMode,
+      directoryMode,
       fileExtensions: {
         audio: convertFileExtensions(fileExtensionsAudio),
         image: convertFileExtensions(fileExtensionsImage),
@@ -114,6 +117,33 @@
     <TableOfContents element="#config" />
     <div id="config" class="grid gap-2">
       <h1 class={CSS_CLASS_H1}>Settings</h1>
+      <h2 class={CSS_CLASS_H2}>Appearance</h2>
+      <div class="flex gap-4">
+        <Radio
+          name="displayMode"
+          bind:group={displayMode}
+          value={Protocol.DisplayMode.Auto}
+          on:change={onChange}
+        >
+          Auto Mode
+        </Radio>
+        <Radio
+          name="displayMode"
+          bind:group={displayMode}
+          value={Protocol.DisplayMode.Light}
+          on:change={onChange}
+        >
+          Light Mode
+        </Radio>
+        <Radio
+          name="displayMode"
+          bind:group={displayMode}
+          value={Protocol.DisplayMode.Dark}
+          on:change={onChange}
+        >
+          Dark Mode
+        </Radio>
+      </div>
       <h2 class={CSS_CLASS_H2}>Append on File Drop</h2>
       <div class="flex gap-4">
         <Radio

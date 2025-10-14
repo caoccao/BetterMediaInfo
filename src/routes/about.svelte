@@ -76,7 +76,7 @@
       <a
         href="https://github.com/caoccao"
         target="_blank"
-        class="text-blue-600 visited:text-purple-600 underline underline-offset-auto"
+        class="text-blue-600 dark:text-blue-400 visited:text-purple-600 dark:visited:text-purple-400 underline underline-offset-auto"
       >
         Sam Cao
       </a>
@@ -86,7 +86,7 @@
       <a
         href="https://github.com/caoccao/BetterMediaInfo"
         target="_blank"
-        class="text-blue-600 visited:text-purple-600 underline underline-offset-auto"
+        class="text-blue-600 dark:text-blue-400 visited:text-purple-600 dark:visited:text-purple-400 underline underline-offset-auto"
       >
         https://github.com/caoccao/BetterMediaInfo
       </a>
@@ -111,9 +111,9 @@
     <Table
       data={pagedParameters}
       classes={{
-        table: "border-collapse border border-slate-500",
-        th: "border border-slate-600 p-1 bg-lime-50",
-        td: "border border-slate-700 p-1",
+        table: "border-collapse border border-slate-500 dark:border-slate-600",
+        th: "border border-slate-600 dark:border-slate-500 p-1 bg-lime-50 dark:bg-lime-900 dark:text-lime-100",
+        td: "border border-slate-700 dark:border-slate-600 p-1",
       }}
       columns={[
         {
@@ -153,13 +153,12 @@
     />
   </Paginate>
 </div>
-<div class="bg-lime-50"></div>
-<div class="bg-orange-50"></div>
-<div class="bg-amber-50"></div>
-<div class="bg-emerald-50"></div>
-<div class="bg-neutral-50"></div>
-<div class="bg-sky-50"></div>
-<div class="bg-indigo-50"></div>
-<div class="bg-lime-50"></div>
+<div class="bg-lime-50 dark:bg-lime-900 dark:text-lime-100"></div>
+<div class="bg-orange-50 dark:bg-orange-900 dark:text-orange-100"></div>
+<div class="bg-amber-50 dark:bg-amber-900 dark:text-amber-100"></div>
+<div class="bg-emerald-50 dark:bg-emerald-900 dark:text-emerald-100"></div>
+<div class="bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100"></div>
+<div class="bg-sky-50 dark:bg-sky-900 dark:text-sky-100"></div>
+<div class="bg-indigo-50 dark:bg-indigo-900 dark:text-indigo-100"></div>
 <div class="text-green-600 text-wrap break-words justify-self-center"></div>
 <div class="text-red-600"></div>

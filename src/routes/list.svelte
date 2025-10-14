@@ -194,6 +194,7 @@
       stream: Protocol.StreamKind
     ): ColumnDef<Record<string, string>> {
       const name = `${stream}:${this.name}`;
+      const color = Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream);
       return {
         name,
         header: this.getHeader(),
@@ -201,22 +202,22 @@
         format: this.format,
         orderBy: this.getOrderBy(name),
         classes: {
-          th: `border border-slate-600 p-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-50`,
+          th: `border border-slate-600 dark:border-slate-500 p-1 bg-${color}-50 dark:bg-${color}-900 dark:text-${color}-100`,
         },
       };
     }
   }
 
   const BUTTON_CLASSES_SIDE_ALERT =
-    "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-red-500";
+    "w-12 h-12 bg-white dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-500 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400";
   const BUTTON_CLASSES_SIDE_NORMAL =
-    "w-12 h-12 bg-white hover:bg-gray-200 text-gray-500 hover:text-blue-500";
+    "w-12 h-12 bg-white dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-500 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400";
   const BUTTON_CLASSES_TOOLBAR_ACTIVE =
-    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white hover:text-blue-200";
+    "w-4 h-8 bg-cyan-400 dark:bg-cyan-600 hover:bg-cyan-600 dark:hover:bg-cyan-700 text-white hover:text-blue-200";
   const BUTTON_CLASSES_TOOLBAR_NORMAL =
-    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
+    "w-4 h-8 bg-gray-400 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white hover:text-blue-200";
   const BUTTON_CLASSES_TOOLBAR_LARGE =
-    "w-12 h-12 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
+    "w-12 h-12 bg-gray-400 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white hover:text-blue-200";
 
   const COMMON_PROPERTIES_GENERAL: Array<PropertyDefinition> = [
     new PropertyDefinition("CompleteName")
@@ -717,9 +718,9 @@
                   ?.some((map) => map.stream === stream)}
                   <Table
                     classes={{
-                      table: "border-collapse border border-slate-500 mb-1",
-                      th: `border border-slate-600 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-50`,
-                      td: "border border-slate-700 px-1",
+                      table: "border-collapse border border-slate-500 dark:border-slate-600 mb-1",
+                      th: `border border-slate-600 dark:border-slate-500 px-1 bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-50 dark:bg-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-900 dark:text-${Protocol.STREAM_KIND_TO_COLOR_MAP.get(stream)}-100`,
+                      td: "border border-slate-700 dark:border-slate-600 px-1",
                     }}
                     data={fileToPropertyMaps
                       .get(file)
@@ -740,9 +741,9 @@
       <Overflow class="pb-2 overflow-auto">
         <Table
           classes={{
-            table: "border-collapse border border-slate-500 mb-1",
-            th: "border border-slate-600 p-1 bg-lime-50",
-            td: "border border-slate-700 px-1 text-nowrap",
+            table: "border-collapse border border-slate-500 dark:border-slate-600 mb-1",
+            th: "border border-slate-600 dark:border-slate-500 p-1",
+            td: "border border-slate-700 dark:border-slate-600 px-1 text-nowrap",
           }}
           data={sortedDataOfListView}
           columns={columnsOfListView}

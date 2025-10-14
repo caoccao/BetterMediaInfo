@@ -32,9 +32,9 @@
   import * as Protocol from "../lib/protocol";
 
   const BUTTON_CLASSES_ACTIVE =
-    "w-4 h-8 bg-cyan-400 hover:bg-cyan-600 text-white hover:text-blue-200";
+    "w-4 h-8 bg-cyan-400 dark:bg-cyan-600 hover:bg-cyan-600 dark:hover:bg-cyan-700 text-white hover:text-blue-200";
   const BUTTON_CLASSES_NORMAL =
-    "w-4 h-8 bg-gray-400 hover:bg-gray-600 text-white hover:text-blue-200";
+    "w-4 h-8 bg-gray-400 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white hover:text-blue-200";
 
   let buttonAboutClasses = $state(BUTTON_CLASSES_NORMAL);
   let buttonSettingsClasses = $state(BUTTON_CLASSES_NORMAL);

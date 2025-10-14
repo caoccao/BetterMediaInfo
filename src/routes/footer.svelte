@@ -19,10 +19,10 @@
  	 */
 
   const LINK_CLASS =
-    "text-blue-600 visited:text-purple-600 underline underline-offset-auto";
+    "text-blue-600 dark:text-blue-400 visited:text-purple-600 dark:visited:text-purple-400 underline underline-offset-auto";
 </script>
 
-<div class="my-3 text-zinc-400 place-content-center text-center grid gap-2">
+<div class="my-3 text-zinc-400 dark:text-zinc-500 place-content-center text-center grid gap-2">
   <div>
     <a
       href="https://paypal.me/caoccao?locale.x=en_US"

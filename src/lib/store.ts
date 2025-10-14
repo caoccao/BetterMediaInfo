@@ -170,3 +170,10 @@ export const tabSettingsStatus = Store.writable<Protocol.ControlStatus>(
     };
   }
 );
+
+export const darkMode = Store.writable<boolean>(false, (set) => {
+  set(false);
+  return () => {
+    set(false);
+  };
+});

@@ -22,8 +22,15 @@ export interface About {
 
 export interface Config {
   appendOnFileDrop: boolean;
+  displayMode: DisplayMode;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
+}
+
+export enum DisplayMode {
+  Auto = "Auto",
+  Light = "Light",
+  Dark = "Dark",
 }
 
 export enum ConfigDirectoryMode {
@@ -131,6 +138,14 @@ export function getConfigDirectoryModes(): ConfigDirectoryMode[] {
     ConfigDirectoryMode.Audio,
     ConfigDirectoryMode.Image,
     ConfigDirectoryMode.Video,
+  ];
+}
+
+export function getDisplayModes(): DisplayMode[] {
+  return [
+    DisplayMode.Auto,
+    DisplayMode.Light,
+    DisplayMode.Dark,
   ];
 }
 

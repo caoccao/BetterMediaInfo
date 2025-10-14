@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.7.0
+
+* Supported dark mode
+
 ## 0.6.0
 
 * Upgraded MediaInfoLib to v25.09

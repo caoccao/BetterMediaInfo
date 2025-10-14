@@ -21,7 +21,7 @@
   import type { Event, UnlistenFn } from "@tauri-apps/api/event";
   import { writeText } from "@tauri-apps/plugin-clipboard-manager";
   import { onDestroy, onMount } from "svelte";
-  import { Button, Dialog, Tab, Tabs, Tooltip } from "svelte-ux";
+  import { Button, Dialog, getSettings, Tab, Tabs, Tooltip } from "svelte-ux";
   import { CodeBlock } from "svhighlight";
   import "highlight.js/styles/intellij-light.css";
   import About from "./about.svelte";
@@ -31,6 +31,7 @@
   import * as Protocol from "../lib/protocol";
   import {
     config,
+    darkMode,
     dialogJsonCode,
     dialogNotification,
     mediaDetailedFiles,
@@ -41,6 +42,9 @@
   import { openSaveJsonCodeFileDialog } from "../lib/dialog";
   import { scanFiles } from "../lib/fs";
   import { shrinkFileName } from "../lib/format";
+
+  // Get Svelte UX theme store
+  const themeStore = getSettings().currentTheme;
 
   let appendOnFileDrop = $state(true);
   let dialogJsonCodeOpen = $state(false);
@@ -53,6 +57,11 @@
   let statusTabAbout = $state<Protocol.ControlStatus>(Protocol.ControlStatus.Hidden);
   let statusTabSettings = $state<Protocol.ControlStatus>(Protocol.ControlStatus.Hidden);
   let tabIndex = $state(0);
+  let isDarkMode = $state(false);
+  
+  darkMode.subscribe((value) => {
+    isDarkMode = value;
+  });
   
   // Use $state for tabControls and update it in $effect to avoid unsafe mutations
   let tabControls = $state<Array<Protocol.TabControl>>([
@@ -118,6 +127,7 @@
     config.subscribe((value) => {
       if (value) {
         appendOnFileDrop = value.appendOnFileDrop;
+        setDisplayMode(value.displayMode);
       }
     });
 
@@ -337,6 +347,31 @@
     dialogNotification.set(null);
   }
 
+  function setDisplayMode(mode: Protocol.DisplayMode) {
+    // Map our display mode to Svelte UX theme names
+    let themeName: string;
+    if (mode === Protocol.DisplayMode.Auto) {
+      themeName = "system";
+    } else if (mode === Protocol.DisplayMode.Dark) {
+      themeName = "dark";
+    } else {
+      themeName = "light";
+    }
+
+    // Use Svelte UX theme store to set the theme
+    // This will automatically handle:
+    // - OS theme detection (for "system")
+    // - Setting dark class on <html>
+    // - Listening to OS theme changes
+    // - Persisting to localStorage
+    themeStore.setTheme(themeName);
+
+    // Subscribe to theme store to update our darkMode store
+    themeStore.subscribe((currentTheme) => {
+      darkMode.set(currentTheme.dark);
+    });
+  }
+
   function onKeyUp(event: KeyboardEvent) {
     if (event.ctrlKey && !event.altKey && !event.shiftKey) {
       if (event.key >= "1" && event.key <= "9") {
@@ -369,7 +404,7 @@
 <Tabs
   bind:value={tabIndex}
   classes={{
-    content: "border p-2 rounded-b rounded-tr min-h-[calc(100vh-180px)]",
+    content: "border border-gray-300 dark:border-gray-600 p-2 rounded-b rounded-tr min-h-[calc(100vh-180px)] bg-white dark:bg-zinc-900",
     tab: { root: "rounded-t" },
   }}
 >
@@ -430,7 +465,7 @@
   bind:open={dialogNotificationOpen}
   on:close={onCloseDialogNotification}
   classes={{
-    root: "rounded-lg border-gray-200 drop-shadow-lg",
+    root: "rounded-lg border-gray-200 dark:border-gray-700 drop-shadow-lg bg-white dark:bg-zinc-800",
     dialog: "max-w-screen-lg",
     title: dialogTitleClasses,
     actions: "justify-center",
@@ -447,7 +482,7 @@
   bind:open={dialogJsonCodeOpen}
   on:close={onCloseDialogJsonCode}
   classes={{
-    root: "rounded-lg border-gray-200 drop-shadow-lg",
+    root: "rounded-lg border-gray-200 dark:border-gray-700 drop-shadow-lg bg-white dark:bg-zinc-800",
     dialog: "w-4/5",
     actions: "justify-center",
   }}
@@ -457,8 +492,8 @@
     <CodeBlock
       language="json"
       code={dialogJsonCodeString ?? ""}
-      codeTextClasses="text-neutral-800 bg-white overflow-auto w-full h-[calc(80vh-100px)]"
-      lineNumberTextClasses="text-neutral-800"
+      codeTextClasses="text-neutral-800 dark:text-neutral-200 bg-white dark:bg-zinc-900 overflow-auto w-full h-[calc(80vh-100px)]"
+      lineNumberTextClasses="text-neutral-800 dark:text-neutral-400"
       showHeader={false}
       showLineNumbers={true}
     />
@@ -481,7 +516,11 @@
       >
         Save
       </Button>
-      <Button variant="fill-light" color="default" classes={{ root: "w-24" }}>
+      <Button
+        variant="fill-light"
+        color="default"
+        classes={{ root: "w-24" }}
+      >
         Close
       </Button>
     </div>

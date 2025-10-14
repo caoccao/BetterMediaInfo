@@ -16,11 +16,22 @@
    *   limitations under the License.
    */
   import "../app.css";
+  import { settings, ThemeInit } from "svelte-ux";
   import Footer from "./footer.svelte";
   import Toolbar from "./toolbar.svelte";
+
+  // Initialize Svelte UX settings with theme configuration
+  settings({
+    themes: {
+      light: ["light"],
+      dark: ["dark"],
+    },
+  });
 </script>
 
-<div class="grid px-2">
+<ThemeInit />
+
+<div class="grid px-2 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100">
   <nav><Toolbar /></nav>
   <main><slot></slot></main>
   <footer><Footer /></footer>

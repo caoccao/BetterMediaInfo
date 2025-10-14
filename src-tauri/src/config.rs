@@ -28,6 +28,8 @@ static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 pub struct Config {
   #[serde(rename = "appendOnFileDrop")]
   pub append_on_file_drop: bool,
+  #[serde(rename = "displayMode")]
+  pub display_mode: DisplayMode,
   #[serde(rename = "directoryMode")]
   pub directory_mode: ConfigDirectoryMode,
   #[serde(rename = "fileExtensions")]
@@ -38,6 +40,7 @@ impl Default for Config {
   fn default() -> Self {
     Self {
       append_on_file_drop: true,
+      display_mode: Default::default(),
       directory_mode: Default::default(),
       file_extensions: Default::default(),
     }
@@ -81,6 +84,19 @@ impl Config {
     let file = File::create(path).expect(format!("Couldn't create config file {}.", path_string).as_str());
     let buf_writer = BufWriter::new(file);
     serde_json::to_writer_pretty(buf_writer, &self).map_err(Error::msg)
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum DisplayMode {
+  Auto,
+  Light,
+  Dark,
+}
+
+impl Default for DisplayMode {
+  fn default() -> Self {
+    Self::Auto
   }
 }
 
