@@ -3,6 +3,7 @@
 ## 0.7.0
 
 * Supported dark mode
+* Upgraded MediaInfoLib to v25.10
 
 ## 0.6.0
 
