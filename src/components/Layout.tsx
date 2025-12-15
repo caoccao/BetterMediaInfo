@@ -15,4 +15,23 @@
  *   limitations under the License.
  */
 
-export * as protocol from "./protocol";
+import { Box } from '@mui/material';
+import Toolbar from './Toolbar';
+import MainContent from './MainContent';
+import Footer from './Footer';
+
+export default function Layout() {
+  return (
+    <Box sx={{ display: 'grid', px: 1, minHeight: '100vh', gridTemplateRows: 'auto 1fr auto' }}>
+      <nav>
+        <Toolbar />
+      </nav>
+      <main>
+        <MainContent />
+      </main>
+      <footer>
+        <Footer />
+      </footer>
+    </Box>
+  );
+}

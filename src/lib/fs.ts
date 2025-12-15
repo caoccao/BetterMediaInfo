@@ -15,23 +15,21 @@
  *   limitations under the License.
  */
 
-import { dialogNotification, mediaFiles } from "./store";
-import * as Protocol from "../lib/protocol";
-import { getFiles } from "../lib/service";
+import { useAppStore } from "./store";
+import * as Protocol from "./protocol";
+import { getFiles } from "./service";
 
 export async function scanFiles(files: string[], append: boolean = false) {
   if (files.length > 0) {
     try {
       const newFiles = await getFiles(files);
       if (append) {
-        mediaFiles.update((existingFiles) => {
-          return [...new Set([...existingFiles, ...newFiles]).keys()];
-        });
+        useAppStore.getState().addMediaFiles(newFiles);
       } else {
-        mediaFiles.set(newFiles);
+        useAppStore.getState().setMediaFiles(newFiles);
       }
     } catch (error) {
-      dialogNotification.set({
+      useAppStore.getState().setDialogNotification({
         title: error as string,
         type: Protocol.DialogNotificationType.Error,
       });
