@@ -396,7 +396,7 @@ export default function List() {
     [addMediaDetailedFile, setMediaFileAllProperties, setDialogNotification]
   );
 
-  const buttonSx = { width: 36, height: 36 };
+  const buttonSx = { width: 36, height: 36, borderRadius: 1 };
   const activeButtonSx = { ...buttonSx, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } };
 
   if (files.length === 0) {
@@ -458,7 +458,7 @@ export default function List() {
       ) : viewType === ViewType.Card ? (
         files.map((file) =>
           fileToPropertyMaps.has(file) ? (
-            <Card key={file} variant="outlined" sx={{ mb: 1 }}>
+            <Card key={file} variant="outlined">
               <CardHeader
                 title={<Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{file}</Typography>}
                 subheader={
@@ -487,13 +487,13 @@ export default function List() {
                 }
                 sx={{ pb: 0 }}
               />
-              <CardContent sx={{ pt: 1 }}>
+              <CardContent sx={{ py: 0, '&.MuiCardContent-root:last-child': { pb: 2 } }}>
                 {[...COMMON_PROPERTIES_MAP.entries()].map(([stream, commonProperties]) => {
                   const streamMaps = fileToPropertyMaps.get(file)?.filter((map) => map.stream === stream);
                   if (!streamMaps || streamMaps.length === 0) return null;
 
                   return (
-                    <TableContainer key={stream} sx={{ mb: 1 }}>
+                    <TableContainer key={stream} sx={{ mt: 1 }}>
                       <Table size="small">
                         <TableHead>
                           <TableRow>
@@ -505,8 +505,11 @@ export default function List() {
                                   align={prop.align}
                                   sx={{
                                     bgcolor: `${STREAM_KIND_COLORS[stream]}20`,
-                                    borderColor: STREAM_KIND_COLORS[stream],
                                     fontWeight: 'bold',
+                                    borderTop: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                    borderBottom: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                    borderLeft: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                    borderRight: `1px solid ${STREAM_KIND_COLORS[stream]}`,
                                   }}
                                 >
                                   {prop.header ?? prop.name}
@@ -520,7 +523,16 @@ export default function List() {
                               {commonProperties
                                 .filter((prop) => prop.inCardView)
                                 .map((prop) => (
-                                  <TableCell key={prop.name} align={prop.align}>
+                                  <TableCell 
+                                    key={prop.name} 
+                                    align={prop.align}
+                                    sx={{
+                                      borderTop: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                      borderBottom: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                      borderLeft: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                      borderRight: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                    }}
+                                  >
                                     {prop.format(map.propertyMap[prop.name], map.propertyMap, idx)}
                                   </TableCell>
                                 ))}

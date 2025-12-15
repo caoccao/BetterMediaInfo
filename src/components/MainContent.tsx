@@ -309,10 +309,12 @@ export default function MainContent() {
           onChange={(_, newValue) => setTabIndex(newValue)}
           variant="scrollable"
           scrollButtons="auto"
+          sx={{ mt: 0, minHeight: '24px', '& .MuiTab-root': { textTransform: 'none' } }}
         >
           {tabControls.map((control) => (
             <Tab
               key={`${control.type}-${control.value}`}
+              style={{ minHeight: '24px' }}
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Tooltip title={getTabTooltip(control)}>
@@ -334,6 +336,7 @@ export default function MainContent() {
                   )}
                 </Box>
               }
+              sx={{ py: 0, my: 0 }}
             />
           ))}
         </Tabs>

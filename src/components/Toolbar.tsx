@@ -70,6 +70,7 @@ export default function Toolbar() {
   const buttonSx = {
     width: 32,
     height: 32,
+    borderRadius: 1,
   };
 
   const activeButtonSx = {
@@ -82,7 +83,7 @@ export default function Toolbar() {
   };
 
   return (
-    <Box sx={{ mt: 1, mb: 1.5, display: 'flex', gap: 1 }}>
+    <Box sx={{ mx: 1, my: 0, display: 'flex', gap: 1 }}>
       <ButtonGroup variant="outlined" size="small">
         <Tooltip title="Add Files">
           <IconButton sx={buttonSx} onClick={() => openFileDialog(false)}>
