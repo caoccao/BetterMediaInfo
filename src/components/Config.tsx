@@ -43,22 +43,31 @@ export default function Config() {
   const [fileExtensionsVideo, setFileExtensionsVideo] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const isInitializedRef = useRef(false);
 
   const config = useAppStore((state) => state.config);
   const setStoreConfig = useAppStore((state) => state.setConfig);
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
 
-  // Initialize from config
+  // Initialize from config only once
   useEffect(() => {
-    if (config) {
+    if (config && config.fileExtensions && !isInitializedRef.current) {
+      isInitializedRef.current = true;
       setAppendOnFileDrop(config.appendOnFileDrop);
       setDisplayMode(config.displayMode);
       setDirectoryMode(config.directoryMode);
-      setFileExtensionsAudio(config.fileExtensions.audio.join(', '));
-      setFileExtensionsImage(config.fileExtensions.image.join(', '));
-      setFileExtensionsVideo(config.fileExtensions.video.join(', '));
+      setFileExtensionsAudio(config.fileExtensions.audio?.join(', ') ?? '');
+      setFileExtensionsImage(config.fileExtensions.image?.join(', ') ?? '');
+      setFileExtensionsVideo(config.fileExtensions.video?.join(', ') ?? '');
     }
   }, [config]);
+
+  // Reset initialization flag when component unmounts so it reinitializes on next mount
+  useEffect(() => {
+    return () => {
+      isInitializedRef.current = false;
+    };
+  }, []);
 
   // Debounced file extension changes with 200ms delay
   const handleFileExtensionChange = (
@@ -112,17 +121,12 @@ export default function Config() {
     }
   };
 
-  // Save config to store when component unmounts (but don't persist to disk)
+  // Update store immediately when displayMode changes (for instant theme switching)
   useEffect(() => {
-    return () => {
-      try {
-        const newConfig = createConfig();
-        setStoreConfig(newConfig);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-  }, [appendOnFileDrop, displayMode, directoryMode, fileExtensionsAudio, fileExtensionsImage, fileExtensionsVideo]);
+    if (config && isInitializedRef.current && displayMode !== config.displayMode) {
+      setStoreConfig({ ...config, displayMode });
+    }
+  }, [displayMode, config, setStoreConfig]);
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>

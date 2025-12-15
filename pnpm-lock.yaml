@@ -24,32 +24,32 @@ importers:
         specifier: ^7.0.2
         version: 7.3.6(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.3))(@types/react@19.2.7)(react@19.2.3))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@tauri-apps/api':
-        specifier: ^2.8.0
+        specifier: ^2.9.0
         version: 2.9.1
       '@tauri-apps/plugin-cli':
-        specifier: ~2.4.0
+        specifier: ^2.4.0
         version: 2.4.1
       '@tauri-apps/plugin-clipboard-manager':
         specifier: ^2.3.0
         version: 2.3.2
       '@tauri-apps/plugin-dialog':
-        specifier: ~2.4.0
+        specifier: ^2.4.0
         version: 2.4.2
       '@tauri-apps/plugin-shell':
-        specifier: ^2.3.1
+        specifier: ^2.3.0
         version: 2.3.3
       react:
-        specifier: ^19.0.0
+        specifier: ^19.1.0
         version: 19.2.3
       react-dom:
-        specifier: ^19.0.0
+        specifier: ^19.1.0
         version: 19.2.3(react@19.2.3)
       zustand:
         specifier: ^5.0.3
         version: 5.0.9(@types/react@19.2.7)(react@19.2.3)
     devDependencies:
       '@tauri-apps/cli':
-        specifier: ^2.8.4
+        specifier: ^2.9.0
         version: 2.9.6
       '@types/react':
         specifier: ^19.0.8
