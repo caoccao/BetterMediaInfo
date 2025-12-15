@@ -17,26 +17,36 @@
 
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { DialogFilter } from "@tauri-apps/plugin-dialog";
-import { config } from "./store";
+import { useAppStore } from "./store";
 import { scanFiles } from "./fs";
 
-const filters: Array<DialogFilter> = [];
+let filters: Array<DialogFilter> = [];
 
-config.subscribe((value) => {
-  if (value !== null) {
-    filters.length = 0;
-    filters.push({
-      name: "Video",
-      extensions: value.fileExtensions.video,
-    });
-    filters.push({
-      name: "Image",
-      extensions: value.fileExtensions.image,
-    });
-    filters.push({
-      name: "Audio",
-      extensions: value.fileExtensions.audio,
-    });
+// Initialize filters from config
+const initFilters = () => {
+  const config = useAppStore.getState().config;
+  if (config !== null) {
+    filters = [
+      {
+        name: "Video",
+        extensions: config.fileExtensions.video,
+      },
+      {
+        name: "Image",
+        extensions: config.fileExtensions.image,
+      },
+      {
+        name: "Audio",
+        extensions: config.fileExtensions.audio,
+      },
+    ];
+  }
+};
+
+// Subscribe to config changes
+useAppStore.subscribe((state) => {
+  if (state.config !== null) {
+    initFilters();
   }
 });
 
@@ -48,6 +58,7 @@ export async function openDirectoryDialog(append: boolean) {
 }
 
 export async function openFileDialog(append: boolean) {
+  initFilters();
   const files = await open({
     multiple: true,
     filters: filters,
