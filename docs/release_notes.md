@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.8.0 Snapshot
+
+* Converted UI from Svelte to React
+
 ## 0.7.0
 
 * Supported dark mode
