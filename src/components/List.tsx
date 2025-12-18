@@ -453,7 +453,7 @@ export default function List() {
 
       {fileToPropertyMaps.size === 0 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <img src="images/empty.gif" alt="Not Found" />
+          <img src="images/empty.png" alt="Not Media Files" />
         </Box>
       ) : viewType === ViewType.Card ? (
         files.map((file) =>
