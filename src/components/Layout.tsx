@@ -23,9 +23,17 @@ import Footer from './Footer';
 export default function Layout() {
   return (
     <Box sx={{ display: 'grid', px: 1, minHeight: '100vh', gridTemplateRows: 'auto 1fr auto' }}>
-      <nav>
+      <Box
+        component="nav"
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+          backgroundColor: 'background.default',
+        }}
+      >
         <Toolbar />
-      </nav>
+      </Box>
       <main>
         <MainContent />
       </main>

@@ -24,16 +24,21 @@ import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InfoIcon from '@mui/icons-material/Info';
+import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
+import ViewListIcon from '@mui/icons-material/ViewList';
 import { useAppStore } from '../lib/store';
 import * as Protocol from '../lib/protocol';
+import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
 
 export default function Toolbar() {
   const files = useAppStore((state) => state.mediaFiles);
   const tabAboutStatus = useAppStore((state) => state.tabAboutStatus);
   const tabSettingsStatus = useAppStore((state) => state.tabSettingsStatus);
+  const viewType = useAppStore((state) => state.viewType);
   const setTabAboutStatus = useAppStore((state) => state.setTabAboutStatus);
   const setTabSettingsStatus = useAppStore((state) => state.setTabSettingsStatus);
+  const setViewType = useAppStore((state) => state.setViewType);
   const clearMediaFiles = useAppStore((state) => state.clearMediaFiles);
 
   const handleClearFiles = useCallback(() => {
@@ -68,18 +73,15 @@ export default function Toolbar() {
   }, [handleClearFiles, handleSelectTabSettings]);
 
   const buttonSx = {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
+    margin: '2px',
     borderRadius: 1,
   };
 
   const activeButtonSx = {
     ...buttonSx,
-    bgcolor: 'primary.main',
-    color: 'white',
-    '&:hover': {
-      bgcolor: 'primary.dark',
-    },
+    color: 'primary.main',
   };
 
   return (
@@ -103,6 +105,25 @@ export default function Toolbar() {
         <Tooltip title="Append Folder">
           <IconButton sx={buttonSx} onClick={() => openDirectoryDialog(true)}>
             <CreateNewFolderIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </ButtonGroup>
+
+      <ButtonGroup variant="outlined" size="small">
+        <Tooltip title="Card View">
+          <IconButton
+            sx={viewType === ViewType.Card ? activeButtonSx : buttonSx}
+            onClick={() => setViewType(ViewType.Card)}
+          >
+            <ViewAgendaIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="List View">
+          <IconButton
+            sx={viewType === ViewType.List ? activeButtonSx : buttonSx}
+            onClick={() => setViewType(ViewType.List)}
+          >
+            <ViewListIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </ButtonGroup>

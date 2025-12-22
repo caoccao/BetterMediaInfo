@@ -32,19 +32,17 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
-  ButtonGroup,
   CircularProgress,
 } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
-import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
-import ViewListIcon from '@mui/icons-material/ViewList';
 import NotesIcon from '@mui/icons-material/Notes';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { getMatches } from '@tauri-apps/plugin-cli';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
+import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
 import { getPropertiesMap, getStreamCountMap } from '../lib/service';
 import { scanFiles } from '../lib/fs';
@@ -64,11 +62,6 @@ enum OrderByType {
   None,
   Number,
   String,
-}
-
-enum ViewType {
-  Card,
-  List,
 }
 
 interface PropertyDefinition {
@@ -179,12 +172,12 @@ const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
 export default function List() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [viewType, setViewType] = useState<ViewType>(ViewType.Card);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const files = useAppStore((state) => state.mediaFiles);
+  const viewType = useAppStore((state) => state.viewType);
   const mediaFileToCommonPropertyMap = useAppStore((state) => state.mediaFileToCommonPropertyMap);
   const mediaFileToStreamCountMap = useAppStore((state) => state.mediaFileToStreamCountMap);
   const setMediaFileStreamCount = useAppStore((state) => state.setMediaFileStreamCount);
@@ -397,7 +390,6 @@ export default function List() {
   );
 
   const buttonSx = { width: 36, height: 36, borderRadius: 1 };
-  const activeButtonSx = { ...buttonSx, bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } };
 
   if (files.length === 0) {
     return (
@@ -422,27 +414,6 @@ export default function List() {
 
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <ButtonGroup size="small">
-          <Tooltip title="Card View">
-            <IconButton
-              sx={viewType === ViewType.Card ? activeButtonSx : buttonSx}
-              onClick={() => setViewType(ViewType.Card)}
-            >
-              <ViewAgendaIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="List View">
-            <IconButton
-              sx={viewType === ViewType.List ? activeButtonSx : buttonSx}
-              onClick={() => setViewType(ViewType.List)}
-            >
-              <ViewListIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </ButtonGroup>
-      </Box>
-
       <TextField
         placeholder="Filter"
         value={query}

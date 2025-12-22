@@ -17,6 +17,7 @@
 
 import { create } from 'zustand';
 import * as Protocol from './protocol';
+import { ViewType } from './types';
 import { getAbout, getConfig, getParameters } from './service';
 
 interface DialogJsonCode {
@@ -53,6 +54,9 @@ interface AppState {
   tabAboutStatus: Protocol.ControlStatus;
   tabSettingsStatus: Protocol.ControlStatus;
 
+  // View type
+  viewType: ViewType;
+
   // Actions
   initConfig: () => Promise<void>;
   initAbout: () => Promise<void>;
@@ -73,6 +77,7 @@ interface AppState {
   setMediaFileStreamCount: (file: string, streamCountMap: Map<Protocol.StreamKind, Protocol.StreamCount>) => void;
   setTabAboutStatus: (status: Protocol.ControlStatus) => void;
   setTabSettingsStatus: (status: Protocol.ControlStatus) => void;
+  setViewType: (viewType: ViewType) => void;
   clearMediaFiles: () => void;
 }
 
@@ -91,6 +96,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   mediaInfoParameters: [],
   tabAboutStatus: Protocol.ControlStatus.Hidden,
   tabSettingsStatus: Protocol.ControlStatus.Hidden,
+  viewType: ViewType.Card,
 
   // Actions
   initConfig: async () => {
@@ -186,6 +192,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setTabAboutStatus: (tabAboutStatus) => set({ tabAboutStatus }),
   setTabSettingsStatus: (tabSettingsStatus) => set({ tabSettingsStatus }),
+  setViewType: (viewType) => set({ viewType }),
 
   clearMediaFiles: () => set({
     mediaFiles: [],
