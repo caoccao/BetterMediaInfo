@@ -549,8 +549,6 @@ export default function List() {
             columns={columnsOfDataGrid}
             density="compact"
             disableRowSelectionOnClick
-            disableColumnFilter
-            disableColumnMenu
             hideFooter
             autosizeOnMount
             autosizeOptions={{
