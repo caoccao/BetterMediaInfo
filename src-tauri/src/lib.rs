@@ -84,6 +84,14 @@ async fn write_text_file(file: String, text: String) -> Result<(), String> {
 pub fn run() {
   env_logger::init();
 
+  let runtime = tokio::runtime::Builder::new_multi_thread()
+    .worker_threads(4)
+    .enable_all()
+    .build()
+    .expect("Failed to build Tokio runtime");
+
+  tauri::async_runtime::set(runtime.handle().clone());
+
   tauri::Builder::default()
     .plugin(tauri_plugin_cli::init())
     .plugin(tauri_plugin_dialog::init())

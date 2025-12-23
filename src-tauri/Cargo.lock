@@ -19,6 +19,7 @@ dependencies = [
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-dialog",
  "tauri-plugin-shell",
+ "tokio",
  "widestring",
 ]
 
