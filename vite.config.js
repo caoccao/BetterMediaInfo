@@ -28,4 +28,7 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  optimizeDeps: {
+    include: ['@emotion/react', '@emotion/styled', '@mui/material', '@mui/x-data-grid'],
+  },
 }));

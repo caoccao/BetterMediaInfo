@@ -30,10 +30,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Typography,
   CircularProgress,
 } from '@mui/material';
+import { DataGrid, GridColDef, GridRowsProp, useGridApiRef } from '@mui/x-data-grid';
 import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
@@ -172,9 +172,8 @@ const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
 export default function List() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const apiRef = useGridApiRef();
 
   const files = useAppStore((state) => state.mediaFiles);
   const viewType = useAppStore((state) => state.viewType);
@@ -318,47 +317,67 @@ export default function List() {
     });
   }, [fileToPropertyMaps, mediaFileToStreamCountMap]);
 
-  const columnsOfListView = useMemo(() => {
+  const columnsOfDataGrid = useMemo((): GridColDef[] => {
     return [...COMMON_PROPERTIES_MAP.entries()]
       .flatMap(([stream, commonProperties]) =>
         commonProperties
           .filter((prop) => prop.inListView)
-          .map((prop) => ({
-            stream,
-            property: prop,
-            columnId: `${stream}:${prop.name}`,
+          .map((prop): GridColDef => ({
+            field: `${stream}:${prop.name}`,
+            headerName: prop.header ?? prop.name,
+            align: prop.align,
+            headerAlign: 'center',
+            flex: prop.name === 'CompleteName' ? 1 : undefined,
+            minWidth: 10,
+            sortable: prop.orderByType !== OrderByType.None,
+            type: prop.orderByType === OrderByType.Number ? 'number' : 'string',
+            valueGetter: (value: any) => value ?? '',
+            valueFormatter: (value: any, row: any) => {
+              const rowIndex = dataOfListView.findIndex((r) => r.file === row.file);
+              return prop.format(value, row, rowIndex);
+            },
+            headerClassName: `header-${stream}`,
           }))
       );
-  }, []);
+  }, [dataOfListView]);
 
-  const sortedDataOfListView = useMemo(() => {
-    if (!sortColumn) return dataOfListView;
+  const rowsOfDataGrid = useMemo((): GridRowsProp => {
+    return dataOfListView.map((row) => ({
+      id: row.file,
+      ...row,
+    }));
+  }, [dataOfListView]);
 
-    const column = columnsOfListView.find((c) => c.columnId === sortColumn);
-    if (!column) return dataOfListView;
-
-    return [...dataOfListView].sort((a, b) => {
-      const aVal = a[sortColumn] ?? '';
-      const bVal = b[sortColumn] ?? '';
-
-      if (column.property.orderByType === OrderByType.Number) {
-        const aNum = parseFloat(aVal) || 0;
-        const bNum = parseFloat(bVal) || 0;
-        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum;
-      }
-
-      return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-    });
-  }, [dataOfListView, sortColumn, sortDirection, columnsOfListView]);
-
-  const handleSort = (columnId: string) => {
-    if (sortColumn === columnId) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortColumn(columnId);
-      setSortDirection('asc');
+  // Filter rows based on debounced query (searches across all columns)
+  const filteredRows = useMemo(() => {
+    if (!debouncedQuery || debouncedQuery.length === 0) {
+      return rowsOfDataGrid;
     }
-  };
+    const lowerCasedQuery = debouncedQuery.toLowerCase();
+    return rowsOfDataGrid.filter((row) => {
+      return Object.values(row).some((value) => {
+        if (value && typeof value === 'string') {
+          return value.toLowerCase().includes(lowerCasedQuery);
+        }
+        return false;
+      });
+    });
+  }, [rowsOfDataGrid, debouncedQuery]);
+
+  // Trigger auto-sizing when filtered rows change
+  useEffect(() => {
+    if (apiRef.current && filteredRows.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (apiRef.current) {
+          apiRef.current.autosizeColumns({
+            includeHeaders: true,
+            includeOutliers: true,
+          });
+        }
+      }, 100);
+    }
+  }, [filteredRows, apiRef]);
 
   const openDialogJsonCode = useCallback(
     (file: string) => {
@@ -523,47 +542,68 @@ export default function List() {
           )
         )
       ) : (
-        <TableContainer sx={{ maxHeight: 'calc(100vh - 280px)', overflow: 'auto' }}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                {columnsOfListView.map((col) => (
-                  <TableCell
-                    key={col.columnId}
-                    align={col.property.align}
-                    sx={{
-                      bgcolor: `${STREAM_KIND_COLORS[col.stream]}20`,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {col.property.orderByType !== OrderByType.None ? (
-                      <TableSortLabel
-                        active={sortColumn === col.columnId}
-                        direction={sortColumn === col.columnId ? sortDirection : 'asc'}
-                        onClick={() => handleSort(col.columnId)}
-                      >
-                        {col.property.header ?? col.property.name}
-                      </TableSortLabel>
-                    ) : (
-                      col.property.header ?? col.property.name
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedDataOfListView.map((row, rowIdx) => (
-                <TableRow key={row.file}>
-                  {columnsOfListView.map((col) => (
-                    <TableCell key={col.columnId} align={col.property.align} sx={{ whiteSpace: 'nowrap' }}>
-                      {col.property.format(row[col.columnId], row as Record<string, string>, rowIdx)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'auto' }}>
+          <DataGrid
+            apiRef={apiRef}
+            rows={filteredRows}
+            columns={columnsOfDataGrid}
+            density="compact"
+            disableRowSelectionOnClick
+            disableColumnFilter
+            disableColumnMenu
+            hideFooter
+            autosizeOnMount
+            autosizeOptions={{
+              includeHeaders: true,
+              includeOutliers: true,
+            }}
+            autoHeight
+            sx={{
+              width: '100%',
+              maxWidth: '100%',
+              '& .MuiDataGrid-columnHeader': {
+                padding: 0,
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              },
+              '& .MuiDataGrid-cell': {
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+                py: 0.5,
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                minHeight: '36px !important',
+                maxHeight: '36px !important',
+              },
+              '& .MuiDataGrid-row': {
+                minHeight: '32px !important',
+              },
+              '& .MuiDataGrid-virtualScroller': {
+                maxWidth: '100%',
+              },
+              [`& .header-${Protocol.StreamKind.General}`]: {
+                bgcolor: `${STREAM_KIND_COLORS[Protocol.StreamKind.General]}20`,
+              },
+              [`& .header-${Protocol.StreamKind.Video}`]: {
+                bgcolor: `${STREAM_KIND_COLORS[Protocol.StreamKind.Video]}20`,
+              },
+              [`& .header-${Protocol.StreamKind.Audio}`]: {
+                bgcolor: `${STREAM_KIND_COLORS[Protocol.StreamKind.Audio]}20`,
+              },
+              [`& .header-${Protocol.StreamKind.Text}`]: {
+                bgcolor: `${STREAM_KIND_COLORS[Protocol.StreamKind.Text]}20`,
+              },
+              [`& .header-${Protocol.StreamKind.Image}`]: {
+                bgcolor: `${STREAM_KIND_COLORS[Protocol.StreamKind.Image]}20`,
+              },
+              [`& .header-${Protocol.StreamKind.Menu}`]: {
+                bgcolor: `${STREAM_KIND_COLORS[Protocol.StreamKind.Menu]}20`,
+              },
+            }}
+          />
+        </Box>
       )}
     </Box>
   );

@@ -302,8 +302,8 @@ export default function MainContent() {
   };
 
   return (
-    <Box>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+    <Box sx={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
         <Tabs
           value={tabIndex}
           onChange={(_, newValue) => setTabIndex(newValue)}
@@ -342,7 +342,7 @@ export default function MainContent() {
         </Tabs>
       </Box>
 
-      <Box sx={{ p: 1, border: 1, borderColor: 'divider', borderTop: 0, borderRadius: '0 0 4px 4px', minHeight: 'calc(100vh - 180px)' }}>
+      <Box sx={{ p: 1, border: 1, borderColor: 'divider', borderTop: 0, borderRadius: '0 0 4px 4px', width: '100%', overflowX: 'auto', flex: 1, minHeight: 0 }}>
         {tabControls.map((control) => (
           <Box
             key={`content-${control.type}-${control.value}`}
