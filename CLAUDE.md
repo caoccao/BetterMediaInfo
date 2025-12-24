@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 BetterMediaInfo is a cross-platform desktop application that provides a modern GUI for MediaInfo. It's built using:
-- **Frontend**: Svelte 5 + SvelteKit with TypeScript, Tailwind CSS, and Svelte UX components
+- **Frontend**: React 19 + TypeScript with Material-UI (MUI) v7
 - **Backend**: Rust with Tauri v2 framework
 - **Native Library**: MediaInfoLib (C++) for media file analysis via FFI
+- **State Management**: Zustand for React state
 - **Package Manager**: pnpm for Node.js dependencies
 
 ## Development Commands
@@ -30,12 +31,14 @@ pnpm dev
 pnpm build
 # Alternative: pnpm tauri build
 
-# Type checking and validation
-pnpm check
-pnpm check:watch
+# Type checking
+tsc -b
+
+# Preview production build
+pnpm preview
 
 # Run Rust tests
-cd src-tauri && cargo test -r
+cd src-tauri && cargo test
 
 # Build NSIS installer (Windows)
 node src-tauri/scripts/copy_dlls.cjs
@@ -44,7 +47,7 @@ node src-tauri/scripts/patch_tauri_conf.cjs
 
 ### Build System Notes
 - Uses Tauri's bundler which creates platform-specific packages (deb, rpm, AppImage, dmg, exe)
-- Static site generation via `@sveltejs/adapter-static` (no SSR)
+- Vite-based build system with React plugin
 - Cross-platform build via GitHub Actions for Linux, macOS, and Windows
 - Frontend dev server runs on http://localhost:1420
 
@@ -69,22 +72,27 @@ The application uses a strict protocol-based communication pattern between TypeS
    - Frontend receives processed data structures, never raw FFI data
 
 ### Frontend Structure (`src/`)
-- **Svelte 5 Runes**: Uses `$state`, `$derived`, `$effect` instead of legacy reactive syntax
-- **Routes**: SvelteKit file-based routing in `src/routes/`
-  - `+layout.svelte` - Root layout with Svelte UX theme initialization
-  - `+page.svelte` - Main application view with tab management
-  - `toolbar.svelte` - Top toolbar with file operations
-  - `list.svelte` - File list view with card/list toggle and filtering
-  - `details.svelte` - Detailed stream property view per file
-  - `config.svelte` - Settings panel with display mode selection
-  - `about.svelte` - About dialog with version info
+- **React 19**: Uses modern React with hooks
+- **Component Structure** (`src/components/`):
+  - `Layout.tsx` - Root layout component
+  - `MainContent.tsx` - Main content area with tab management
+  - `Toolbar.tsx` - Top toolbar with file operations
+  - `List.tsx` - File list view with card/grid toggle and filtering (uses MUI DataGrid)
+  - `Details.tsx` - Detailed stream property view per file
+  - `Config.tsx` - Settings panel with display mode selection
+  - `About.tsx` - About dialog with version info
+  - `Footer.tsx` - Footer component
 - **Libraries** (`src/lib/`):
   - `service.ts` - Tauri command bindings (invoke layer)
-  - `store.ts` - Svelte stores for global state (config, files, dialogs)
+  - `store.tsx` - Zustand store for global state management
   - `protocol.ts` - TypeScript interfaces matching Rust protocol
   - `format.ts` - Data formatting utilities (duration, file size, etc.)
   - `dialog.ts` - File/directory dialog helpers
   - `fs.ts` - File system utilities (recursive scanning)
+  - `types.ts` - Additional TypeScript type definitions
+- **Entry Points**:
+  - `App.tsx` - Root component with MUI theme provider and dark mode logic
+  - `main.tsx` - React application entry point
 
 ### Backend Structure (`src-tauri/src/`)
 - `main.rs` - Application entry point, CLI argument handling
@@ -97,51 +105,58 @@ The application uses a strict protocol-based communication pattern between TypeS
 - `bindings.rs` - Auto-generated C bindings (reference only, not used directly)
 
 ### State Management
-- **Frontend Stores** (`src/lib/store.ts`):
+- **Zustand Store** (`src/lib/store.tsx`):
   - `config` - Application configuration (display mode, file extensions, etc.)
-  - `darkMode` - Boolean indicating current dark mode state
   - `mediaFiles` - List of analyzed media files
   - `mediaDetailedFiles` - Files currently open in detail tabs
+  - `mediaFileToAllPropertiesMap` - Map of file paths to all properties
+  - `mediaFileToCommonPropertyMap` - Map of file paths to common properties
+  - `mediaFileToStreamCountMap` - Map of file paths to stream counts
   - `dialogJsonCode` - JSON export dialog state
   - `dialogNotification` - Notification dialog state
+  - `mediaInfoAbout` - MediaInfo version information
+  - `mediaInfoParameters` - Available MediaInfo parameters
   - `tabAboutStatus`/`tabSettingsStatus` - Tab visibility control
+  - `viewType` - Current view type (Card or Grid)
 
 - **Configuration Persistence**:
   - Rust side: Config stored as JSON in Tauri's app data directory
-  - Frontend: Config loaded on startup, saved on changes
-  - No local storage used; all persistence through Tauri file APIs
+  - Frontend: Config loaded on startup via `initConfig()`, saved on changes
+  - All persistence through Tauri file APIs
 
 ### Dark Mode Implementation
-The application uses Svelte UX's built-in theming system:
+The application uses MUI's built-in theming system:
 
-1. **Theme Configuration** (`src/routes/+layout.svelte`):
-   - Initializes Svelte UX settings with light/dark theme definitions
-   - `<ThemeInit />` component injects theme CSS into document head
+1. **Theme Configuration** (`src/App.tsx`):
+   - Creates MUI theme with `createTheme()` based on display mode
+   - Listens to system theme preferences via `window.matchMedia('(prefers-color-scheme: dark)')`
+   - Provides theme to entire app via `ThemeProvider`
 
-2. **Theme Switching** (`src/routes/+page.svelte`):
-   - Uses `getSettings().currentTheme` store from Svelte UX
-   - Maps display modes: Auto → "system", Light → "light", Dark → "dark"
-   - Svelte UX handles OS theme detection, `dark` class management, and localStorage persistence
+2. **Display Mode Logic**:
+   - Auto → Uses system preference (light/dark)
+   - Light → Forces light mode
+   - Dark → Forces dark mode
+   - Mode changes trigger theme recreation and re-render
 
 3. **Component Styling**:
-   - Svelte UX components automatically use dark theme from `tailwind.config.ts`
-   - Custom components use Tailwind's `dark:` prefix for dark mode variants
-   - **IMPORTANT**: Do NOT modify `src/app.css` for dark mode - use Tailwind classes in components
+   - MUI components automatically use theme colors
+   - Custom styling via MUI's `sx` prop and `styled` components
+   - Theme customization includes default component sizes (small buttons, compact tables, etc.)
 
 ### UI Framework Details
-- **Svelte UX**: Primary component library with built-in theming
-  - Theme configuration in `tailwind.config.ts` under `ux.themes`
-  - Uses CSS custom properties for colors (surface-100, surface-200, etc.)
-- **Tailwind CSS**: Utility-first styling with dark mode via `class` strategy
-  - darkMode: "class" in tailwind.config.ts
-  - Dark mode triggered by `dark` class on `<html>` element
-- **svhighlight**: Syntax highlighting for JSON export
-- **Google Material Symbols**: Icon system
+- **Material-UI (MUI) v7**: Primary component library
+  - `@mui/material` - Core components (Button, TextField, Dialog, etc.)
+  - `@mui/x-data-grid` - Advanced data grid for file list view
+  - `@mui/icons-material` - Material Design icons
+- **Monaco Editor**: Code editor for JSON export view (`@monaco-editor/react`)
+- **Emotion**: CSS-in-JS styling library (used by MUI)
 
 ## Testing
 
-- Rust unit tests: `cd src-tauri && cargo test -r`
-- No JavaScript test framework currently configured
+- Rust unit tests: `cd src-tauri && cargo test`
+  - Use `cargo test -r` for release mode tests
+  - Use `cargo test [TESTNAME]` to run specific tests
+- No JavaScript/TypeScript test framework currently configured
 - CI/CD runs cargo tests as part of build validation
 
 ## Build Dependencies
@@ -162,15 +177,12 @@ parent-directory/
 
 ## Common Pitfalls
 
-1. **Protocol Synchronization**: When adding/modifying data structures, update BOTH `src/lib/protocol.ts` AND `src-tauri/src/protocol.rs`
+1. **Protocol Synchronization**: When adding/modifying data structures, update BOTH `src/lib/protocol.ts` AND `src-tauri/src/protocol.rs`. Field names must use camelCase in TypeScript and snake_case in Rust with `#[serde(rename)]` attributes.
 
-2. **Svelte 5 Runes**: This project uses Svelte 5 runes (`$state`, `$derived`, `$effect`), not legacy reactive syntax (`$:`)
+2. **Tauri IPC**: All backend calls must go through `src/lib/service.ts` invoke functions, never call Tauri APIs directly from components.
 
-3. **Dark Mode Styling**:
-   - Use Tailwind's `dark:` prefix in component classes
-   - Do NOT add global CSS rules to `app.css` for dark mode
-   - Svelte UX components automatically support dark mode via theme configuration
+3. **MediaInfoLib FFI**: The auto-generated `bindings.rs` is broken and for reference only. Use the safe wrappers in `media_info.rs`.
 
-4. **Tauri IPC**: All backend calls must go through `src/lib/service.ts` invoke functions, never call Tauri directly from components
+4. **State Management**: Use Zustand store from `src/lib/store.tsx` for global state. Component-local state should use React hooks (`useState`, `useMemo`, etc.).
 
-5. **MediaInfoLib FFI**: The auto-generated `bindings.rs` is broken and for reference only. Use the safe wrappers in `media_info.rs`
+5. **MUI Theme**: Always use theme values via `sx` prop or `styled` API instead of hardcoded colors to ensure dark mode compatibility.
