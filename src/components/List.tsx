@@ -173,6 +173,7 @@ export default function List() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const apiRef = useGridApiRef();
 
   const files = useAppStore((state) => state.mediaFiles);
@@ -367,16 +368,23 @@ export default function List() {
   // Trigger auto-sizing when filtered rows change
   useEffect(() => {
     if (apiRef.current && filteredRows.length > 0) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
+      if (autosizeDebounceRef.current) {
+        clearTimeout(autosizeDebounceRef.current);
+      }
+      autosizeDebounceRef.current = setTimeout(() => {
         if (apiRef.current) {
           apiRef.current.autosizeColumns({
             includeHeaders: true,
             includeOutliers: true,
           });
         }
-      }, 100);
+      }, 200);
     }
+    return () => {
+      if (autosizeDebounceRef.current) {
+        clearTimeout(autosizeDebounceRef.current);
+      }
+    };
   }, [filteredRows, apiRef]);
 
   const openDialogJsonCode = useCallback(
