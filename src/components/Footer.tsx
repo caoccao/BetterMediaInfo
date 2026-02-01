@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2024-2025. caoccao.com Sam Cao
+ *   Copyright (c) 2024-2026. caoccao.com Sam Cao
  *   All rights reserved.
 
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,7 @@ export default function Footer() {
         </Link>
       </Typography>
       <Typography variant="caption" component="div" sx={{ mt: 0.5 }}>
-        © Copyright 2024-2025{' '}
+        © Copyright 2024-2025-2026{' '}
         <Link href="https://github.com/caoccao" target="_blank" rel="noopener noreferrer">
           Sam Cao
         </Link>{' '}
