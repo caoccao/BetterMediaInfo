@@ -30,7 +30,7 @@ export default function Footer() {
         </Link>
       </Typography>
       <Typography variant="caption" component="div" sx={{ mt: 0.5 }}>
-        © Copyright 2024-2025-2026{' '}
+        © Copyright 2024-2026{' '}
         <Link href="https://github.com/caoccao" target="_blank" rel="noopener noreferrer">
           Sam Cao
         </Link>{' '}
