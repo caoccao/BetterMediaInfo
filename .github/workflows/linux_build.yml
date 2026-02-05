@@ -19,7 +19,7 @@ on:
 
 env:
   BETTER_MEDIA_INFO_VERSION: 0.8.0
-  MEDIA_INFO_LIB_VERSION: v25.10
+  MEDIA_INFO_LIB_VERSION: v26.01
 
 jobs:
   build_package:

@@ -3,6 +3,7 @@
 ## 0.8.0 Snapshot
 
 * Converted UI from Svelte to React
+* Upgraded MediaInfoLib to v26.01
 
 ## 0.7.0
 
