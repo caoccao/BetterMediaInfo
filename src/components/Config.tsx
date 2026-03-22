@@ -138,7 +138,6 @@ export default function Config() {
     try {
       const newConfig = await saveConfig(createConfig());
       setStoreConfig(newConfig);
-      changeLanguage(newConfig.language);
       setIsDirty(false);
       setDialogNotification({
         title: t('config.settingsSaved'),
@@ -158,6 +157,30 @@ export default function Config() {
       setStoreConfig({ ...config, displayMode });
     }
   }, [displayMode, config, setStoreConfig]);
+
+  // Update store immediately when language changes
+  useEffect(() => {
+    if (config && isInitializedRef.current && language !== config.language) {
+      changeLanguage(language);
+      setStoreConfig({ ...config, language });
+    }
+  }, [language, config, setStoreConfig]);
+
+  // Update store immediately when bitRate changes
+  useEffect(() => {
+    if (config && isInitializedRef.current &&
+      (bitRatePrecision !== config.bitRate?.precision || bitRateUnit !== config.bitRate?.unit)) {
+      setStoreConfig({ ...config, bitRate: { precision: bitRatePrecision, unit: bitRateUnit } });
+    }
+  }, [bitRatePrecision, bitRateUnit, config, setStoreConfig]);
+
+  // Update store immediately when size changes
+  useEffect(() => {
+    if (config && isInitializedRef.current &&
+      (sizePrecision !== config.size?.precision || sizeUnit !== config.size?.unit)) {
+      setStoreConfig({ ...config, size: { precision: sizePrecision, unit: sizeUnit } });
+    }
+  }, [sizePrecision, sizeUnit, config, setStoreConfig]);
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
