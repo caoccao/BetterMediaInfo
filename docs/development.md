@@ -117,6 +117,19 @@ cmake -G "Visual Studio 17 2022" -A x64 -S . -B contrib/vstudio/vc17
 cmake --build contrib/vstudio/vc17 --config Release
 ```
 
+* Patch MediaInfoLib to work with cmake-built zlib.
+
+```bash
+cd zlib/contrib/vstudio/vc17
+ln -s zlibstatic.vcxproj zlibstat.vcxproj
+cd ../../../../
+cd MediaInfoLib/Project/MSVC2022
+find . -name '*.sln' -o -name '*.vcxproj' | xargs sed -i 's|ReleaseWithoutAsm|Release|g'
+sed -i 's|%(AdditionalDependencies)</AdditionalDependencies>|..\\..\\..\\..\\zlib\\contrib\\vstudio\\vc17\\Release\\zs.lib;%(AdditionalDependencies)</AdditionalDependencies>|' Dll/MediaInfoDll.vcxproj
+find . -name '*.vcxproj' -exec sed -i 's|%(PreprocessorDefinitions)|_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)|g' {} +
+cd ../../../../
+```
+
 * Build MediaInfoLib in Visual Studio 2022.
 
 ```sh
