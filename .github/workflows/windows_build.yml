@@ -46,7 +46,7 @@ jobs:
         toolchain: stable
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
 
     - name: Setup CMake
       uses: jwlawson/actions-setup-cmake@v2
@@ -77,7 +77,7 @@ jobs:
         cd ..
         git clone -b ${{ env.MEDIA_INFO_LIB_VERSION }} --depth 1 https://github.com/MediaArea/MediaInfoLib.git
         cd MediaInfoLib\Project\MSVC2022
-        msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64 /p:PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)"
+        msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64 '/p:PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)"'
 
     - name: Copy DLLs
       run: |
