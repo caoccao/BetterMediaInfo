@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "Dateien hinzufügen",
+    "appendFiles": "Dateien anhängen",
+    "addFolder": "Ordner hinzufügen",
+    "appendFolder": "Ordner anhängen",
+    "cardView": "Kartenansicht",
+    "listView": "Listenansicht",
+    "clear": "Löschen (Strg + Q)",
+    "settings": "Einstellungen (F10)",
+    "about": "Über"
+  },
+  "tabs": {
+    "about": "Über",
+    "settings": "Einstellungen",
+    "list": "Liste",
+    "fileList": "Dateiliste",
+    "close": "Schließen (Strg + W)"
+  },
+  "list": {
+    "filter": "Filter",
+    "emptyLine1": "Bitte wählen Sie Dateien oder ein Verzeichnis aus,",
+    "emptyLine2": "oder ziehen Sie Dateien oder Verzeichnisse hierher.",
+    "addFiles": "Dateien hinzufügen",
+    "addFolder": "Ordner hinzufügen",
+    "json": "Json",
+    "details": "Details",
+    "delete": "Löschen",
+    "altNotMediaFiles": "Keine Mediendateien",
+    "header": {
+      "filePath": "Dateipfad",
+      "size": "Größe",
+      "format": "Format",
+      "duration": "Dauer",
+      "time": "Zeit",
+      "title": "Titel",
+      "encodedDate": "Kodierungsdatum",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "Sprache",
+      "resolution": "Auflösung",
+      "hdr": "HDR",
+      "scanType": "Abtastmodus",
+      "default": "D",
+      "forced": "F",
+      "depth": "Tiefe",
+      "fps": "FPS",
+      "bitRate": "Bitrate",
+      "channels": "CH",
+      "sampling": "Abtastrate",
+      "mode": "Modus"
+    }
+  },
+  "details": {
+    "filter": "Filter",
+    "json": "Json",
+    "selectAll": "Alle auswählen",
+    "selectNone": "Auswahl aufheben",
+    "property": "Eigenschaft",
+    "value": "Wert",
+    "altNotFound": "Nicht gefunden"
+  },
+  "config": {
+    "title": "Einstellungen",
+    "appearance": "Erscheinungsbild",
+    "autoMode": "Automatisch",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "language": "Sprache",
+    "appendOnFileDrop": "Beim Ablegen anhängen",
+    "append": "Anhängen",
+    "doNotAppend": "Nicht anhängen",
+    "directoryMode": "Verzeichnismodus",
+    "fileExtensions": "Dateierweiterungen",
+    "audioFileExtensions": "Audio-Dateierweiterungen",
+    "imageFileExtensions": "Bild-Dateierweiterungen",
+    "videoFileExtensions": "Video-Dateierweiterungen",
+    "bitRate": "Bitrate",
+    "size": "Größe",
+    "precision": "Genauigkeit",
+    "unit": "Einheit",
+    "save": "Speichern",
+    "settingsSaved": "Einstellungen gespeichert.",
+    "settingsSaveError": "Einstellungen konnten nicht gespeichert werden. Unbekannter Fehler."
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "Autor",
+    "github": "Github",
+    "allStreams": "Alle Streams",
+    "property": "Eigenschaft",
+    "id": "ID",
+    "stream": "Stream"
+  },
+  "footer": {
+    "donate": "Spenden Sie zur Unterstützung der Entwicklung",
+    "copyright": "© Copyright 2024-2026"
+  },
+  "dialog": {
+    "copy": "Kopieren",
+    "save": "Speichern",
+    "close": "Schließen",
+    "jsonCopied": "Json-Code wurde in die Zwischenablage kopiert.",
+    "jsonCopyFailed": "Kopieren in die Zwischenablage fehlgeschlagen. Fehler: {{error}}.",
+    "jsonSaved": "Json-Code wurde in {{filePath}} gespeichert.",
+    "jsonSaveFailed": "Speichern in {{filePath}} fehlgeschlagen. Fehler: {{error}}."
+  },
+  "fileFilter": {
+    "video": "Video",
+    "image": "Bild",
+    "audio": "Audio",
+    "json": "JSON"
+  }
+}

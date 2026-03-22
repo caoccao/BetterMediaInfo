@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "ファイルを追加",
+    "appendFiles": "ファイルを追記",
+    "addFolder": "フォルダを追加",
+    "appendFolder": "フォルダを追記",
+    "cardView": "カード表示",
+    "listView": "リスト表示",
+    "clear": "クリア (Ctrl + Q)",
+    "settings": "設定 (F10)",
+    "about": "バージョン情報"
+  },
+  "tabs": {
+    "about": "バージョン情報",
+    "settings": "設定",
+    "list": "リスト",
+    "fileList": "ファイル一覧",
+    "close": "閉じる (Ctrl + W)"
+  },
+  "list": {
+    "filter": "フィルター",
+    "emptyLine1": "ファイルまたはディレクトリを選択するか、",
+    "emptyLine2": "ここにファイルまたはディレクトリをドラッグ＆ドロップしてください。",
+    "addFiles": "ファイルを追加",
+    "addFolder": "フォルダを追加",
+    "json": "Json",
+    "details": "詳細",
+    "delete": "削除",
+    "altNotMediaFiles": "メディアファイルではありません",
+    "header": {
+      "filePath": "ファイルパス",
+      "size": "サイズ",
+      "format": "形式",
+      "duration": "再生時間",
+      "time": "時間",
+      "title": "タイトル",
+      "encodedDate": "エンコード日",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "言語",
+      "resolution": "解像度",
+      "hdr": "HDR",
+      "scanType": "走査方式",
+      "default": "D",
+      "forced": "F",
+      "depth": "ビット深度",
+      "fps": "FPS",
+      "bitRate": "ビットレート",
+      "channels": "CH",
+      "sampling": "サンプリング",
+      "mode": "モード"
+    }
+  },
+  "details": {
+    "filter": "フィルター",
+    "json": "Json",
+    "selectAll": "すべて選択",
+    "selectNone": "選択解除",
+    "property": "プロパティ",
+    "value": "値",
+    "altNotFound": "見つかりません"
+  },
+  "config": {
+    "title": "設定",
+    "appearance": "外観",
+    "autoMode": "自動モード",
+    "lightMode": "ライトモード",
+    "darkMode": "ダークモード",
+    "language": "言語",
+    "appendOnFileDrop": "ドロップ時に追記",
+    "append": "追記",
+    "doNotAppend": "追記しない",
+    "directoryMode": "ディレクトリモード",
+    "fileExtensions": "ファイル拡張子",
+    "audioFileExtensions": "音声ファイル拡張子",
+    "imageFileExtensions": "画像ファイル拡張子",
+    "videoFileExtensions": "動画ファイル拡張子",
+    "bitRate": "ビットレート",
+    "size": "サイズ",
+    "precision": "精度",
+    "unit": "単位",
+    "save": "保存",
+    "settingsSaved": "設定を保存しました。",
+    "settingsSaveError": "設定の保存に失敗しました。不明なエラーが発生しました。"
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "作者",
+    "github": "Github",
+    "allStreams": "すべてのストリーム",
+    "property": "プロパティ",
+    "id": "ID",
+    "stream": "ストリーム"
+  },
+  "footer": {
+    "donate": "開発を支援するために寄付する",
+    "copyright": "© Copyright 2024-2026"
+  },
+  "dialog": {
+    "copy": "コピー",
+    "save": "保存",
+    "close": "閉じる",
+    "jsonCopied": "Jsonコードをクリップボードにコピーしました。",
+    "jsonCopyFailed": "クリップボードへのコピーに失敗しました。エラー：{{error}}。",
+    "jsonSaved": "Jsonコードを {{filePath}} に保存しました。",
+    "jsonSaveFailed": "{{filePath}} への保存に失敗しました。エラー：{{error}}。"
+  },
+  "fileFilter": {
+    "video": "動画",
+    "image": "画像",
+    "audio": "音声",
+    "json": "JSON"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "新增檔案",
+    "appendFiles": "追加檔案",
+    "addFolder": "新增資料夾",
+    "appendFolder": "追加資料夾",
+    "cardView": "卡片檢視",
+    "listView": "清單檢視",
+    "clear": "清除 (Ctrl + Q)",
+    "settings": "設定 (F10)",
+    "about": "關於"
+  },
+  "tabs": {
+    "about": "關於",
+    "settings": "設定",
+    "list": "清單",
+    "fileList": "檔案清單",
+    "close": "關閉 (Ctrl + W)"
+  },
+  "list": {
+    "filter": "篩選",
+    "emptyLine1": "請選擇檔案或目錄，",
+    "emptyLine2": "或將檔案或目錄拖放到此處。",
+    "addFiles": "新增檔案",
+    "addFolder": "新增資料夾",
+    "json": "Json",
+    "details": "詳情",
+    "delete": "刪除",
+    "altNotMediaFiles": "非媒體檔案",
+    "header": {
+      "filePath": "檔案路徑",
+      "size": "大小",
+      "format": "格式",
+      "duration": "時長",
+      "time": "時間",
+      "title": "標題",
+      "encodedDate": "編碼日期",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "語言",
+      "resolution": "解析度",
+      "hdr": "HDR",
+      "scanType": "掃描類型",
+      "default": "D",
+      "forced": "F",
+      "depth": "位元深度",
+      "fps": "FPS",
+      "bitRate": "位元率",
+      "channels": "CH",
+      "sampling": "取樣",
+      "mode": "模式"
+    }
+  },
+  "details": {
+    "filter": "篩選",
+    "json": "Json",
+    "selectAll": "全選",
+    "selectNone": "取消全選",
+    "property": "屬性",
+    "value": "值",
+    "altNotFound": "未找到"
+  },
+  "config": {
+    "title": "設定",
+    "appearance": "外觀",
+    "autoMode": "自動模式",
+    "lightMode": "淺色模式",
+    "darkMode": "深色模式",
+    "language": "語言",
+    "appendOnFileDrop": "拖放檔案時追加",
+    "append": "追加",
+    "doNotAppend": "不追加",
+    "directoryMode": "目錄模式",
+    "fileExtensions": "副檔名",
+    "audioFileExtensions": "音訊副檔名",
+    "imageFileExtensions": "圖片副檔名",
+    "videoFileExtensions": "影片副檔名",
+    "bitRate": "位元率",
+    "size": "大小",
+    "precision": "精度",
+    "unit": "單位",
+    "save": "儲存",
+    "settingsSaved": "設定已儲存。",
+    "settingsSaveError": "儲存設定失敗，發生未知錯誤。"
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "作者",
+    "github": "Github",
+    "allStreams": "所有串流",
+    "property": "屬性",
+    "id": "ID",
+    "stream": "串流"
+  },
+  "footer": {
+    "donate": "捐款支持開發",
+    "copyright": "© 版權所有 2024-2026"
+  },
+  "dialog": {
+    "copy": "複製",
+    "save": "儲存",
+    "close": "關閉",
+    "jsonCopied": "Json 代碼已複製到剪貼簿。",
+    "jsonCopyFailed": "複製到剪貼簿失敗，錯誤：{{error}}。",
+    "jsonSaved": "Json 代碼已儲存到 {{filePath}}。",
+    "jsonSaveFailed": "儲存到 {{filePath}} 失敗，錯誤：{{error}}。"
+  },
+  "fileFilter": {
+    "video": "影片",
+    "image": "圖片",
+    "audio": "音訊",
+    "json": "JSON"
+  }
+}

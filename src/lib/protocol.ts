@@ -47,7 +47,14 @@ export interface ConfigSize {
 }
 
 export enum Language {
+  De = "de",
   EnUS = "en-US",
+  Es = "es",
+  Fr = "fr",
+  Ja = "ja",
+  ZhCN = "zh-CN",
+  ZhHK = "zh-HK",
+  ZhTW = "zh-TW",
 }
 
 export interface Config {
@@ -166,12 +173,28 @@ export interface TabControl {
 }
 
 export function getLanguages(): Language[] {
-  return [Language.EnUS];
+  return [
+    Language.De,
+    Language.EnUS,
+    Language.Es,
+    Language.Fr,
+    Language.Ja,
+    Language.ZhCN,
+    Language.ZhHK,
+    Language.ZhTW,
+  ];
 }
 
 export function getLanguageLabel(language: Language): string {
   switch (language) {
+    case Language.De: return "Deutsch";
     case Language.EnUS: return "English (US)";
+    case Language.Es: return "Español";
+    case Language.Fr: return "Français";
+    case Language.Ja: return "日本語";
+    case Language.ZhCN: return "简体中文";
+    case Language.ZhHK: return "繁體中文 (香港)";
+    case Language.ZhTW: return "繁體中文 (臺灣)";
   }
 }
 

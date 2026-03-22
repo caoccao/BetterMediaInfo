@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "添加文件",
+    "appendFiles": "追加文件",
+    "addFolder": "添加文件夹",
+    "appendFolder": "追加文件夹",
+    "cardView": "卡片视图",
+    "listView": "列表视图",
+    "clear": "清除 (Ctrl + Q)",
+    "settings": "设置 (F10)",
+    "about": "关于"
+  },
+  "tabs": {
+    "about": "关于",
+    "settings": "设置",
+    "list": "列表",
+    "fileList": "文件列表",
+    "close": "关闭 (Ctrl + W)"
+  },
+  "list": {
+    "filter": "筛选",
+    "emptyLine1": "请选择文件或目录，",
+    "emptyLine2": "或将文件或目录拖放到此处。",
+    "addFiles": "添加文件",
+    "addFolder": "添加文件夹",
+    "json": "Json",
+    "details": "详情",
+    "delete": "删除",
+    "altNotMediaFiles": "非媒体文件",
+    "header": {
+      "filePath": "文件路径",
+      "size": "大小",
+      "format": "格式",
+      "duration": "时长",
+      "time": "时间",
+      "title": "标题",
+      "encodedDate": "编码日期",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "语言",
+      "resolution": "分辨率",
+      "hdr": "HDR",
+      "scanType": "扫描类型",
+      "default": "D",
+      "forced": "F",
+      "depth": "位深",
+      "fps": "FPS",
+      "bitRate": "码率",
+      "channels": "CH",
+      "sampling": "采样",
+      "mode": "模式"
+    }
+  },
+  "details": {
+    "filter": "筛选",
+    "json": "Json",
+    "selectAll": "全选",
+    "selectNone": "取消全选",
+    "property": "属性",
+    "value": "值",
+    "altNotFound": "未找到"
+  },
+  "config": {
+    "title": "设置",
+    "appearance": "外观",
+    "autoMode": "自动模式",
+    "lightMode": "浅色模式",
+    "darkMode": "深色模式",
+    "language": "语言",
+    "appendOnFileDrop": "拖放文件时追加",
+    "append": "追加",
+    "doNotAppend": "不追加",
+    "directoryMode": "目录模式",
+    "fileExtensions": "文件扩展名",
+    "audioFileExtensions": "音频文件扩展名",
+    "imageFileExtensions": "图片文件扩展名",
+    "videoFileExtensions": "视频文件扩展名",
+    "bitRate": "码率",
+    "size": "大小",
+    "precision": "精度",
+    "unit": "单位",
+    "save": "保存",
+    "settingsSaved": "设置已保存。",
+    "settingsSaveError": "保存设置失败，发生未知错误。"
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "作者",
+    "github": "Github",
+    "allStreams": "所有流",
+    "property": "属性",
+    "id": "ID",
+    "stream": "流"
+  },
+  "footer": {
+    "donate": "捐赠以支持开发",
+    "copyright": "© 版权所有 2024-2026"
+  },
+  "dialog": {
+    "copy": "复制",
+    "save": "保存",
+    "close": "关闭",
+    "jsonCopied": "Json 代码已复制到剪贴板。",
+    "jsonCopyFailed": "复制到剪贴板失败，错误：{{error}}。",
+    "jsonSaved": "Json 代码已保存到 {{filePath}}。",
+    "jsonSaveFailed": "保存到 {{filePath}} 失败，错误：{{error}}。"
+  },
+  "fileFilter": {
+    "video": "视频",
+    "image": "图片",
+    "audio": "音频",
+    "json": "JSON"
+  }
+}

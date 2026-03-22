@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "Ajouter des fichiers",
+    "appendFiles": "Ajouter en fin de liste",
+    "addFolder": "Ajouter un dossier",
+    "appendFolder": "Ajouter un dossier en fin de liste",
+    "cardView": "Vue en cartes",
+    "listView": "Vue en liste",
+    "clear": "Effacer (Ctrl + Q)",
+    "settings": "Paramètres (F10)",
+    "about": "À propos"
+  },
+  "tabs": {
+    "about": "À propos",
+    "settings": "Paramètres",
+    "list": "Liste",
+    "fileList": "Liste des fichiers",
+    "close": "Fermer (Ctrl + W)"
+  },
+  "list": {
+    "filter": "Filtrer",
+    "emptyLine1": "Veuillez sélectionner des fichiers ou un répertoire,",
+    "emptyLine2": "ou glissez-déposez des fichiers ou répertoires ici.",
+    "addFiles": "Ajouter des fichiers",
+    "addFolder": "Ajouter un dossier",
+    "json": "Json",
+    "details": "Détails",
+    "delete": "Supprimer",
+    "altNotMediaFiles": "Pas de fichiers multimédias",
+    "header": {
+      "filePath": "Chemin du fichier",
+      "size": "Taille",
+      "format": "Format",
+      "duration": "Durée",
+      "time": "Temps",
+      "title": "Titre",
+      "encodedDate": "Date d'encodage",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "Langue",
+      "resolution": "Résolution",
+      "hdr": "HDR",
+      "scanType": "Type de balayage",
+      "default": "D",
+      "forced": "F",
+      "depth": "Profondeur",
+      "fps": "FPS",
+      "bitRate": "Débit",
+      "channels": "CH",
+      "sampling": "Échantillonnage",
+      "mode": "Mode"
+    }
+  },
+  "details": {
+    "filter": "Filtrer",
+    "json": "Json",
+    "selectAll": "Tout sélectionner",
+    "selectNone": "Tout désélectionner",
+    "property": "Propriété",
+    "value": "Valeur",
+    "altNotFound": "Non trouvé"
+  },
+  "config": {
+    "title": "Paramètres",
+    "appearance": "Apparence",
+    "autoMode": "Mode automatique",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "language": "Langue",
+    "appendOnFileDrop": "Ajouter lors du dépôt de fichiers",
+    "append": "Ajouter",
+    "doNotAppend": "Ne pas ajouter",
+    "directoryMode": "Mode répertoire",
+    "fileExtensions": "Extensions de fichiers",
+    "audioFileExtensions": "Extensions audio",
+    "imageFileExtensions": "Extensions image",
+    "videoFileExtensions": "Extensions vidéo",
+    "bitRate": "Débit",
+    "size": "Taille",
+    "precision": "Précision",
+    "unit": "Unité",
+    "save": "Enregistrer",
+    "settingsSaved": "Paramètres enregistrés.",
+    "settingsSaveError": "Échec de l'enregistrement des paramètres. Erreur inconnue."
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "Auteur",
+    "github": "Github",
+    "allStreams": "Tous les flux",
+    "property": "Propriété",
+    "id": "ID",
+    "stream": "Flux"
+  },
+  "footer": {
+    "donate": "Faire un don pour soutenir le développement",
+    "copyright": "© Copyright 2024-2026"
+  },
+  "dialog": {
+    "copy": "Copier",
+    "save": "Enregistrer",
+    "close": "Fermer",
+    "jsonCopied": "Le code Json a été copié dans le presse-papiers.",
+    "jsonCopyFailed": "Échec de la copie dans le presse-papiers. Erreur : {{error}}.",
+    "jsonSaved": "Le code Json a été enregistré dans {{filePath}}.",
+    "jsonSaveFailed": "Échec de l'enregistrement dans {{filePath}}. Erreur : {{error}}."
+  },
+  "fileFilter": {
+    "video": "Vidéo",
+    "image": "Image",
+    "audio": "Audio",
+    "json": "JSON"
+  }
+}

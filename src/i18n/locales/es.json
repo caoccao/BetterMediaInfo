@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "Agregar archivos",
+    "appendFiles": "Anexar archivos",
+    "addFolder": "Agregar carpeta",
+    "appendFolder": "Anexar carpeta",
+    "cardView": "Vista de tarjetas",
+    "listView": "Vista de lista",
+    "clear": "Limpiar (Ctrl + Q)",
+    "settings": "Configuración (F10)",
+    "about": "Acerca de"
+  },
+  "tabs": {
+    "about": "Acerca de",
+    "settings": "Configuración",
+    "list": "Lista",
+    "fileList": "Lista de archivos",
+    "close": "Cerrar (Ctrl + W)"
+  },
+  "list": {
+    "filter": "Filtrar",
+    "emptyLine1": "Seleccione archivos o un directorio,",
+    "emptyLine2": "o arrastre y suelte archivos o directorios aquí.",
+    "addFiles": "Agregar archivos",
+    "addFolder": "Agregar carpeta",
+    "json": "Json",
+    "details": "Detalles",
+    "delete": "Eliminar",
+    "altNotMediaFiles": "No son archivos multimedia",
+    "header": {
+      "filePath": "Ruta del archivo",
+      "size": "Tamaño",
+      "format": "Formato",
+      "duration": "Duración",
+      "time": "Tiempo",
+      "title": "Título",
+      "encodedDate": "Fecha de codificación",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "Idioma",
+      "resolution": "Resolución",
+      "hdr": "HDR",
+      "scanType": "Tipo de escaneo",
+      "default": "D",
+      "forced": "F",
+      "depth": "Profundidad",
+      "fps": "FPS",
+      "bitRate": "Tasa de bits",
+      "channels": "CH",
+      "sampling": "Muestreo",
+      "mode": "Modo"
+    }
+  },
+  "details": {
+    "filter": "Filtrar",
+    "json": "Json",
+    "selectAll": "Seleccionar todo",
+    "selectNone": "Deseleccionar todo",
+    "property": "Propiedad",
+    "value": "Valor",
+    "altNotFound": "No encontrado"
+  },
+  "config": {
+    "title": "Configuración",
+    "appearance": "Apariencia",
+    "autoMode": "Modo automático",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "language": "Idioma",
+    "appendOnFileDrop": "Anexar al soltar archivos",
+    "append": "Anexar",
+    "doNotAppend": "No anexar",
+    "directoryMode": "Modo de directorio",
+    "fileExtensions": "Extensiones de archivo",
+    "audioFileExtensions": "Extensiones de audio",
+    "imageFileExtensions": "Extensiones de imagen",
+    "videoFileExtensions": "Extensiones de video",
+    "bitRate": "Tasa de bits",
+    "size": "Tamaño",
+    "precision": "Precisión",
+    "unit": "Unidad",
+    "save": "Guardar",
+    "settingsSaved": "Configuración guardada.",
+    "settingsSaveError": "Error al guardar la configuración. Error desconocido."
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "Autor",
+    "github": "Github",
+    "allStreams": "Todos los flujos",
+    "property": "Propiedad",
+    "id": "ID",
+    "stream": "Flujo"
+  },
+  "footer": {
+    "donate": "Donar para apoyar el desarrollo",
+    "copyright": "© Copyright 2024-2026"
+  },
+  "dialog": {
+    "copy": "Copiar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "jsonCopied": "El código Json se copió al portapapeles.",
+    "jsonCopyFailed": "Error al copiar al portapapeles: {{error}}.",
+    "jsonSaved": "El código Json se guardó en {{filePath}}.",
+    "jsonSaveFailed": "Error al guardar en {{filePath}}: {{error}}."
+  },
+  "fileFilter": {
+    "video": "Video",
+    "image": "Imagen",
+    "audio": "Audio",
+    "json": "JSON"
+  }
+}

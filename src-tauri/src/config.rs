@@ -58,8 +58,22 @@ impl Default for Config {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Language {
+  #[serde(rename = "de")]
+  De,
   #[serde(rename = "en-US")]
   EnUS,
+  #[serde(rename = "es")]
+  Es,
+  #[serde(rename = "fr")]
+  Fr,
+  #[serde(rename = "ja")]
+  Ja,
+  #[serde(rename = "zh-CN")]
+  ZhCN,
+  #[serde(rename = "zh-HK")]
+  ZhHK,
+  #[serde(rename = "zh-TW")]
+  ZhTW,
 }
 
 impl Default for Language {
