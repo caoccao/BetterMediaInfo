@@ -103,7 +103,7 @@ make -j `nproc`
 * Download zlib.
 
 ```sh
-curl -o zlib.zip https://www.zlib.net/zlib132.zip
+curl -o zlib.zip https://zlib.net/zlib132.zip
 7z x zlib.zip
 move zlib-1.3.2 zlib
 del zlib.zip
