@@ -124,7 +124,7 @@ copy zconf.h ..\
 
 ```sh
 cd MediaInfoLib\Project\MSVC2022
-msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
+msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64 /p:DisableSpecificWarnings=4996
 ```
 
 ## Generate bindings.rs on Windows
