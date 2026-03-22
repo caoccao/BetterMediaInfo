@@ -60,12 +60,8 @@ jobs:
         7z x zlib.zip
         move zlib-1.3.2 zlib
         del zlib.zip
-        cd zlib
-        md build
-        cd build
-        cmake -A x64 ..\
-        cmake --build . --config Release
-        copy zconf.h ..\
+        cd zlib\contrib\vstudio\vc17
+        msbuild zlibstat.vcxproj -t:rebuild -property:Configuration=Release -property:Platform=x64
 
     - name: Download ZenLib
       run: |
