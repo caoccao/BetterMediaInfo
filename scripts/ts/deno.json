@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "patch": "deno run --allow-read --allow-write --allow-env patch-mediainfolib.ts"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  }
+}
