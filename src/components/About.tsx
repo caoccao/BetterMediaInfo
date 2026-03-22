@@ -32,12 +32,14 @@ import {
   Typography,
   TablePagination,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 import { useAppStore } from '../lib/store';
 
 const APP_NAME = 'BetterMediaInfo';
 
 export default function About() {
+  const { t } = useTranslation();
   const [propertyFilter, setPropertyFilter] = useState('');
   const [debouncedPropertyFilter, setDebouncedPropertyFilter] = useState('');
   const [streamFilter, setStreamFilter] = useState<string | null>(null);
@@ -116,14 +118,14 @@ export default function About() {
         <Typography variant="body2">v{mediaInfoAbout?.appVersion ?? ''}</Typography>
 
         <Typography variant="body2" sx={{ textAlign: 'right' }}>
-          MediaInfoLib
+          {t('about.mediaInfoLib')}
         </Typography>
         <Typography variant="body2">
           v{mediaInfoAbout?.mediaInfoVersion.replace(/[^0-9.]+/g, '') ?? ''}
         </Typography>
 
         <Typography variant="body2" sx={{ textAlign: 'right' }}>
-          Author
+          {t('about.author')}
         </Typography>
         <Typography variant="body2">
           <Link href="https://github.com/caoccao" target="_blank" rel="noopener noreferrer">
@@ -132,7 +134,7 @@ export default function About() {
         </Typography>
 
         <Typography variant="body2" sx={{ textAlign: 'right' }}>
-          Github
+          {t('about.github')}
         </Typography>
         <Typography variant="body2">
           <Link href="https://github.com/caoccao/BetterMediaInfo" target="_blank" rel="noopener noreferrer">
@@ -148,7 +150,7 @@ export default function About() {
             onChange={(e) => setStreamFilter(e.target.value || null)}
             displayEmpty
           >
-            <MenuItem value="">All Streams</MenuItem>
+            <MenuItem value="">{t('about.allStreams')}</MenuItem>
             {streams.map((stream) => (
               <MenuItem key={stream} value={stream}>
                 {stream}
@@ -157,7 +159,7 @@ export default function About() {
           </Select>
         </FormControl>
         <TextField
-          placeholder="Property"
+          placeholder={t('about.property')}
           value={propertyFilter}
           onChange={(e) => setPropertyFilter(e.target.value)}
           size="small"
@@ -170,13 +172,13 @@ export default function About() {
           <TableHead>
             <TableRow>
               <TableCell sx={{ bgcolor: 'success.light', color: 'success.contrastText', fontWeight: 'bold' }}>
-                ID
+                {t('about.id')}
               </TableCell>
               <TableCell sx={{ bgcolor: 'success.light', color: 'success.contrastText', fontWeight: 'bold' }}>
-                Stream
+                {t('about.stream')}
               </TableCell>
               <TableCell sx={{ bgcolor: 'success.light', color: 'success.contrastText', fontWeight: 'bold' }}>
-                Property
+                {t('about.property')}
               </TableCell>
             </TableRow>
           </TableHead>

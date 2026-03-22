@@ -16,8 +16,11 @@
  */
 
 import { Box, Link, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <Box sx={{ my: 1.5, textAlign: 'center', color: 'text.secondary' }}>
       <Typography variant="caption" component="div">
@@ -26,11 +29,11 @@ export default function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Donate to Support the Development
+          {t('footer.donate')}
         </Link>
       </Typography>
       <Typography variant="caption" component="div" sx={{ mt: 0.5 }}>
-        © Copyright 2024-2026{' '}
+        {t('footer.copyright')}{' '}
         <Link href="https://github.com/caoccao" target="_blank" rel="noopener noreferrer">
           Sam Cao
         </Link>{' '}

@@ -1,0 +1,118 @@
+{
+  "toolbar": {
+    "addFiles": "Add Files",
+    "appendFiles": "Append Files",
+    "addFolder": "Add Folder",
+    "appendFolder": "Append Folder",
+    "cardView": "Card View",
+    "listView": "List View",
+    "clear": "Clear (Ctrl + Q)",
+    "settings": "Settings (F10)",
+    "about": "About"
+  },
+  "tabs": {
+    "about": "About",
+    "settings": "Settings",
+    "list": "List",
+    "fileList": "File List",
+    "close": "Close (Ctrl + W)"
+  },
+  "list": {
+    "filter": "Filter",
+    "emptyLine1": "Please select some files or a directory,",
+    "emptyLine2": "or drag and drop some files or directories here.",
+    "addFiles": "Add Files",
+    "addFolder": "Add Folder",
+    "json": "Json",
+    "details": "Details",
+    "delete": "Delete",
+    "altNotMediaFiles": "Not Media Files",
+    "header": {
+      "filePath": "File Path",
+      "size": "Size",
+      "format": "Format",
+      "duration": "Duration",
+      "time": "Time",
+      "title": "Title",
+      "encodedDate": "Encoded Date",
+      "videoCount": "V",
+      "audioCount": "A",
+      "textCount": "T",
+      "imageCount": "I",
+      "menuCount": "M",
+      "id": "ID",
+      "language": "Language",
+      "resolution": "Resolution",
+      "hdr": "HDR",
+      "scanType": "Scan Type",
+      "default": "D",
+      "forced": "F",
+      "depth": "Depth",
+      "fps": "FPS",
+      "bitRate": "Bit Rate",
+      "channels": "CH",
+      "sampling": "Sampling",
+      "mode": "Mode"
+    }
+  },
+  "details": {
+    "filter": "Filter",
+    "json": "Json",
+    "selectAll": "Select All",
+    "selectNone": "Select None",
+    "property": "Property",
+    "value": "Value",
+    "altNotFound": "Not Found"
+  },
+  "config": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "autoMode": "Auto Mode",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "language": "Language",
+    "appendOnFileDrop": "Append on File Drop",
+    "append": "Append",
+    "doNotAppend": "Do not append",
+    "directoryMode": "Directory Mode",
+    "fileExtensions": "File Extensions",
+    "audioFileExtensions": "Audio File Extensions",
+    "imageFileExtensions": "Image File Extensions",
+    "videoFileExtensions": "Video File Extensions",
+    "bitRate": "Bit Rate",
+    "size": "Size",
+    "precision": "Precision",
+    "unit": "Unit",
+    "save": "Save",
+    "settingsSaved": "Settings saved.",
+    "settingsSaveError": "Failed to save settings with unknown error."
+  },
+  "about": {
+    "mediaInfoLib": "MediaInfoLib",
+    "author": "Author",
+    "github": "Github",
+    "allStreams": "All Streams",
+    "property": "Property",
+    "id": "ID",
+    "stream": "Stream"
+  },
+  "footer": {
+    "donate": "Donate to Support the Development",
+    "copyright": "© Copyright 2024-2026"
+  },
+  "dialog": {
+    "copy": "Copy",
+    "save": "Save",
+    "close": "Close",
+    "jsonCopied": "Json code is copied to clipboard.",
+    "jsonCopyFailed": "Failed to copy to clipboard with error: {{error}}.",
+    "jsonSaved": "Json code is saved to {{filePath}}.",
+    "jsonSaveFailed": "Failed to save to {{filePath}} with error: {{error}}."
+  },
+  "fileFilter": {
+    "video": "Video",
+    "image": "Image",
+    "audio": "Audio",
+    "json": "JSON"
+  }
+}

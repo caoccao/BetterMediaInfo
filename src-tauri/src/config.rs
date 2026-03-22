@@ -37,6 +37,8 @@ pub struct Config {
   #[serde(rename = "fileExtensions")]
   pub file_extensions: ConfigFileExtensions,
   #[serde(default)]
+  pub language: Language,
+  #[serde(default)]
   pub size: ConfigSize,
 }
 
@@ -48,8 +50,21 @@ impl Default for Config {
       display_mode: Default::default(),
       directory_mode: Default::default(),
       file_extensions: Default::default(),
+      language: Default::default(),
       size: Default::default(),
     }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum Language {
+  #[serde(rename = "en-US")]
+  EnUS,
+}
+
+impl Default for Language {
+  fn default() -> Self {
+    Self::EnUS
   }
 }
 

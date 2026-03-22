@@ -26,12 +26,14 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import InfoIcon from '@mui/icons-material/Info';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../lib/store';
 import * as Protocol from '../lib/protocol';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
 
 export default function Toolbar() {
+  const { t } = useTranslation();
   const files = useAppStore((state) => state.mediaFiles);
   const tabAboutStatus = useAppStore((state) => state.tabAboutStatus);
   const tabSettingsStatus = useAppStore((state) => state.tabSettingsStatus);
@@ -87,22 +89,22 @@ export default function Toolbar() {
   return (
     <Box sx={{ mx: 1, my: 0, display: 'flex', gap: 1 }}>
       <ButtonGroup variant="outlined" size="small">
-        <Tooltip title="Add Files">
+        <Tooltip title={t('toolbar.addFiles')}>
           <IconButton sx={buttonSx} onClick={() => openFileDialog(false)}>
             <ArticleIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Append Files">
+        <Tooltip title={t('toolbar.appendFiles')}>
           <IconButton sx={buttonSx} onClick={() => openFileDialog(true)}>
             <PostAddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Add Folder">
+        <Tooltip title={t('toolbar.addFolder')}>
           <IconButton sx={buttonSx} onClick={() => openDirectoryDialog(false)}>
             <FolderIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Append Folder">
+        <Tooltip title={t('toolbar.appendFolder')}>
           <IconButton sx={buttonSx} onClick={() => openDirectoryDialog(true)}>
             <CreateNewFolderIcon fontSize="small" />
           </IconButton>
@@ -110,7 +112,7 @@ export default function Toolbar() {
       </ButtonGroup>
 
       <ButtonGroup variant="outlined" size="small">
-        <Tooltip title="Card View">
+        <Tooltip title={t('toolbar.cardView')}>
           <IconButton
             sx={viewType === ViewType.Card ? activeButtonSx : buttonSx}
             onClick={() => setViewType(ViewType.Card)}
@@ -118,7 +120,7 @@ export default function Toolbar() {
             <ViewAgendaIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title="List View">
+        <Tooltip title={t('toolbar.listView')}>
           <IconButton
             sx={viewType === ViewType.List ? activeButtonSx : buttonSx}
             onClick={() => setViewType(ViewType.List)}
@@ -129,7 +131,7 @@ export default function Toolbar() {
       </ButtonGroup>
 
       <ButtonGroup variant="outlined" size="small">
-        <Tooltip title="Clear (Ctrl + Q)">
+        <Tooltip title={t('toolbar.clear')}>
           <span>
             <IconButton sx={buttonSx} onClick={handleClearFiles} disabled={files.length === 0}>
               <DeleteIcon fontSize="small" />
@@ -139,7 +141,7 @@ export default function Toolbar() {
       </ButtonGroup>
 
       <ButtonGroup variant="outlined" size="small">
-        <Tooltip title="Settings (F10)">
+        <Tooltip title={t('toolbar.settings')}>
           <IconButton
             sx={tabSettingsStatus !== Protocol.ControlStatus.Hidden ? activeButtonSx : buttonSx}
             onClick={handleSelectTabSettings}
@@ -147,7 +149,7 @@ export default function Toolbar() {
             <SettingsIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title="About">
+        <Tooltip title={t('toolbar.about')}>
           <IconButton
             sx={tabAboutStatus !== Protocol.ControlStatus.Hidden ? activeButtonSx : buttonSx}
             onClick={handleSelectTabAbout}

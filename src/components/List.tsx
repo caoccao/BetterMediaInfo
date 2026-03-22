@@ -34,6 +34,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowsProp, useGridApiRef } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
@@ -113,64 +115,65 @@ function createSizeFormatter(config: Protocol.Config | null): Formatter {
 function buildCommonPropertiesMap(
   bitRateFormatter: Formatter,
   sizeFormatter: Formatter,
+  t: TFunction,
 ): Map<Protocol.StreamKind, PropertyDefinition[]> {
   const general: PropertyDefinition[] = [
-    { ...createPropertyDef('CompleteName'), header: 'File Path', inListView: true },
-    { ...createPropertyDef('Format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('FileSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Duration', transformDuration), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Time', transformTime), orderByType: OrderByType.None, align: 'right', virtual: true, inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Encoded_Date'), header: 'Encoded Date', inCardView: true, inListView: true },
-    { ...createPropertyDef('Video:Count'), orderByType: OrderByType.Number, header: 'V', inListView: true },
-    { ...createPropertyDef('Audio:Count'), orderByType: OrderByType.Number, header: 'A', inListView: true },
-    { ...createPropertyDef('Text:Count'), orderByType: OrderByType.Number, header: 'T', inListView: true },
-    { ...createPropertyDef('Image:Count'), orderByType: OrderByType.Number, header: 'I', inListView: true },
-    { ...createPropertyDef('Menu:Count'), orderByType: OrderByType.Number, header: 'M', inListView: true },
+    { ...createPropertyDef('CompleteName'), header: t('list.header.filePath'), inListView: true },
+    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('FileSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Duration', transformDuration, t('list.header.duration')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Time', transformTime, t('list.header.time')), orderByType: OrderByType.None, align: 'right', virtual: true, inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Encoded_Date'), header: t('list.header.encodedDate'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Video:Count'), orderByType: OrderByType.Number, header: t('list.header.videoCount'), inListView: true },
+    { ...createPropertyDef('Audio:Count'), orderByType: OrderByType.Number, header: t('list.header.audioCount'), inListView: true },
+    { ...createPropertyDef('Text:Count'), orderByType: OrderByType.Number, header: t('list.header.textCount'), inListView: true },
+    { ...createPropertyDef('Image:Count'), orderByType: OrderByType.Number, header: t('list.header.imageCount'), inListView: true },
+    { ...createPropertyDef('Menu:Count'), orderByType: OrderByType.Number, header: t('list.header.menuCount'), inListView: true },
   ];
 
   const video: PropertyDefinition[] = [
-    { ...createPropertyDef('ID'), inCardView: true },
-    { ...createPropertyDef('Format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Language'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Resolution', transformResolution), orderByType: OrderByType.None, virtual: true, inCardView: true, inListView: true },
-    { ...createPropertyDef('HDR_Format_Compatibility'), header: 'HDR', inCardView: true, inListView: true },
-    { ...createPropertyDef('ScanType'), header: 'Scan Type', inCardView: true, inListView: true },
-    { ...createPropertyDef('Default'), header: 'D', inCardView: true },
-    { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
-    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: 'Depth', inCardView: true, inListView: true },
-    { ...createPropertyDef('FrameRate', transformFPS), orderByType: OrderByType.Number, align: 'right', header: 'FPS', inCardView: true, inListView: true },
-    { ...createPropertyDef('BitRate', bitRateFormatter, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('ID'), header: t('list.header.id'), inCardView: true },
+    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Language'), header: t('list.header.language'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Resolution', transformResolution, t('list.header.resolution')), orderByType: OrderByType.None, virtual: true, inCardView: true, inListView: true },
+    { ...createPropertyDef('HDR_Format_Compatibility'), header: t('list.header.hdr'), inCardView: true, inListView: true },
+    { ...createPropertyDef('ScanType'), header: t('list.header.scanType'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
+    { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
+    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.depth'), inCardView: true, inListView: true },
+    { ...createPropertyDef('FrameRate', transformFPS, t('list.header.fps')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', bitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
     { ...createPropertyDef('Width') },
     { ...createPropertyDef('Height') },
   ];
 
   const audio: PropertyDefinition[] = [
-    { ...createPropertyDef('ID'), inCardView: true },
-    { ...createPropertyDef('Format_Commercial'), header: 'Format', inCardView: true, inListView: true },
-    { ...createPropertyDef('Language'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Channel(s)'), orderByType: OrderByType.Number, align: 'right', header: 'CH', inCardView: true, inListView: true },
-    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: 'Depth', inCardView: true, inListView: true },
-    { ...createPropertyDef('SamplingRate', transformSamplingRate, 'Sampling'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Default'), header: 'D', inCardView: true },
-    { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
-    { ...createPropertyDef('BitRate_Mode'), header: 'Mode', inCardView: true, inListView: true },
-    { ...createPropertyDef('BitRate', bitRateFormatter, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('ID'), header: t('list.header.id'), inCardView: true },
+    { ...createPropertyDef('Format_Commercial'), header: t('list.header.format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Language'), header: t('list.header.language'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Channel(s)'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.channels'), inCardView: true, inListView: true },
+    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.depth'), inCardView: true, inListView: true },
+    { ...createPropertyDef('SamplingRate', transformSamplingRate, t('list.header.sampling')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
+    { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
+    { ...createPropertyDef('BitRate_Mode'), header: t('list.header.mode'), inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', bitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
   ];
 
   const text: PropertyDefinition[] = [
-    { ...createPropertyDef('ID'), inCardView: true },
-    { ...createPropertyDef('Format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Language'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Default'), header: 'D', inCardView: true },
-    { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
-    { ...createPropertyDef('BitRate', bitRateFormatter, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('ID'), header: t('list.header.id'), inCardView: true },
+    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Language'), header: t('list.header.language'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
+    { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
+    { ...createPropertyDef('BitRate', bitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
   ];
 
   return new Map<Protocol.StreamKind, PropertyDefinition[]>([
@@ -193,6 +196,7 @@ const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
 };
 
 export default function List() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -213,8 +217,8 @@ export default function List() {
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
 
   const commonPropertiesMap = useMemo(
-    () => buildCommonPropertiesMap(createBitRateFormatter(config), createSizeFormatter(config)),
-    [config]
+    () => buildCommonPropertiesMap(createBitRateFormatter(config), createSizeFormatter(config), t),
+    [config, t]
   );
 
   // Debounce query
@@ -450,15 +454,15 @@ export default function List() {
   if (files.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', mt: 2 }}>
-        <Typography variant="body2">Please select some files or a directory,</Typography>
-        <Typography variant="body2">or drag and drop some files or directories here.</Typography>
+        <Typography variant="body2">{t('list.emptyLine1')}</Typography>
+        <Typography variant="body2">{t('list.emptyLine2')}</Typography>
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
-          <Tooltip title="Add Files">
+          <Tooltip title={t('list.addFiles')}>
             <IconButton sx={buttonSx} onClick={() => openFileDialog(false)}>
               <ArticleIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Add Folder">
+          <Tooltip title={t('list.addFolder')}>
             <IconButton sx={buttonSx} onClick={() => openDirectoryDialog(false)}>
               <FolderIcon />
             </IconButton>
@@ -471,7 +475,7 @@ export default function List() {
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>
       <TextField
-        placeholder="Filter"
+        placeholder={t('list.filter')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         size="small"
@@ -480,7 +484,7 @@ export default function List() {
 
       {fileToPropertyMaps.size === 0 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <img src="images/empty.png" alt="Not Media Files" />
+          <img src="images/empty.png" alt={t('list.altNotMediaFiles')} />
         </Box>
       ) : viewType === ViewType.Card ? (
         files.map((file) =>
@@ -495,17 +499,17 @@ export default function List() {
                 }
                 action={
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Json">
+                    <Tooltip title={t('list.json')}>
                       <IconButton size="small" onClick={() => openDialogJsonCode(file)}>
                         <JavascriptIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Details">
+                    <Tooltip title={t('list.details')}>
                       <IconButton size="small" onClick={() => openDetails(file)}>
                         <NotesIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip title={t('list.delete')}>
                       <IconButton size="small" color="error" onClick={() => deleteMediaFile(file)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>

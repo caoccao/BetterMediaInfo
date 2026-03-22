@@ -15,13 +15,23 @@
  *   limitations under the License.
  */
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './i18n';
-import App from './App';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import enUS from './locales/en-US.json';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+i18n.use(initReactI18next).init({
+  resources: {
+    'en-US': { translation: enUS },
+  },
+  lng: 'en-US',
+  fallbackLng: 'en-US',
+  interpolation: {
+    escapeValue: false,
+  },
+});
+
+export function changeLanguage(language: string) {
+  i18n.changeLanguage(language);
+}
+
+export default i18n;

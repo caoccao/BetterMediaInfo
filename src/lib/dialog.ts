@@ -17,6 +17,7 @@
 
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { DialogFilter } from "@tauri-apps/plugin-dialog";
+import i18n from "../i18n";
 import { useAppStore } from "./store";
 import { scanFiles } from "./fs";
 
@@ -28,15 +29,15 @@ const initFilters = () => {
   if (config !== null) {
     filters = [
       {
-        name: "Video",
+        name: i18n.t("fileFilter.video"),
         extensions: config.fileExtensions.video,
       },
       {
-        name: "Image",
+        name: i18n.t("fileFilter.image"),
         extensions: config.fileExtensions.image,
       },
       {
-        name: "Audio",
+        name: i18n.t("fileFilter.audio"),
         extensions: config.fileExtensions.audio,
       },
     ];
@@ -70,6 +71,6 @@ export async function openFileDialog(append: boolean) {
 
 export async function openSaveJsonCodeFileDialog() {
   return await save({
-    filters: [{ name: "JSON", extensions: ["json"] }],
+    filters: [{ name: i18n.t("fileFilter.json"), extensions: ["json"] }],
   });
 }

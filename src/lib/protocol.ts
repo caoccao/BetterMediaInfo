@@ -46,12 +46,17 @@ export interface ConfigSize {
   unit: FormatUnit;
 }
 
+export enum Language {
+  EnUS = "en-US",
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
   bitRate: ConfigBitRate;
   displayMode: DisplayMode;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
+  language: Language;
   size: ConfigSize;
 }
 
@@ -158,6 +163,16 @@ export interface TabControl {
   type: TabType;
   index: number;
   value: string | null;
+}
+
+export function getLanguages(): Language[] {
+  return [Language.EnUS];
+}
+
+export function getLanguageLabel(language: Language): string {
+  switch (language) {
+    case Language.EnUS: return "English (US)";
+  }
 }
 
 export function getFormatPrecisions(): FormatPrecision[] {

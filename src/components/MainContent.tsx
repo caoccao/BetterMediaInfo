@@ -29,6 +29,7 @@ import {
   Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { useTranslation } from 'react-i18next';
 import { getCurrentWindow, type DragDropEvent } from '@tauri-apps/api/window';
 import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
@@ -51,6 +52,7 @@ interface TabControl {
 }
 
 export default function MainContent() {
+  const { t } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
   const [tabControls, setTabControls] = useState<TabControl[]>([
     { type: Protocol.TabType.List, index: 0, value: null },
@@ -236,12 +238,12 @@ export default function MainContent() {
       try {
         await writeText(dialogJsonCodeString);
         setDialogNotification({
-          title: 'Json code is copied to clipboard.',
+          title: t('dialog.jsonCopied'),
           type: Protocol.DialogNotificationType.Info,
         });
       } catch (error) {
         setDialogNotification({
-          title: `Failed to copy to clipboard with error: ${error}.`,
+          title: t('dialog.jsonCopyFailed', { error }),
           type: Protocol.DialogNotificationType.Error,
         });
       }
@@ -255,12 +257,12 @@ export default function MainContent() {
         try {
           await writeTextFile(filePath, dialogJsonCodeString);
           setDialogNotification({
-            title: `Json code is saved to ${filePath}.`,
+            title: t('dialog.jsonSaved', { filePath }),
             type: Protocol.DialogNotificationType.Info,
           });
         } catch (error) {
           setDialogNotification({
-            title: `Failed to save to ${filePath} with error: ${error}.`,
+            title: t('dialog.jsonSaveFailed', { filePath, error }),
             type: Protocol.DialogNotificationType.Error,
           });
         }
@@ -278,11 +280,11 @@ export default function MainContent() {
   const getTabLabel = (control: TabControl) => {
     switch (control.type) {
       case Protocol.TabType.About:
-        return 'About';
+        return t('tabs.about');
       case Protocol.TabType.Config:
-        return 'Settings';
+        return t('tabs.settings');
       case Protocol.TabType.List:
-        return 'List';
+        return t('tabs.list');
       case Protocol.TabType.Details:
         return shrinkFileName(control.value ?? '', 30);
     }
@@ -291,11 +293,11 @@ export default function MainContent() {
   const getTabTooltip = (control: TabControl) => {
     switch (control.type) {
       case Protocol.TabType.About:
-        return 'About';
+        return t('tabs.about');
       case Protocol.TabType.Config:
-        return 'Settings';
+        return t('tabs.settings');
       case Protocol.TabType.List:
-        return 'File List';
+        return t('tabs.fileList');
       case Protocol.TabType.Details:
         return control.value ?? '';
     }
@@ -321,7 +323,7 @@ export default function MainContent() {
                     <span>{getTabLabel(control)}</span>
                   </Tooltip>
                   {control.type !== Protocol.TabType.List && (
-                    <Tooltip title="Close (Ctrl + W)">
+                    <Tooltip title={t('tabs.close')}>
                       <IconButton
                         size="small"
                         sx={{ ml: 0.5, p: 0.25 }}
@@ -372,7 +374,7 @@ export default function MainContent() {
         </DialogTitle>
         <DialogActions sx={{ justifyContent: 'center' }}>
           <Button variant="outlined" onClick={() => setDialogNotification(null)}>
-            Close
+            {t('dialog.close')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -405,13 +407,13 @@ export default function MainContent() {
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', gap: 1 }}>
           <Button variant="contained" color="primary" onClick={handleCopyJsonCode}>
-            Copy
+            {t('dialog.copy')}
           </Button>
           <Button variant="contained" color="primary" onClick={handleSaveJsonCode}>
-            Save
+            {t('dialog.save')}
           </Button>
           <Button variant="outlined" onClick={() => setDialogJsonCode(null)}>
-            Close
+            {t('dialog.close')}
           </Button>
         </DialogActions>
       </Dialog>

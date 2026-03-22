@@ -1,6 +1,11 @@
 # Release Notes
 
-## 0.8.0 Snapshot
+## 0.9.0
+
+* Added configurable precision and unit settings for bit rate and size display
+* Added i18n
+
+## 0.8.0
 
 * Converted UI from Svelte to React
 * Upgraded MediaInfoLib to v26.01

@@ -28,11 +28,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import { setConfig as saveConfig } from '../lib/service';
 import { useAppStore } from '../lib/store';
+import { changeLanguage } from '../i18n';
 
 export default function Config() {
+  const { t } = useTranslation();
   const [appendOnFileDrop, setAppendOnFileDrop] = useState(true);
   const [bitRatePrecision, setBitRatePrecision] = useState<Protocol.FormatPrecision>(
     Protocol.FormatPrecision.Two
@@ -47,6 +50,7 @@ export default function Config() {
     Protocol.FormatUnit.KMGT
   );
   const [displayMode, setDisplayMode] = useState<Protocol.DisplayMode>(Protocol.DisplayMode.Auto);
+  const [language, setLanguage] = useState<Protocol.Language>(Protocol.Language.EnUS);
   const [directoryMode, setDirectoryMode] = useState<Protocol.ConfigDirectoryMode>(
     Protocol.ConfigDirectoryMode.All
   );
@@ -71,6 +75,7 @@ export default function Config() {
       setSizePrecision(config.size?.precision ?? Protocol.FormatPrecision.Two);
       setSizeUnit(config.size?.unit ?? Protocol.FormatUnit.KMGT);
       setDisplayMode(config.displayMode);
+      setLanguage(config.language ?? Protocol.Language.EnUS);
       setDirectoryMode(config.directoryMode);
       setFileExtensionsAudio(config.fileExtensions.audio?.join(', ') ?? '');
       setFileExtensionsImage(config.fileExtensions.image?.join(', ') ?? '');
@@ -122,6 +127,7 @@ export default function Config() {
       image: convertFileExtensions(fileExtensionsImage),
       video: convertFileExtensions(fileExtensionsVideo),
     },
+    language,
     size: {
       precision: sizePrecision,
       unit: sizeUnit,
@@ -132,14 +138,15 @@ export default function Config() {
     try {
       const newConfig = await saveConfig(createConfig());
       setStoreConfig(newConfig);
+      changeLanguage(newConfig.language);
       setIsDirty(false);
       setDialogNotification({
-        title: 'Settings saved.',
+        title: t('config.settingsSaved'),
         type: Protocol.DialogNotificationType.Info,
       });
     } catch (error) {
       setDialogNotification({
-        title: error ? error.toString() : 'Failed to save settings with unknown error.',
+        title: error ? error.toString() : t('config.settingsSaveError'),
         type: Protocol.DialogNotificationType.Error,
       });
     }
@@ -156,13 +163,13 @@ export default function Config() {
     <Box sx={{ display: 'grid', gap: 2 }}>
       <Box>
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', pb: 1, borderBottom: 2, borderColor: 'success.main' }}>
-          Settings
+          {t('config.title')}
         </Typography>
       </Box>
 
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          Appearance
+          {t('config.appearance')}
         </Typography>
         <FormControl sx={{ mt: 1 }}>
           <RadioGroup
@@ -176,17 +183,17 @@ export default function Config() {
             <FormControlLabel
               value={Protocol.DisplayMode.Auto}
               control={<Radio size="small" />}
-              label={<Typography variant="body2">Auto Mode</Typography>}
+              label={<Typography variant="body2">{t('config.autoMode')}</Typography>}
             />
             <FormControlLabel
               value={Protocol.DisplayMode.Light}
               control={<Radio size="small" />}
-              label={<Typography variant="body2">Light Mode</Typography>}
+              label={<Typography variant="body2">{t('config.lightMode')}</Typography>}
             />
             <FormControlLabel
               value={Protocol.DisplayMode.Dark}
               control={<Radio size="small" />}
-              label={<Typography variant="body2">Dark Mode</Typography>}
+              label={<Typography variant="body2">{t('config.darkMode')}</Typography>}
             />
           </RadioGroup>
         </FormControl>
@@ -194,7 +201,28 @@ export default function Config() {
 
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          Append on File Drop
+          {t('config.language')}
+        </Typography>
+        <FormControl size="small" sx={{ mt: 1, minWidth: 150 }}>
+          <Select
+            value={language}
+            onChange={(e) => {
+              setLanguage(e.target.value as Protocol.Language);
+              handleChange();
+            }}
+          >
+            {Protocol.getLanguages().map((lang) => (
+              <MenuItem key={lang} value={lang}>
+                {Protocol.getLanguageLabel(lang)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
+          {t('config.appendOnFileDrop')}
         </Typography>
         <FormControl sx={{ mt: 1 }}>
           <RadioGroup
@@ -208,12 +236,12 @@ export default function Config() {
             <FormControlLabel
               value="true"
               control={<Radio size="small" />}
-              label={<Typography variant="body2">Append</Typography>}
+              label={<Typography variant="body2">{t('config.append')}</Typography>}
             />
             <FormControlLabel
               value="false"
               control={<Radio size="small" />}
-              label={<Typography variant="body2">Do not append</Typography>}
+              label={<Typography variant="body2">{t('config.doNotAppend')}</Typography>}
             />
           </RadioGroup>
         </FormControl>
@@ -221,7 +249,7 @@ export default function Config() {
 
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          Directory Mode
+          {t('config.directoryMode')}
         </Typography>
         <FormControl size="small" sx={{ mt: 1, minWidth: 120 }}>
           <Select
@@ -242,12 +270,12 @@ export default function Config() {
 
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          File Extensions
+          {t('config.fileExtensions')}
         </Typography>
         <Box sx={{ display: 'grid', gap: 1.5, mt: 1 }}>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Audio File Extensions
+              {t('config.audioFileExtensions')}
             </Typography>
             <TextField
               value={fileExtensionsAudio}
@@ -258,7 +286,7 @@ export default function Config() {
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Image File Extensions
+              {t('config.imageFileExtensions')}
             </Typography>
             <TextField
               value={fileExtensionsImage}
@@ -269,7 +297,7 @@ export default function Config() {
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Video File Extensions
+              {t('config.videoFileExtensions')}
             </Typography>
             <TextField
               value={fileExtensionsVideo}
@@ -283,12 +311,12 @@ export default function Config() {
 
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          Bit Rate
+          {t('config.bitRate')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Precision
+              {t('config.precision')}
             </Typography>
             <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 100 }}>
               <Select
@@ -308,7 +336,7 @@ export default function Config() {
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Unit
+              {t('config.unit')}
             </Typography>
             <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 120 }}>
               <Select
@@ -331,12 +359,12 @@ export default function Config() {
 
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          Size
+          {t('config.size')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Precision
+              {t('config.precision')}
             </Typography>
             <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 100 }}>
               <Select
@@ -356,7 +384,7 @@ export default function Config() {
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Unit
+              {t('config.unit')}
             </Typography>
             <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 120 }}>
               <Select
@@ -379,7 +407,7 @@ export default function Config() {
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
         <Button variant="contained" color="primary" disabled={!isDirty} onClick={handleSave} sx={{ minWidth: 150 }}>
-          Save
+          {t('config.save')}
         </Button>
       </Box>
     </Box>

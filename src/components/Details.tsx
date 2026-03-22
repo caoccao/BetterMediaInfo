@@ -39,6 +39,7 @@ import {
 import JavascriptIcon from '@mui/icons-material/Javascript';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import RemoveDoneIcon from '@mui/icons-material/RemoveDone';
+import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 
@@ -58,6 +59,7 @@ const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
 };
 
 export default function Details({ file }: DetailsProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [streamGroup, setStreamGroup] = useState<Protocol.StreamKind[]>([]);
@@ -151,7 +153,7 @@ export default function Details({ file }: DetailsProps) {
         <CardHeader
           title={<Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{file}</Typography>}
           action={
-            <Tooltip title="Json">
+            <Tooltip title={t('details.json')}>
               <span>
                 <IconButton size="small" onClick={openDialogJsonCode} disabled={allProperties.length === 0}>
                   <JavascriptIcon fontSize="small" />
@@ -163,7 +165,7 @@ export default function Details({ file }: DetailsProps) {
         />
         <CardContent sx={{ pt: 1 }}>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1 }}>
-            <Tooltip title="Select All">
+            <Tooltip title={t('details.selectAll')}>
               <span>
                 <IconButton
                   size="small"
@@ -175,7 +177,7 @@ export default function Details({ file }: DetailsProps) {
                 </IconButton>
               </span>
             </Tooltip>
-            <Tooltip title="Select None">
+            <Tooltip title={t('details.selectNone')}>
               <span>
                 <IconButton
                   size="small"
@@ -213,7 +215,7 @@ export default function Details({ file }: DetailsProps) {
             </Box>
           </Box>
           <TextField
-            placeholder="Filter"
+            placeholder={t('details.filter')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             size="small"
@@ -228,7 +230,7 @@ export default function Details({ file }: DetailsProps) {
         </Box>
       ) : filteredAllProperties.length === 0 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <img src="images/empty.gif" alt="Not Found" />
+          <img src="images/empty.gif" alt={t('details.altNotFound')} />
         </Box>
       ) : (
         filteredAllProperties.map((properties) =>
@@ -253,7 +255,7 @@ export default function Details({ file }: DetailsProps) {
                             fontWeight: 'bold',
                           }}
                         >
-                          Property
+                          {t('details.property')}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -261,7 +263,7 @@ export default function Details({ file }: DetailsProps) {
                             fontWeight: 'bold',
                           }}
                         >
-                          Value
+                          {t('details.value')}
                         </TableCell>
                       </TableRow>
                     </TableHead>
