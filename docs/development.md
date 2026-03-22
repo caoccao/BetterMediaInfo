@@ -112,8 +112,9 @@ del zlib.zip
 * Build zlib.
 
 ```sh
-cd zlib\contrib\vstudio\vc17
-msbuild zlibstat.vcxproj -t:rebuild -property:Configuration=Release -property:Platform=x64
+cd zlib
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B contrib/vstudio/vc17
+cmake --build contrib/vstudio/vc17 --config Release
 ```
 
 * Build MediaInfoLib in Visual Studio 2022.
