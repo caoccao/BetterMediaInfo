@@ -37,18 +37,80 @@ export function shrinkFileName(fileName: string, maxLength: number): string {
   return fileName;
 }
 
-export function transformBitRate(value: string | undefined | null): string {
-  if (value) {
-    const bitRate = parseInt(value);
-    if (bitRate > 1000000) {
-      return `${trimFractionZeros((bitRate / 1000000.0).toFixed(2))}Mbps`;
-    }
-    if (bitRate > 1000) {
-      return `${trimFractionZeros((bitRate / 1000.0).toFixed(2))}Kbps`;
-    }
-    return `${value}bps`;
+interface FormatTier {
+  divisor: number;
+  label: string;
+}
+
+function precisionToDecimalPlaces(precision: Protocol.FormatPrecision): number {
+  switch (precision) {
+    case Protocol.FormatPrecision.Zero: return 0;
+    case Protocol.FormatPrecision.One: return 1;
+    case Protocol.FormatPrecision.Two: return 2;
   }
-  return "";
+}
+
+function unitToTiers(unit: Protocol.FormatUnit): FormatTier[] {
+  switch (unit) {
+    case Protocol.FormatUnit.K:
+      return [{ divisor: 1e3, label: "K" }];
+    case Protocol.FormatUnit.KM:
+      return [
+        { divisor: 1e3, label: "K" },
+        { divisor: 1e6, label: "M" },
+      ];
+    case Protocol.FormatUnit.KMG:
+      return [
+        { divisor: 1e3, label: "K" },
+        { divisor: 1e6, label: "M" },
+        { divisor: 1e9, label: "G" },
+      ];
+    case Protocol.FormatUnit.KMGT:
+      return [
+        { divisor: 1e3, label: "K" },
+        { divisor: 1e6, label: "M" },
+        { divisor: 1e9, label: "G" },
+        { divisor: 1e12, label: "T" },
+      ];
+    case Protocol.FormatUnit.KMi:
+      return [
+        { divisor: 1024, label: "Ki" },
+        { divisor: 1048576, label: "Mi" },
+      ];
+    case Protocol.FormatUnit.KMiGi:
+      return [
+        { divisor: 1024, label: "Ki" },
+        { divisor: 1048576, label: "Mi" },
+        { divisor: 1073741824, label: "Gi" },
+      ];
+    case Protocol.FormatUnit.KMiGiTi:
+      return [
+        { divisor: 1024, label: "Ki" },
+        { divisor: 1048576, label: "Mi" },
+        { divisor: 1073741824, label: "Gi" },
+        { divisor: 1099511627776, label: "Ti" },
+      ];
+  }
+}
+
+export function transformBitRate(
+  value: string | undefined | null,
+  precision: Protocol.FormatPrecision = Protocol.FormatPrecision.Two,
+  unit: Protocol.FormatUnit = Protocol.FormatUnit.KMGT,
+): string {
+  if (!value) return "";
+
+  const bitRate = parseInt(value);
+  const decimalPlaces = precisionToDecimalPlaces(precision);
+  const tiers = unitToTiers(unit);
+
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    if (bitRate > tiers[i].divisor) {
+      return `${trimFractionZeros((bitRate / tiers[i].divisor).toFixed(decimalPlaces))}${tiers[i].label}bps`;
+    }
+  }
+
+  return `${value}bps`;
 }
 
 export function transformDefault(value: string | undefined | null): string {
@@ -94,21 +156,67 @@ export function transformSamplingRate(
   return "";
 }
 
-export function transformSize(value: string | undefined | null): string {
-  if (value) {
-    const size = parseInt(value);
-    if (size > 1 << 30) {
-      return `${trimFractionZeros((size / (1 << 30)).toFixed(2))}GB`;
-    }
-    if (size > 1 << 20) {
-      return `${trimFractionZeros((size / (1 << 20)).toFixed(2))}MB`;
-    }
-    if (size > 1 << 10) {
-      return `${trimFractionZeros((size / (1 << 10)).toFixed(2))}KB`;
-    }
-    return `${value}B`;
+function unitToSizeTiers(unit: Protocol.FormatUnit): FormatTier[] {
+  switch (unit) {
+    case Protocol.FormatUnit.K:
+      return [{ divisor: 1e3, label: "K" }];
+    case Protocol.FormatUnit.KM:
+      return [
+        { divisor: 1e3, label: "K" },
+        { divisor: 1e6, label: "M" },
+      ];
+    case Protocol.FormatUnit.KMG:
+      return [
+        { divisor: 1e3, label: "K" },
+        { divisor: 1e6, label: "M" },
+        { divisor: 1e9, label: "G" },
+      ];
+    case Protocol.FormatUnit.KMGT:
+      return [
+        { divisor: 1e3, label: "K" },
+        { divisor: 1e6, label: "M" },
+        { divisor: 1e9, label: "G" },
+        { divisor: 1e12, label: "T" },
+      ];
+    case Protocol.FormatUnit.KMi:
+      return [
+        { divisor: 1024, label: "Ki" },
+        { divisor: 1048576, label: "Mi" },
+      ];
+    case Protocol.FormatUnit.KMiGi:
+      return [
+        { divisor: 1024, label: "Ki" },
+        { divisor: 1048576, label: "Mi" },
+        { divisor: 1073741824, label: "Gi" },
+      ];
+    case Protocol.FormatUnit.KMiGiTi:
+      return [
+        { divisor: 1024, label: "Ki" },
+        { divisor: 1048576, label: "Mi" },
+        { divisor: 1073741824, label: "Gi" },
+        { divisor: 1099511627776, label: "Ti" },
+      ];
   }
-  return "";
+}
+
+export function transformSize(
+  value: string | undefined | null,
+  precision: Protocol.FormatPrecision = Protocol.FormatPrecision.Two,
+  unit: Protocol.FormatUnit = Protocol.FormatUnit.KMGT,
+): string {
+  if (!value) return "";
+
+  const size = parseInt(value);
+  const decimalPlaces = precisionToDecimalPlaces(precision);
+  const tiers = unitToSizeTiers(unit);
+
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    if (size > tiers[i].divisor) {
+      return `${trimFractionZeros((size / tiers[i].divisor).toFixed(decimalPlaces))}${tiers[i].label}B`;
+    }
+  }
+
+  return `${value}B`;
 }
 
 export function transformTime(

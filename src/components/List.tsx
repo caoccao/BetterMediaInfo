@@ -92,71 +92,94 @@ function createPropertyDef(
   };
 }
 
-const COMMON_PROPERTIES_GENERAL: PropertyDefinition[] = [
-  { ...createPropertyDef('CompleteName'), header: 'File Path', inListView: true },
-  { ...createPropertyDef('Format'), inCardView: true, inListView: true },
-  { ...createPropertyDef('FileSize', transformSize, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('Duration', transformDuration), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('Time', transformTime), orderByType: OrderByType.None, align: 'right', virtual: true, inCardView: true, inListView: true },
-  { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Encoded_Date'), header: 'Encoded Date', inCardView: true, inListView: true },
-  { ...createPropertyDef('Video:Count'), orderByType: OrderByType.Number, header: 'V', inListView: true },
-  { ...createPropertyDef('Audio:Count'), orderByType: OrderByType.Number, header: 'A', inListView: true },
-  { ...createPropertyDef('Text:Count'), orderByType: OrderByType.Number, header: 'T', inListView: true },
-  { ...createPropertyDef('Image:Count'), orderByType: OrderByType.Number, header: 'I', inListView: true },
-  { ...createPropertyDef('Menu:Count'), orderByType: OrderByType.Number, header: 'M', inListView: true },
-];
+type Formatter = (value: any, rowData: Record<string, string>, rowIndex: number) => string;
 
-const COMMON_PROPERTIES_VIDEO: PropertyDefinition[] = [
-  { ...createPropertyDef('ID'), inCardView: true },
-  { ...createPropertyDef('Format'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Language'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Resolution', transformResolution), orderByType: OrderByType.None, virtual: true, inCardView: true, inListView: true },
-  { ...createPropertyDef('HDR_Format_Compatibility'), header: 'HDR', inCardView: true, inListView: true },
-  { ...createPropertyDef('ScanType'), header: 'Scan Type', inCardView: true, inListView: true },
-  { ...createPropertyDef('Default'), header: 'D', inCardView: true },
-  { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
-  { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: 'Depth', inCardView: true, inListView: true },
-  { ...createPropertyDef('FrameRate', transformFPS), orderByType: OrderByType.Number, align: 'right', header: 'FPS', inCardView: true, inListView: true },
-  { ...createPropertyDef('BitRate', transformBitRate, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('StreamSize', transformSize, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('Width') },
-  { ...createPropertyDef('Height') },
-];
+function createBitRateFormatter(config: Protocol.Config | null): Formatter {
+  return (value, _rowData, _rowIndex) => {
+    const precision = config?.bitRate?.precision ?? Protocol.FormatPrecision.Two;
+    const unit = config?.bitRate?.unit ?? Protocol.FormatUnit.KMGT;
+    return transformBitRate(value, precision, unit);
+  };
+}
 
-const COMMON_PROPERTIES_AUDIO: PropertyDefinition[] = [
-  { ...createPropertyDef('ID'), inCardView: true },
-  { ...createPropertyDef('Format_Commercial'), header: 'Format', inCardView: true, inListView: true },
-  { ...createPropertyDef('Language'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Channel(s)'), orderByType: OrderByType.Number, align: 'right', header: 'CH', inCardView: true, inListView: true },
-  { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: 'Depth', inCardView: true, inListView: true },
-  { ...createPropertyDef('SamplingRate', transformSamplingRate, 'Sampling'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('Default'), header: 'D', inCardView: true },
-  { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
-  { ...createPropertyDef('BitRate_Mode'), header: 'Mode', inCardView: true, inListView: true },
-  { ...createPropertyDef('BitRate', transformBitRate, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('StreamSize', transformSize, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-];
+function createSizeFormatter(config: Protocol.Config | null): Formatter {
+  return (value, _rowData, _rowIndex) => {
+    const precision = config?.size?.precision ?? Protocol.FormatPrecision.Two;
+    const unit = config?.size?.unit ?? Protocol.FormatUnit.KMGT;
+    return transformSize(value, precision, unit);
+  };
+}
 
-const COMMON_PROPERTIES_TEXT: PropertyDefinition[] = [
-  { ...createPropertyDef('ID'), inCardView: true },
-  { ...createPropertyDef('Format'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Language'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Title'), inCardView: true, inListView: true },
-  { ...createPropertyDef('Default'), header: 'D', inCardView: true },
-  { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
-  { ...createPropertyDef('BitRate', transformBitRate, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  { ...createPropertyDef('StreamSize', transformSize, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-];
+function buildCommonPropertiesMap(
+  bitRateFormatter: Formatter,
+  sizeFormatter: Formatter,
+): Map<Protocol.StreamKind, PropertyDefinition[]> {
+  const general: PropertyDefinition[] = [
+    { ...createPropertyDef('CompleteName'), header: 'File Path', inListView: true },
+    { ...createPropertyDef('Format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('FileSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Duration', transformDuration), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Time', transformTime), orderByType: OrderByType.None, align: 'right', virtual: true, inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Encoded_Date'), header: 'Encoded Date', inCardView: true, inListView: true },
+    { ...createPropertyDef('Video:Count'), orderByType: OrderByType.Number, header: 'V', inListView: true },
+    { ...createPropertyDef('Audio:Count'), orderByType: OrderByType.Number, header: 'A', inListView: true },
+    { ...createPropertyDef('Text:Count'), orderByType: OrderByType.Number, header: 'T', inListView: true },
+    { ...createPropertyDef('Image:Count'), orderByType: OrderByType.Number, header: 'I', inListView: true },
+    { ...createPropertyDef('Menu:Count'), orderByType: OrderByType.Number, header: 'M', inListView: true },
+  ];
 
-const COMMON_PROPERTIES_MAP = new Map<Protocol.StreamKind, PropertyDefinition[]>([
-  [Protocol.StreamKind.General, COMMON_PROPERTIES_GENERAL],
-  [Protocol.StreamKind.Video, COMMON_PROPERTIES_VIDEO],
-  [Protocol.StreamKind.Audio, COMMON_PROPERTIES_AUDIO],
-  [Protocol.StreamKind.Text, COMMON_PROPERTIES_TEXT],
-]);
+  const video: PropertyDefinition[] = [
+    { ...createPropertyDef('ID'), inCardView: true },
+    { ...createPropertyDef('Format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Language'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Resolution', transformResolution), orderByType: OrderByType.None, virtual: true, inCardView: true, inListView: true },
+    { ...createPropertyDef('HDR_Format_Compatibility'), header: 'HDR', inCardView: true, inListView: true },
+    { ...createPropertyDef('ScanType'), header: 'Scan Type', inCardView: true, inListView: true },
+    { ...createPropertyDef('Default'), header: 'D', inCardView: true },
+    { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
+    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: 'Depth', inCardView: true, inListView: true },
+    { ...createPropertyDef('FrameRate', transformFPS), orderByType: OrderByType.Number, align: 'right', header: 'FPS', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', bitRateFormatter, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Width') },
+    { ...createPropertyDef('Height') },
+  ];
+
+  const audio: PropertyDefinition[] = [
+    { ...createPropertyDef('ID'), inCardView: true },
+    { ...createPropertyDef('Format_Commercial'), header: 'Format', inCardView: true, inListView: true },
+    { ...createPropertyDef('Language'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Channel(s)'), orderByType: OrderByType.Number, align: 'right', header: 'CH', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: 'Depth', inCardView: true, inListView: true },
+    { ...createPropertyDef('SamplingRate', transformSamplingRate, 'Sampling'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('Default'), header: 'D', inCardView: true },
+    { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
+    { ...createPropertyDef('BitRate_Mode'), header: 'Mode', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', bitRateFormatter, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+  ];
+
+  const text: PropertyDefinition[] = [
+    { ...createPropertyDef('ID'), inCardView: true },
+    { ...createPropertyDef('Format'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Language'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Title'), inCardView: true, inListView: true },
+    { ...createPropertyDef('Default'), header: 'D', inCardView: true },
+    { ...createPropertyDef('Forced'), header: 'F', inCardView: true },
+    { ...createPropertyDef('BitRate', bitRateFormatter, 'Bit Rate'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', sizeFormatter, 'Size'), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+  ];
+
+  return new Map<Protocol.StreamKind, PropertyDefinition[]>([
+    [Protocol.StreamKind.General, general],
+    [Protocol.StreamKind.Video, video],
+    [Protocol.StreamKind.Audio, audio],
+    [Protocol.StreamKind.Text, text],
+  ]);
+}
 
 const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
   [Protocol.StreamKind.General]: '#84cc16',
@@ -176,6 +199,7 @@ export default function List() {
   const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const apiRef = useGridApiRef();
 
+  const config = useAppStore((state) => state.config);
   const files = useAppStore((state) => state.mediaFiles);
   const viewType = useAppStore((state) => state.viewType);
   const mediaFileToCommonPropertyMap = useAppStore((state) => state.mediaFileToCommonPropertyMap);
@@ -187,6 +211,11 @@ export default function List() {
   const addMediaDetailedFile = useAppStore((state) => state.addMediaDetailedFile);
   const setDialogJsonCode = useAppStore((state) => state.setDialogJsonCode);
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
+
+  const commonPropertiesMap = useMemo(
+    () => buildCommonPropertiesMap(createBitRateFormatter(config), createSizeFormatter(config)),
+    [config]
+  );
 
   // Debounce query
   useEffect(() => {
@@ -228,7 +257,7 @@ export default function List() {
 
       // Get common properties if not loaded
       if (!mediaFileToCommonPropertyMap.has(file)) {
-        const properties = [...COMMON_PROPERTIES_MAP.entries()]
+        const properties = [...commonPropertiesMap.entries()]
           .filter(([stream]) => (streamCountMap.get(stream)?.count ?? 0) > 0)
           .flatMap(([stream, propertyFormats]) =>
             propertyFormats
@@ -319,7 +348,7 @@ export default function List() {
   }, [fileToPropertyMaps, mediaFileToStreamCountMap]);
 
   const columnsOfDataGrid = useMemo((): GridColDef[] => {
-    return [...COMMON_PROPERTIES_MAP.entries()]
+    return [...commonPropertiesMap.entries()]
       .flatMap(([stream, commonProperties]) =>
         commonProperties
           .filter((prop) => prop.inListView)
@@ -340,7 +369,7 @@ export default function List() {
             headerClassName: `header-${stream}`,
           }))
       );
-  }, [dataOfListView]);
+  }, [dataOfListView, commonPropertiesMap]);
 
   const rowsOfDataGrid = useMemo((): GridRowsProp => {
     return dataOfListView.map((row) => ({
@@ -486,7 +515,7 @@ export default function List() {
                 sx={{ pb: 0 }}
               />
               <CardContent sx={{ py: 0, '&.MuiCardContent-root:last-child': { pb: 2 } }}>
-                {[...COMMON_PROPERTIES_MAP.entries()].map(([stream, commonProperties]) => {
+                {[...commonPropertiesMap.entries()].map(([stream, commonProperties]) => {
                   const streamMaps = fileToPropertyMaps.get(file)?.filter((map) => map.stream === stream);
                   if (!streamMaps || streamMaps.length === 0) return null;
 

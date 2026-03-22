@@ -20,11 +20,39 @@ export interface About {
   mediaInfoVersion: string;
 }
 
+export enum FormatPrecision {
+  Zero = "Zero",
+  One = "One",
+  Two = "Two",
+}
+
+export enum FormatUnit {
+  K = "K",
+  KM = "KM",
+  KMG = "KMG",
+  KMGT = "KMGT",
+  KMi = "KMi",
+  KMiGi = "KMiGi",
+  KMiGiTi = "KMiGiTi",
+}
+
+export interface ConfigBitRate {
+  precision: FormatPrecision;
+  unit: FormatUnit;
+}
+
+export interface ConfigSize {
+  precision: FormatPrecision;
+  unit: FormatUnit;
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
+  bitRate: ConfigBitRate;
   displayMode: DisplayMode;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
+  size: ConfigSize;
 }
 
 export enum DisplayMode {
@@ -130,6 +158,42 @@ export interface TabControl {
   type: TabType;
   index: number;
   value: string | null;
+}
+
+export function getFormatPrecisions(): FormatPrecision[] {
+  return [FormatPrecision.Zero, FormatPrecision.One, FormatPrecision.Two];
+}
+
+export function getFormatUnits(): FormatUnit[] {
+  return [
+    FormatUnit.K,
+    FormatUnit.KM,
+    FormatUnit.KMG,
+    FormatUnit.KMGT,
+    FormatUnit.KMi,
+    FormatUnit.KMiGi,
+    FormatUnit.KMiGiTi,
+  ];
+}
+
+export function getFormatPrecisionLabel(precision: FormatPrecision): string {
+  switch (precision) {
+    case FormatPrecision.Zero: return "#";
+    case FormatPrecision.One: return "#.#";
+    case FormatPrecision.Two: return "#.##";
+  }
+}
+
+export function getFormatUnitLabel(unit: FormatUnit): string {
+  switch (unit) {
+    case FormatUnit.K: return "k";
+    case FormatUnit.KM: return "k/M";
+    case FormatUnit.KMG: return "k/M/G";
+    case FormatUnit.KMGT: return "k/M/G/T";
+    case FormatUnit.KMi: return "k/Mi";
+    case FormatUnit.KMiGi: return "k/Mi/Gi";
+    case FormatUnit.KMiGiTi: return "k/Mi/Gi/Ti";
+  }
 }
 
 export function getConfigDirectoryModes(): ConfigDirectoryMode[] {

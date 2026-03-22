@@ -28,21 +28,87 @@ static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 pub struct Config {
   #[serde(rename = "appendOnFileDrop")]
   pub append_on_file_drop: bool,
+  #[serde(rename = "bitRate", default)]
+  pub bit_rate: ConfigBitRate,
   #[serde(rename = "displayMode")]
   pub display_mode: DisplayMode,
   #[serde(rename = "directoryMode")]
   pub directory_mode: ConfigDirectoryMode,
   #[serde(rename = "fileExtensions")]
   pub file_extensions: ConfigFileExtensions,
+  #[serde(default)]
+  pub size: ConfigSize,
 }
 
 impl Default for Config {
   fn default() -> Self {
     Self {
       append_on_file_drop: true,
+      bit_rate: Default::default(),
       display_mode: Default::default(),
       directory_mode: Default::default(),
       file_extensions: Default::default(),
+      size: Default::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum FormatPrecision {
+  Zero,
+  One,
+  Two,
+}
+
+impl Default for FormatPrecision {
+  fn default() -> Self {
+    Self::Two
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum FormatUnit {
+  K,
+  KM,
+  KMG,
+  KMGT,
+  KMi,
+  KMiGi,
+  KMiGiTi,
+}
+
+impl Default for FormatUnit {
+  fn default() -> Self {
+    Self::KMGT
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigBitRate {
+  pub precision: FormatPrecision,
+  pub unit: FormatUnit,
+}
+
+impl Default for ConfigBitRate {
+  fn default() -> Self {
+    Self {
+      precision: Default::default(),
+      unit: Default::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigSize {
+  pub precision: FormatPrecision,
+  pub unit: FormatUnit,
+}
+
+impl Default for ConfigSize {
+  fn default() -> Self {
+    Self {
+      precision: Default::default(),
+      unit: Default::default(),
     }
   }
 }

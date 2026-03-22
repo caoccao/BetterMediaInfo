@@ -34,6 +34,18 @@ import { useAppStore } from '../lib/store';
 
 export default function Config() {
   const [appendOnFileDrop, setAppendOnFileDrop] = useState(true);
+  const [bitRatePrecision, setBitRatePrecision] = useState<Protocol.FormatPrecision>(
+    Protocol.FormatPrecision.Two
+  );
+  const [bitRateUnit, setBitRateUnit] = useState<Protocol.FormatUnit>(
+    Protocol.FormatUnit.KMGT
+  );
+  const [sizePrecision, setSizePrecision] = useState<Protocol.FormatPrecision>(
+    Protocol.FormatPrecision.Two
+  );
+  const [sizeUnit, setSizeUnit] = useState<Protocol.FormatUnit>(
+    Protocol.FormatUnit.KMGT
+  );
   const [displayMode, setDisplayMode] = useState<Protocol.DisplayMode>(Protocol.DisplayMode.Auto);
   const [directoryMode, setDirectoryMode] = useState<Protocol.ConfigDirectoryMode>(
     Protocol.ConfigDirectoryMode.All
@@ -54,6 +66,10 @@ export default function Config() {
     if (config && config.fileExtensions && !isInitializedRef.current) {
       isInitializedRef.current = true;
       setAppendOnFileDrop(config.appendOnFileDrop);
+      setBitRatePrecision(config.bitRate?.precision ?? Protocol.FormatPrecision.Two);
+      setBitRateUnit(config.bitRate?.unit ?? Protocol.FormatUnit.KMGT);
+      setSizePrecision(config.size?.precision ?? Protocol.FormatPrecision.Two);
+      setSizeUnit(config.size?.unit ?? Protocol.FormatUnit.KMGT);
       setDisplayMode(config.displayMode);
       setDirectoryMode(config.directoryMode);
       setFileExtensionsAudio(config.fileExtensions.audio?.join(', ') ?? '');
@@ -95,12 +111,20 @@ export default function Config() {
 
   const createConfig = (): Protocol.Config => ({
     appendOnFileDrop,
+    bitRate: {
+      precision: bitRatePrecision,
+      unit: bitRateUnit,
+    },
     displayMode,
     directoryMode,
     fileExtensions: {
       audio: convertFileExtensions(fileExtensionsAudio),
       image: convertFileExtensions(fileExtensionsImage),
       video: convertFileExtensions(fileExtensionsVideo),
+    },
+    size: {
+      precision: sizePrecision,
+      unit: sizeUnit,
     },
   });
 
@@ -253,6 +277,102 @@ export default function Config() {
               size="small"
               fullWidth
             />
+          </Box>
+        </Box>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
+          Bit Rate
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Precision
+            </Typography>
+            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 100 }}>
+              <Select
+                value={bitRatePrecision}
+                onChange={(e) => {
+                  setBitRatePrecision(e.target.value as Protocol.FormatPrecision);
+                  handleChange();
+                }}
+              >
+                {Protocol.getFormatPrecisions().map((p) => (
+                  <MenuItem key={p} value={p}>
+                    {Protocol.getFormatPrecisionLabel(p)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Unit
+            </Typography>
+            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 120 }}>
+              <Select
+                value={bitRateUnit}
+                onChange={(e) => {
+                  setBitRateUnit(e.target.value as Protocol.FormatUnit);
+                  handleChange();
+                }}
+              >
+                {Protocol.getFormatUnits().map((u) => (
+                  <MenuItem key={u} value={u}>
+                    {Protocol.getFormatUnitLabel(u)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
+          Size
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Precision
+            </Typography>
+            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 100 }}>
+              <Select
+                value={sizePrecision}
+                onChange={(e) => {
+                  setSizePrecision(e.target.value as Protocol.FormatPrecision);
+                  handleChange();
+                }}
+              >
+                {Protocol.getFormatPrecisions().map((p) => (
+                  <MenuItem key={p} value={p}>
+                    {Protocol.getFormatPrecisionLabel(p)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Unit
+            </Typography>
+            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 120 }}>
+              <Select
+                value={sizeUnit}
+                onChange={(e) => {
+                  setSizeUnit(e.target.value as Protocol.FormatUnit);
+                  handleChange();
+                }}
+              >
+                {Protocol.getFormatUnits().map((u) => (
+                  <MenuItem key={u} value={u}>
+                    {Protocol.getFormatUnitLabel(u)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         </Box>
       </Box>
