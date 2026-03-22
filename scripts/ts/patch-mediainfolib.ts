@@ -61,7 +61,7 @@ function patchAllVcxproj(dirPath: string, replacements: Array<[string | RegExp, 
 // Create symlink: zlibstatic.vcxproj -> zlibstat.vcxproj
 const symlinkTarget = path.join(rootDirPath, "zlib/contrib/vstudio/vc17/zlibstat.vcxproj");
 if (!fs.existsSync(symlinkTarget)) {
-  Deno.symlinkSync("zlibstatic.vcxproj", symlinkTarget);
+  Deno.symlinkSync("zlibstatic.vcxproj", symlinkTarget, { type: "file" });
   console.info(`Created symlink ${symlinkTarget}`);
 }
 
