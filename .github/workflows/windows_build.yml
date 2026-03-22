@@ -73,11 +73,13 @@ jobs:
         git clone https://github.com/MediaArea/ZenLib.git
 
     - name: Build MediaInfoLib
+      env:
+        CL: /D_CRT_SECURE_NO_WARNINGS
       run: |
         cd ..
         git clone -b ${{ env.MEDIA_INFO_LIB_VERSION }} --depth 1 https://github.com/MediaArea/MediaInfoLib.git
         cd MediaInfoLib\Project\MSVC2022
-        msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64 /p:DisableSpecificWarnings=4996
+        msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
 
     - name: Copy DLLs
       run: |
