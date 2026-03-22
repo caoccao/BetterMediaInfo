@@ -123,7 +123,6 @@ copy zconf.h ..\
 * Build MediaInfoLib in Visual Studio 2022.
 
 ```sh
-set CL=/D_CRT_SECURE_NO_WARNINGS
 cd MediaInfoLib\Project\MSVC2022
 msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
 ```

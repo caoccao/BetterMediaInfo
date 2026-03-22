@@ -46,7 +46,7 @@ jobs:
         toolchain: stable
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v3
+      uses: microsoft/setup-msbuild@v2
 
     - name: Setup CMake
       uses: jwlawson/actions-setup-cmake@v2
@@ -73,8 +73,6 @@ jobs:
         git clone https://github.com/MediaArea/ZenLib.git
 
     - name: Build MediaInfoLib
-      env:
-        CL: /D_CRT_SECURE_NO_WARNINGS
       run: |
         cd ..
         git clone -b ${{ env.MEDIA_INFO_LIB_VERSION }} --depth 1 https://github.com/MediaArea/MediaInfoLib.git
