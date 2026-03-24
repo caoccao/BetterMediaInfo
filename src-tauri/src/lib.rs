@@ -96,6 +96,7 @@ pub fn run() {
     .plugin(tauri_plugin_cli::init())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_clipboard_manager::init())
+    .plugin(tauri_plugin_shell::init())
     .setup(|app| {
       let window = app.get_webview_window("main").unwrap();
       let _ = window.set_title("BetterMediaInfo v0.9.0");
