@@ -497,7 +497,7 @@ export default function List() {
       ) : viewType === ViewType.Card ? (
         files.map((file) =>
           fileToPropertyMaps.has(file) ? (
-            <Card key={file} variant="outlined">
+            <Card key={file} variant="outlined" sx={{ mt: 1 }}>
               <CardHeader
                 title={<Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{file}</Typography>}
                 subheader={
@@ -585,7 +585,7 @@ export default function List() {
               </CardContent>
             </Card>
           ) : (
-            <Card key={file} variant="outlined" sx={{ mb: 1, display: 'flex', justifyContent: 'center', p: 2 }}>
+            <Card key={file} variant="outlined" sx={{ mt: 1, display: 'flex', justifyContent: 'center', p: 2 }}>
               <CircularProgress size={20} />
             </Card>
           )
