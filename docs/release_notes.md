@@ -4,6 +4,8 @@
 
 * Added configurable precision and unit settings for bit rate and size display
 * Added i18n support with 8 languages: English, German, Spanish, French, Japanese, Simplified Chinese, Traditional Chinese (Taiwan), Traditional Chinese (Hong Kong)
+* Added separate stream format settings for video, audio, and subtitles in configuration.
+* Improved UI responsiveness and overflow handling across layout, list, and details views.
 
 ## 0.8.0
 
