@@ -25,11 +25,26 @@ use std::sync::{OnceLock, RwLock};
 static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigStreamFormat {
+  #[serde(rename = "bitRate", default)]
+  pub bit_rate: ConfigBitRate,
+  #[serde(default)]
+  pub size: ConfigSize,
+}
+
+impl Default for ConfigStreamFormat {
+  fn default() -> Self {
+    Self {
+      bit_rate: Default::default(),
+      size: Default::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
   #[serde(rename = "appendOnFileDrop")]
   pub append_on_file_drop: bool,
-  #[serde(rename = "bitRate", default)]
-  pub bit_rate: ConfigBitRate,
   #[serde(rename = "displayMode")]
   pub display_mode: DisplayMode,
   #[serde(rename = "directoryMode")]
@@ -39,19 +54,24 @@ pub struct Config {
   #[serde(default)]
   pub language: Language,
   #[serde(default)]
-  pub size: ConfigSize,
+  pub video: ConfigStreamFormat,
+  #[serde(default)]
+  pub audio: ConfigStreamFormat,
+  #[serde(default)]
+  pub subtitle: ConfigStreamFormat,
 }
 
 impl Default for Config {
   fn default() -> Self {
     Self {
       append_on_file_drop: true,
-      bit_rate: Default::default(),
       display_mode: Default::default(),
       directory_mode: Default::default(),
       file_extensions: Default::default(),
       language: Default::default(),
-      size: Default::default(),
+      video: Default::default(),
+      audio: Default::default(),
+      subtitle: Default::default(),
     }
   }
 }

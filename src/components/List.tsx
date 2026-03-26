@@ -96,31 +96,37 @@ function createPropertyDef(
 
 type Formatter = (value: any, rowData: Record<string, string>, rowIndex: number) => string;
 
-function createBitRateFormatter(config: Protocol.Config | null): Formatter {
+function createBitRateFormatter(streamFormat: Protocol.ConfigStreamFormat | undefined): Formatter {
   return (value, _rowData, _rowIndex) => {
-    const precision = config?.bitRate?.precision ?? Protocol.FormatPrecision.Two;
-    const unit = config?.bitRate?.unit ?? Protocol.FormatUnit.KMGT;
+    const precision = streamFormat?.bitRate?.precision ?? Protocol.FormatPrecision.Two;
+    const unit = streamFormat?.bitRate?.unit ?? Protocol.FormatUnit.KMGT;
     return transformBitRate(value, precision, unit);
   };
 }
 
-function createSizeFormatter(config: Protocol.Config | null): Formatter {
+function createSizeFormatter(streamFormat: Protocol.ConfigStreamFormat | undefined): Formatter {
   return (value, _rowData, _rowIndex) => {
-    const precision = config?.size?.precision ?? Protocol.FormatPrecision.Two;
-    const unit = config?.size?.unit ?? Protocol.FormatUnit.KMGT;
+    const precision = streamFormat?.size?.precision ?? Protocol.FormatPrecision.Two;
+    const unit = streamFormat?.size?.unit ?? Protocol.FormatUnit.KMGT;
     return transformSize(value, precision, unit);
   };
 }
 
 function buildCommonPropertiesMap(
-  bitRateFormatter: Formatter,
-  sizeFormatter: Formatter,
+  config: Protocol.Config | null,
   t: TFunction,
 ): Map<Protocol.StreamKind, PropertyDefinition[]> {
+  const videoBitRateFormatter = createBitRateFormatter(config?.video);
+  const videoSizeFormatter = createSizeFormatter(config?.video);
+  const audioBitRateFormatter = createBitRateFormatter(config?.audio);
+  const audioSizeFormatter = createSizeFormatter(config?.audio);
+  const subtitleBitRateFormatter = createBitRateFormatter(config?.subtitle);
+  const subtitleSizeFormatter = createSizeFormatter(config?.subtitle);
+  // General uses video format settings for file size
   const general: PropertyDefinition[] = [
     { ...createPropertyDef('CompleteName'), header: t('list.header.filePath'), inListView: true },
     { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('FileSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('FileSize', videoSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
     { ...createPropertyDef('Duration', transformDuration, t('list.header.duration')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
     { ...createPropertyDef('Time', transformTime, t('list.header.time')), orderByType: OrderByType.None, align: 'right', virtual: true, inCardView: true, inListView: true },
     { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
@@ -144,8 +150,8 @@ function buildCommonPropertiesMap(
     { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
     { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.depth'), inCardView: true, inListView: true },
     { ...createPropertyDef('FrameRate', transformFPS, t('list.header.fps')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('BitRate', bitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', videoBitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', videoSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
     { ...createPropertyDef('Width') },
     { ...createPropertyDef('Height') },
   ];
@@ -161,8 +167,8 @@ function buildCommonPropertiesMap(
     { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
     { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
     { ...createPropertyDef('BitRate_Mode'), header: t('list.header.mode'), inCardView: true, inListView: true },
-    { ...createPropertyDef('BitRate', bitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', audioBitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', audioSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
   ];
 
   const text: PropertyDefinition[] = [
@@ -172,8 +178,8 @@ function buildCommonPropertiesMap(
     { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
     { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
     { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
-    { ...createPropertyDef('BitRate', bitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', sizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('BitRate', subtitleBitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
+    { ...createPropertyDef('StreamSize', subtitleSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
   ];
 
   return new Map<Protocol.StreamKind, PropertyDefinition[]>([
@@ -217,7 +223,7 @@ export default function List() {
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
 
   const commonPropertiesMap = useMemo(
-    () => buildCommonPropertiesMap(createBitRateFormatter(config), createSizeFormatter(config), t),
+    () => buildCommonPropertiesMap(config, t),
     [config, t]
   );
 

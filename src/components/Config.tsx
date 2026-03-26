@@ -25,6 +25,8 @@ import {
   Select,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -32,14 +34,14 @@ import {
 } from '@mui/material';
 import {
   BrightnessAuto as AutoIcon,
+  ClosedCaption as SubtitleIcon,
   DarkMode as DarkIcon,
   FolderOpen as FolderIcon,
   LightMode as LightIcon,
   MusicNote as AudioIcon,
   Palette as AppearanceIcon,
   Save as SaveIcon,
-  Speed as BitRateIcon,
-  Storage as SizeIcon,
+  Tune as FormatIcon,
   VideoFile as VideoIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +49,36 @@ import * as Protocol from '../lib/protocol';
 import { setConfig as saveConfig } from '../lib/service';
 import { useAppStore } from '../lib/store';
 import { changeLanguage } from '../i18n';
+
+interface StreamFormatState {
+  bitRatePrecision: Protocol.FormatPrecision;
+  bitRateUnit: Protocol.FormatUnit;
+  sizePrecision: Protocol.FormatPrecision;
+  sizeUnit: Protocol.FormatUnit;
+}
+
+const defaultStreamFormat: StreamFormatState = {
+  bitRatePrecision: Protocol.FormatPrecision.Two,
+  bitRateUnit: Protocol.FormatUnit.KMGT,
+  sizePrecision: Protocol.FormatPrecision.Two,
+  sizeUnit: Protocol.FormatUnit.KMGT,
+};
+
+function initStreamFormat(sf: Protocol.ConfigStreamFormat | undefined): StreamFormatState {
+  return {
+    bitRatePrecision: sf?.bitRate?.precision ?? Protocol.FormatPrecision.Two,
+    bitRateUnit: sf?.bitRate?.unit ?? Protocol.FormatUnit.KMGT,
+    sizePrecision: sf?.size?.precision ?? Protocol.FormatPrecision.Two,
+    sizeUnit: sf?.size?.unit ?? Protocol.FormatUnit.KMGT,
+  };
+}
+
+function toConfigStreamFormat(s: StreamFormatState): Protocol.ConfigStreamFormat {
+  return {
+    bitRate: { precision: s.bitRatePrecision, unit: s.bitRateUnit },
+    size: { precision: s.sizePrecision, unit: s.sizeUnit },
+  };
+}
 
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
@@ -78,21 +110,92 @@ function SettingRow({ label, children }: { label: string; children: React.ReactN
   );
 }
 
+function StreamFormatPanel({
+  state,
+  onChange,
+  bitRateLabel,
+  sizeLabel,
+  precisionLabel,
+  unitLabel,
+}: {
+  state: StreamFormatState;
+  onChange: (next: StreamFormatState) => void;
+  bitRateLabel: string;
+  sizeLabel: string;
+  precisionLabel: string;
+  unitLabel: string;
+}) {
+  return (
+    <Stack spacing={2}>
+      <Box>
+        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>{bitRateLabel}</Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">{precisionLabel}</Typography>
+            <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+              <Select
+                value={state.bitRatePrecision}
+                onChange={(e) => onChange({ ...state, bitRatePrecision: e.target.value as Protocol.FormatPrecision })}
+              >
+                {Protocol.getFormatPrecisions().map((p) => (
+                  <MenuItem key={p} value={p}>{Protocol.getFormatPrecisionLabel(p)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">{unitLabel}</Typography>
+            <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+              <Select
+                value={state.bitRateUnit}
+                onChange={(e) => onChange({ ...state, bitRateUnit: e.target.value as Protocol.FormatUnit })}
+              >
+                {Protocol.getFormatUnits().map((u) => (
+                  <MenuItem key={u} value={u}>{Protocol.getFormatUnitLabel(u)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>{sizeLabel}</Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">{precisionLabel}</Typography>
+            <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+              <Select
+                value={state.sizePrecision}
+                onChange={(e) => onChange({ ...state, sizePrecision: e.target.value as Protocol.FormatPrecision })}
+              >
+                {Protocol.getFormatPrecisions().map((p) => (
+                  <MenuItem key={p} value={p}>{Protocol.getFormatPrecisionLabel(p)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">{unitLabel}</Typography>
+            <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+              <Select
+                value={state.sizeUnit}
+                onChange={(e) => onChange({ ...state, sizeUnit: e.target.value as Protocol.FormatUnit })}
+              >
+                {Protocol.getFormatUnits().map((u) => (
+                  <MenuItem key={u} value={u}>{Protocol.getFormatUnitLabel(u)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Box>
+    </Stack>
+  );
+}
+
 export default function Config() {
   const { t } = useTranslation();
   const [appendOnFileDrop, setAppendOnFileDrop] = useState(true);
-  const [bitRatePrecision, setBitRatePrecision] = useState<Protocol.FormatPrecision>(
-    Protocol.FormatPrecision.Two
-  );
-  const [bitRateUnit, setBitRateUnit] = useState<Protocol.FormatUnit>(
-    Protocol.FormatUnit.KMGT
-  );
-  const [sizePrecision, setSizePrecision] = useState<Protocol.FormatPrecision>(
-    Protocol.FormatPrecision.Two
-  );
-  const [sizeUnit, setSizeUnit] = useState<Protocol.FormatUnit>(
-    Protocol.FormatUnit.KMGT
-  );
   const [displayMode, setDisplayMode] = useState<Protocol.DisplayMode>(Protocol.DisplayMode.Auto);
   const [language, setLanguage] = useState<Protocol.Language>(Protocol.Language.EnUS);
   const [directoryMode, setDirectoryMode] = useState<Protocol.ConfigDirectoryMode>(
@@ -101,6 +204,10 @@ export default function Config() {
   const [fileExtensionsAudio, setFileExtensionsAudio] = useState('');
   const [fileExtensionsImage, setFileExtensionsImage] = useState('');
   const [fileExtensionsVideo, setFileExtensionsVideo] = useState('');
+  const [videoFormat, setVideoFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
+  const [audioFormat, setAudioFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
+  const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
+  const [formatTab, setFormatTab] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
@@ -114,16 +221,15 @@ export default function Config() {
     if (config && config.fileExtensions && !isInitializedRef.current) {
       isInitializedRef.current = true;
       setAppendOnFileDrop(config.appendOnFileDrop);
-      setBitRatePrecision(config.bitRate?.precision ?? Protocol.FormatPrecision.Two);
-      setBitRateUnit(config.bitRate?.unit ?? Protocol.FormatUnit.KMGT);
-      setSizePrecision(config.size?.precision ?? Protocol.FormatPrecision.Two);
-      setSizeUnit(config.size?.unit ?? Protocol.FormatUnit.KMGT);
       setDisplayMode(config.displayMode);
       setLanguage(config.language ?? Protocol.Language.EnUS);
       setDirectoryMode(config.directoryMode);
       setFileExtensionsAudio(config.fileExtensions.audio?.join(', ') ?? '');
       setFileExtensionsImage(config.fileExtensions.image?.join(', ') ?? '');
       setFileExtensionsVideo(config.fileExtensions.video?.join(', ') ?? '');
+      setVideoFormat(initStreamFormat(config.video));
+      setAudioFormat(initStreamFormat(config.audio));
+      setSubtitleFormat(initStreamFormat(config.subtitle));
     }
   }, [config]);
 
@@ -160,10 +266,6 @@ export default function Config() {
 
   const createConfig = (): Protocol.Config => ({
     appendOnFileDrop,
-    bitRate: {
-      precision: bitRatePrecision,
-      unit: bitRateUnit,
-    },
     displayMode,
     directoryMode,
     fileExtensions: {
@@ -172,10 +274,9 @@ export default function Config() {
       video: convertFileExtensions(fileExtensionsVideo),
     },
     language,
-    size: {
-      precision: sizePrecision,
-      unit: sizeUnit,
-    },
+    video: toConfigStreamFormat(videoFormat),
+    audio: toConfigStreamFormat(audioFormat),
+    subtitle: toConfigStreamFormat(subtitleFormat),
   });
 
   const handleSave = async () => {
@@ -210,26 +311,45 @@ export default function Config() {
     }
   }, [language, config, setStoreConfig]);
 
-  // Update store immediately when bitRate changes
+  // Update store immediately when stream format changes
   useEffect(() => {
-    if (config && isInitializedRef.current &&
-      (bitRatePrecision !== config.bitRate?.precision || bitRateUnit !== config.bitRate?.unit)) {
-      setStoreConfig({ ...config, bitRate: { precision: bitRatePrecision, unit: bitRateUnit } });
+    if (!config || !isInitializedRef.current) return;
+    const videoChanged =
+      videoFormat.bitRatePrecision !== config.video?.bitRate?.precision ||
+      videoFormat.bitRateUnit !== config.video?.bitRate?.unit ||
+      videoFormat.sizePrecision !== config.video?.size?.precision ||
+      videoFormat.sizeUnit !== config.video?.size?.unit;
+    const audioChanged =
+      audioFormat.bitRatePrecision !== config.audio?.bitRate?.precision ||
+      audioFormat.bitRateUnit !== config.audio?.bitRate?.unit ||
+      audioFormat.sizePrecision !== config.audio?.size?.precision ||
+      audioFormat.sizeUnit !== config.audio?.size?.unit;
+    const subtitleChanged =
+      subtitleFormat.bitRatePrecision !== config.subtitle?.bitRate?.precision ||
+      subtitleFormat.bitRateUnit !== config.subtitle?.bitRate?.unit ||
+      subtitleFormat.sizePrecision !== config.subtitle?.size?.precision ||
+      subtitleFormat.sizeUnit !== config.subtitle?.size?.unit;
+    if (videoChanged || audioChanged || subtitleChanged) {
+      setStoreConfig({
+        ...config,
+        video: toConfigStreamFormat(videoFormat),
+        audio: toConfigStreamFormat(audioFormat),
+        subtitle: toConfigStreamFormat(subtitleFormat),
+      });
     }
-  }, [bitRatePrecision, bitRateUnit, config, setStoreConfig]);
+  }, [videoFormat, audioFormat, subtitleFormat, config, setStoreConfig]);
 
-  // Update store immediately when size changes
-  useEffect(() => {
-    if (config && isInitializedRef.current &&
-      (sizePrecision !== config.size?.precision || sizeUnit !== config.size?.unit)) {
-      setStoreConfig({ ...config, size: { precision: sizePrecision, unit: sizeUnit } });
-    }
-  }, [sizePrecision, sizeUnit, config, setStoreConfig]);
+  const handleStreamFormatChange = (
+    setter: React.Dispatch<React.SetStateAction<StreamFormatState>>
+  ) => (next: StreamFormatState) => {
+    setter(next);
+    handleChange();
+  };
 
   return (
     <Box sx={{ maxWidth: 640, mx: 'auto', py: 2, px: 1 }}>
       <Stack spacing={2}>
-        {/* General Section */}
+        {/* Appearance Section */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
           <SectionHeader icon={<AppearanceIcon fontSize="small" />} title={t('config.appearance')} />
           <SettingRow label={t('config.appearance')}>
@@ -358,97 +478,63 @@ export default function Config() {
           </Box>
         </Paper>
 
-        {/* Formatting Section */}
+        {/* Formatting Section - Tabbed by stream type */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<BitRateIcon fontSize="small" />} title={t('config.bitRate')} />
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('config.precision')}
-              </Typography>
-              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                <Select
-                  value={bitRatePrecision}
-                  onChange={(e) => {
-                    setBitRatePrecision(e.target.value as Protocol.FormatPrecision);
-                    handleChange();
-                  }}
-                >
-                  {Protocol.getFormatPrecisions().map((p) => (
-                    <MenuItem key={p} value={p}>
-                      {Protocol.getFormatPrecisionLabel(p)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('config.unit')}
-              </Typography>
-              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                <Select
-                  value={bitRateUnit}
-                  onChange={(e) => {
-                    setBitRateUnit(e.target.value as Protocol.FormatUnit);
-                    handleChange();
-                  }}
-                >
-                  {Protocol.getFormatUnits().map((u) => (
-                    <MenuItem key={u} value={u}>
-                      {Protocol.getFormatUnitLabel(u)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-        </Paper>
-
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<SizeIcon fontSize="small" />} title={t('config.size')} />
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('config.precision')}
-              </Typography>
-              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                <Select
-                  value={sizePrecision}
-                  onChange={(e) => {
-                    setSizePrecision(e.target.value as Protocol.FormatPrecision);
-                    handleChange();
-                  }}
-                >
-                  {Protocol.getFormatPrecisions().map((p) => (
-                    <MenuItem key={p} value={p}>
-                      {Protocol.getFormatPrecisionLabel(p)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('config.unit')}
-              </Typography>
-              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                <Select
-                  value={sizeUnit}
-                  onChange={(e) => {
-                    setSizeUnit(e.target.value as Protocol.FormatUnit);
-                    handleChange();
-                  }}
-                >
-                  {Protocol.getFormatUnits().map((u) => (
-                    <MenuItem key={u} value={u}>
-                      {Protocol.getFormatUnitLabel(u)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
+          <SectionHeader icon={<FormatIcon fontSize="small" />} title={t('config.formatting')} />
+          <Tabs
+            value={formatTab}
+            onChange={(_e, v) => setFormatTab(v)}
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab
+              icon={<VideoIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              label={t('config.video')}
+              sx={{ minHeight: 36, textTransform: 'none' }}
+            />
+            <Tab
+              icon={<AudioIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              label={t('config.audio')}
+              sx={{ minHeight: 36, textTransform: 'none' }}
+            />
+            <Tab
+              icon={<SubtitleIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              label={t('config.subtitle')}
+              sx={{ minHeight: 36, textTransform: 'none' }}
+            />
+          </Tabs>
+          {formatTab === 0 && (
+            <StreamFormatPanel
+              state={videoFormat}
+              onChange={handleStreamFormatChange(setVideoFormat)}
+              bitRateLabel={t('config.bitRate')}
+              sizeLabel={t('config.size')}
+              precisionLabel={t('config.precision')}
+              unitLabel={t('config.unit')}
+            />
+          )}
+          {formatTab === 1 && (
+            <StreamFormatPanel
+              state={audioFormat}
+              onChange={handleStreamFormatChange(setAudioFormat)}
+              bitRateLabel={t('config.bitRate')}
+              sizeLabel={t('config.size')}
+              precisionLabel={t('config.precision')}
+              unitLabel={t('config.unit')}
+            />
+          )}
+          {formatTab === 2 && (
+            <StreamFormatPanel
+              state={subtitleFormat}
+              onChange={handleStreamFormatChange(setSubtitleFormat)}
+              bitRateLabel={t('config.bitRate')}
+              sizeLabel={t('config.size')}
+              precisionLabel={t('config.precision')}
+              unitLabel={t('config.unit')}
+            />
+          )}
         </Paper>
 
         {/* Save Button */}

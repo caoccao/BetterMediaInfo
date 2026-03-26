@@ -57,14 +57,20 @@ export enum Language {
   ZhTW = "zh-TW",
 }
 
+export interface ConfigStreamFormat {
+  bitRate: ConfigBitRate;
+  size: ConfigSize;
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
-  bitRate: ConfigBitRate;
   displayMode: DisplayMode;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
   language: Language;
-  size: ConfigSize;
+  video: ConfigStreamFormat;
+  audio: ConfigStreamFormat;
+  subtitle: ConfigStreamFormat;
 }
 
 export enum DisplayMode {
