@@ -344,18 +344,28 @@ export default function MainContent() {
         </Tabs>
       </Box>
 
-      <Box sx={{ p: 1, border: 1, borderColor: 'divider', borderTop: 0, borderRadius: '0 0 4px 4px', width: '100%', overflowX: 'auto', flex: 1, minHeight: 0 }}>
-        {tabControls.map((control) => (
-          <Box
-            key={`content-${control.type}-${control.value}`}
-            sx={{ display: control.index === tabIndex ? 'block' : 'none' }}
-          >
-            {control.type === Protocol.TabType.About && <About />}
-            {control.type === Protocol.TabType.Config && <Config />}
-            {control.type === Protocol.TabType.List && <List />}
-            {control.type === Protocol.TabType.Details && <Details file={control.value ?? ''} />}
-          </Box>
-        ))}
+      <Box sx={{ p: 1, border: 1, borderColor: 'divider', borderTop: 0, borderRadius: '0 0 4px 4px', width: '100%', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {tabControls.map((control) => {
+          const isVisible = control.index === tabIndex;
+          const ownsScroll = control.type === Protocol.TabType.Details || control.type === Protocol.TabType.List;
+          return (
+            <Box
+              key={`content-${control.type}-${control.value}`}
+              sx={{
+                display: isVisible ? 'flex' : 'none',
+                flexDirection: 'column',
+                flex: 1,
+                minHeight: 0,
+                ...(!ownsScroll && { overflow: 'auto' }),
+              }}
+            >
+              {control.type === Protocol.TabType.About && <About />}
+              {control.type === Protocol.TabType.Config && <Config />}
+              {control.type === Protocol.TabType.List && <List />}
+              {control.type === Protocol.TabType.Details && <Details file={control.value ?? ''} />}
+            </Box>
+          );
+        })}
       </Box>
 
       {/* Notification Dialog */}

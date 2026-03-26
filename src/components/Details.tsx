@@ -148,8 +148,9 @@ export default function Details({ file }: DetailsProps) {
   const buttonSx = { width: 28, height: 28 };
 
   return (
-    <Box sx={{ display: 'grid', gap: 1 }}>
-      <Card variant="outlined">
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, gap: 1 }}>
+      {/* Fixed top card */}
+      <Card variant="outlined" sx={{ flexShrink: 0 }}>
         <CardHeader
           title={<Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{file}</Typography>}
           action={
@@ -224,70 +225,73 @@ export default function Details({ file }: DetailsProps) {
         </CardContent>
       </Card>
 
-      {allProperties.length === 0 ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress size={30} />
-        </Box>
-      ) : filteredAllProperties.length === 0 ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <img src="images/empty.gif" alt={t('details.altNotFound')} />
-        </Box>
-      ) : (
-        filteredAllProperties.map((properties) =>
-          streamGroup.includes(properties.stream) ? (
-            <Card key={`${properties.stream}-${properties.num}`} variant="outlined">
-              <CardHeader
-                title={
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {properties.stream} ({properties.num + 1})
-                  </Typography>
-                }
-                sx={{ pb: 0, pt: 1 }}
-              />
-              <CardContent sx={{ pt: 0.5 }}>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell
-                          sx={{
-                            bgcolor: `${STREAM_KIND_COLORS[properties.stream]}20`,
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          {t('details.property')}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            bgcolor: `${STREAM_KIND_COLORS[properties.stream]}20`,
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          {t('details.value')}
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {Object.entries(properties.propertyMap)
-                        .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([property, value]) => (
-                          <TableRow key={property}>
-                            <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                              {property}
-                            </TableCell>
-                            <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                              {value}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          ) : null
-        )
-      )}
+      {/* Scrollable content area */}
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+        {allProperties.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress size={30} />
+          </Box>
+        ) : filteredAllProperties.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <img src="images/empty.gif" alt={t('details.altNotFound')} />
+          </Box>
+        ) : (
+          filteredAllProperties.map((properties) =>
+            streamGroup.includes(properties.stream) ? (
+              <Card key={`${properties.stream}-${properties.num}`} variant="outlined" sx={{ mt: 1 }}>
+                <CardHeader
+                  title={
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      {properties.stream} ({properties.num + 1})
+                    </Typography>
+                  }
+                  sx={{ pb: 0, pt: 1 }}
+                />
+                <CardContent sx={{ pt: 0.5 }}>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell
+                            sx={{
+                              bgcolor: `${STREAM_KIND_COLORS[properties.stream]}20`,
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            {t('details.property')}
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              bgcolor: `${STREAM_KIND_COLORS[properties.stream]}20`,
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            {t('details.value')}
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {Object.entries(properties.propertyMap)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([property, value]) => (
+                            <TableRow key={property}>
+                              <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                                {property}
+                              </TableCell>
+                              <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                {value}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
+            ) : null
+          )
+        )}
+      </Box>
     </Box>
   );
 }

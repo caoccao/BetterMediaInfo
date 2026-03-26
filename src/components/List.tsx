@@ -479,15 +479,17 @@ export default function List() {
   }
 
   return (
-    <Box sx={{ display: 'grid', gap: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, gap: 1 }}>
       <TextField
         placeholder={t('list.filter')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         size="small"
         fullWidth
+        sx={{ flexShrink: 0 }}
       />
 
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
       {fileToPropertyMaps.size === 0 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
           <img src="images/empty.png" alt={t('list.altNotMediaFiles')} />
@@ -650,6 +652,7 @@ export default function List() {
           />
         </Box>
       )}
+      </Box>
     </Box>
   );
 }

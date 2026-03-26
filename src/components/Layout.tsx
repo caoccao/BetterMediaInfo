@@ -22,21 +22,20 @@ import Footer from './Footer';
 
 export default function Layout() {
   return (
-    <Box sx={{ display: 'grid', px: 1, minHeight: '100vh', gridTemplateRows: 'auto 1fr auto' }}>
+    <Box sx={{ display: 'grid', px: 1, height: '100vh', overflow: 'hidden', gridTemplateRows: 'auto 1fr auto' }}>
       <Box
         component="nav"
         sx={{
-          position: 'sticky',
-          top: 0,
+          flexShrink: 0,
           zIndex: 1000,
           backgroundColor: 'background.default',
         }}
       >
         <Toolbar />
       </Box>
-      <main>
+      <Box component="main" sx={{ overflow: 'hidden', minHeight: 0 }}>
         <MainContent />
-      </main>
+      </Box>
       <footer>
         <Footer />
       </footer>

@@ -347,7 +347,7 @@ export default function Config() {
   };
 
   return (
-    <Box sx={{ maxWidth: 640, mx: 'auto', py: 2, px: 1 }}>
+    <Box sx={{ width: '100%', maxWidth: 640, mx: 'auto', py: 2, px: 1 }}>
       <Stack spacing={2}>
         {/* Appearance Section */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
