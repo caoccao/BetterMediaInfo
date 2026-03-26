@@ -6,6 +6,7 @@
 * Added i18n support with 8 languages: English, German, Spanish, French, Japanese, Simplified Chinese, Traditional Chinese (Taiwan), Traditional Chinese (Hong Kong)
 * Added separate stream format settings for video, audio, and subtitles in configuration.
 * Improved UI responsiveness and overflow handling across layout, list, and details views.
+* Added configurable UI theme selection with 20 built-in themes and immediate preview in Settings.
 
 ## 0.8.0
 

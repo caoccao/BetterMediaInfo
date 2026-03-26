@@ -47,6 +47,8 @@ pub struct Config {
   pub append_on_file_drop: bool,
   #[serde(rename = "displayMode")]
   pub display_mode: DisplayMode,
+  #[serde(default)]
+  pub theme: Theme,
   #[serde(rename = "directoryMode")]
   pub directory_mode: ConfigDirectoryMode,
   #[serde(rename = "fileExtensions")]
@@ -66,6 +68,7 @@ impl Default for Config {
     Self {
       append_on_file_drop: true,
       display_mode: Default::default(),
+      theme: Default::default(),
       directory_mode: Default::default(),
       file_extensions: Default::default(),
       language: Default::default(),
@@ -212,6 +215,37 @@ pub enum DisplayMode {
 impl Default for DisplayMode {
   fn default() -> Self {
     Self::Auto
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum Theme {
+  #[serde(alias = "Default")]
+  Ocean,
+  Aqua,
+  Sky,
+  Arctic,
+  Glacier,
+  Mist,
+  Slate,
+  Charcoal,
+  Midnight,
+  Indigo,
+  Violet,
+  Lavender,
+  Rose,
+  Blush,
+  Coral,
+  Sunset,
+  Amber,
+  Sand,
+  Forest,
+  Emerald,
+}
+
+impl Default for Theme {
+  fn default() -> Self {
+    Self::Ocean
   }
 }
 

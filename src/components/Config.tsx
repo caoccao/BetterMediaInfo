@@ -197,6 +197,7 @@ export default function Config() {
   const { t } = useTranslation();
   const [appendOnFileDrop, setAppendOnFileDrop] = useState(true);
   const [displayMode, setDisplayMode] = useState<Protocol.DisplayMode>(Protocol.DisplayMode.Auto);
+  const [theme, setTheme] = useState<Protocol.Theme>(Protocol.Theme.Ocean);
   const [language, setLanguage] = useState<Protocol.Language>(Protocol.Language.EnUS);
   const [directoryMode, setDirectoryMode] = useState<Protocol.ConfigDirectoryMode>(
     Protocol.ConfigDirectoryMode.All
@@ -222,6 +223,7 @@ export default function Config() {
       isInitializedRef.current = true;
       setAppendOnFileDrop(config.appendOnFileDrop);
       setDisplayMode(config.displayMode);
+      setTheme(config.theme ?? Protocol.Theme.Ocean);
       setLanguage(config.language ?? Protocol.Language.EnUS);
       setDirectoryMode(config.directoryMode);
       setFileExtensionsAudio(config.fileExtensions.audio?.join(', ') ?? '');
@@ -267,6 +269,7 @@ export default function Config() {
   const createConfig = (): Protocol.Config => ({
     appendOnFileDrop,
     displayMode,
+    theme,
     directoryMode,
     fileExtensions: {
       audio: convertFileExtensions(fileExtensionsAudio),
@@ -296,20 +299,24 @@ export default function Config() {
     }
   };
 
-  // Update store immediately when displayMode changes (for instant theme switching)
+  // Update store immediately when appearance/language changes
   useEffect(() => {
-    if (config && isInitializedRef.current && displayMode !== config.displayMode) {
-      setStoreConfig({ ...config, displayMode });
+    if (!isInitializedRef.current || !config) return;
+    const currentTheme = config.theme ?? Protocol.Theme.Ocean;
+    const hasChanges =
+      displayMode !== config.displayMode ||
+      theme !== currentTheme ||
+      language !== config.language;
+    if (hasChanges) {
+      setStoreConfig({ ...config, displayMode, theme, language });
     }
-  }, [displayMode, config, setStoreConfig]);
+  }, [displayMode, theme, language, config, setStoreConfig]);
 
-  // Update store immediately when language changes
+  // Apply i18n language immediately
   useEffect(() => {
-    if (config && isInitializedRef.current && language !== config.language) {
-      changeLanguage(language);
-      setStoreConfig({ ...config, language });
-    }
-  }, [language, config, setStoreConfig]);
+    if (!isInitializedRef.current) return;
+    changeLanguage(language);
+  }, [language]);
 
   // Update store immediately when stream format changes
   useEffect(() => {
@@ -346,6 +353,8 @@ export default function Config() {
     handleChange();
   };
 
+  const getThemeDisplayLabel = (themeOption: Protocol.Theme): string => t(`config.theme${themeOption}`);
+
   return (
     <Box sx={{ width: '100%', maxWidth: 640, mx: 'auto', py: 2, px: 1 }}>
       <Stack spacing={2}>
@@ -377,6 +386,23 @@ export default function Config() {
                 <Typography variant="caption">{t('config.darkMode')}</Typography>
               </ToggleButton>
             </ToggleButtonGroup>
+          </SettingRow>
+          <SettingRow label={t('config.theme')}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <Select
+                value={theme}
+                onChange={(e) => {
+                  setTheme(e.target.value as Protocol.Theme);
+                  handleChange();
+                }}
+              >
+                {Protocol.getThemes().map((themeOption) => (
+                  <MenuItem key={themeOption} value={themeOption}>
+                    {getThemeDisplayLabel(themeOption)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </SettingRow>
           <SettingRow label={t('config.language')}>
             <FormControl size="small" sx={{ minWidth: 150 }}>

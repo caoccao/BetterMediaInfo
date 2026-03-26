@@ -65,6 +65,7 @@ export interface ConfigStreamFormat {
 export interface Config {
   appendOnFileDrop: boolean;
   displayMode: DisplayMode;
+  theme: Theme;
   directoryMode: ConfigDirectoryMode;
   fileExtensions: ConfigFileExtensions;
   language: Language;
@@ -77,6 +78,29 @@ export enum DisplayMode {
   Auto = "Auto",
   Light = "Light",
   Dark = "Dark",
+}
+
+export enum Theme {
+  Ocean = "Ocean",
+  Aqua = "Aqua",
+  Sky = "Sky",
+  Arctic = "Arctic",
+  Glacier = "Glacier",
+  Mist = "Mist",
+  Slate = "Slate",
+  Charcoal = "Charcoal",
+  Midnight = "Midnight",
+  Indigo = "Indigo",
+  Violet = "Violet",
+  Lavender = "Lavender",
+  Rose = "Rose",
+  Blush = "Blush",
+  Coral = "Coral",
+  Sunset = "Sunset",
+  Amber = "Amber",
+  Sand = "Sand",
+  Forest = "Forest",
+  Emerald = "Emerald",
 }
 
 export enum ConfigDirectoryMode {
@@ -254,6 +278,31 @@ export function getDisplayModes(): DisplayMode[] {
     DisplayMode.Auto,
     DisplayMode.Light,
     DisplayMode.Dark,
+  ];
+}
+
+export function getThemes(): Theme[] {
+  return [
+    Theme.Ocean,
+    Theme.Aqua,
+    Theme.Sky,
+    Theme.Arctic,
+    Theme.Glacier,
+    Theme.Mist,
+    Theme.Slate,
+    Theme.Charcoal,
+    Theme.Midnight,
+    Theme.Indigo,
+    Theme.Violet,
+    Theme.Lavender,
+    Theme.Rose,
+    Theme.Blush,
+    Theme.Coral,
+    Theme.Sunset,
+    Theme.Amber,
+    Theme.Sand,
+    Theme.Forest,
+    Theme.Emerald,
   ];
 }
 
