@@ -20,19 +20,63 @@ import {
   Box,
   Button,
   FormControl,
-  FormControlLabel,
   MenuItem,
-  Radio,
-  RadioGroup,
+  Paper,
   Select,
+  Stack,
+  Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import {
+  BrightnessAuto as AutoIcon,
+  DarkMode as DarkIcon,
+  FolderOpen as FolderIcon,
+  LightMode as LightIcon,
+  MusicNote as AudioIcon,
+  Palette as AppearanceIcon,
+  Save as SaveIcon,
+  Speed as BitRateIcon,
+  Storage as SizeIcon,
+  VideoFile as VideoIcon,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import { setConfig as saveConfig } from '../lib/service';
 import { useAppStore } from '../lib/store';
 import { changeLanguage } from '../i18n';
+
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+      <Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        {title}
+      </Typography>
+    </Box>
+  );
+}
+
+function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        py: 1,
+        '&:not(:last-child)': { borderBottom: 1, borderColor: 'divider' },
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Box>{children}</Box>
+    </Box>
+  );
+}
 
 export default function Config() {
   const { t } = useTranslation();
@@ -183,256 +227,244 @@ export default function Config() {
   }, [sizePrecision, sizeUnit, config, setStoreConfig]);
 
   return (
-    <Box sx={{ display: 'grid', gap: 2 }}>
-      <Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', pb: 1, borderBottom: 2, borderColor: 'success.main' }}>
-          {t('config.title')}
-        </Typography>
-      </Box>
-
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.appearance')}
-        </Typography>
-        <FormControl sx={{ mt: 1 }}>
-          <RadioGroup
-            row
-            value={displayMode}
-            onChange={(e) => {
-              setDisplayMode(e.target.value as Protocol.DisplayMode);
-              handleChange();
-            }}
-          >
-            <FormControlLabel
-              value={Protocol.DisplayMode.Auto}
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">{t('config.autoMode')}</Typography>}
-            />
-            <FormControlLabel
-              value={Protocol.DisplayMode.Light}
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">{t('config.lightMode')}</Typography>}
-            />
-            <FormControlLabel
-              value={Protocol.DisplayMode.Dark}
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">{t('config.darkMode')}</Typography>}
-            />
-          </RadioGroup>
-        </FormControl>
-      </Box>
-
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.language')}
-        </Typography>
-        <FormControl size="small" sx={{ mt: 1, minWidth: 150 }}>
-          <Select
-            value={language}
-            onChange={(e) => {
-              setLanguage(e.target.value as Protocol.Language);
-              handleChange();
-            }}
-          >
-            {Protocol.getLanguages().map((lang) => (
-              <MenuItem key={lang} value={lang}>
-                {Protocol.getLanguageLabel(lang)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.appendOnFileDrop')}
-        </Typography>
-        <FormControl sx={{ mt: 1 }}>
-          <RadioGroup
-            row
-            value={appendOnFileDrop.toString()}
-            onChange={(e) => {
-              setAppendOnFileDrop(e.target.value === 'true');
-              handleChange();
-            }}
-          >
-            <FormControlLabel
-              value="true"
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">{t('config.append')}</Typography>}
-            />
-            <FormControlLabel
-              value="false"
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">{t('config.doNotAppend')}</Typography>}
-            />
-          </RadioGroup>
-        </FormControl>
-      </Box>
-
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.directoryMode')}
-        </Typography>
-        <FormControl size="small" sx={{ mt: 1, minWidth: 120 }}>
-          <Select
-            value={directoryMode}
-            onChange={(e) => {
-              setDirectoryMode(e.target.value as Protocol.ConfigDirectoryMode);
-              handleChange();
-            }}
-          >
-            {Protocol.getConfigDirectoryModes().map((mode) => (
-              <MenuItem key={mode} value={mode}>
-                {mode}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.fileExtensions')}
-        </Typography>
-        <Box sx={{ display: 'grid', gap: 1.5, mt: 1 }}>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.audioFileExtensions')}
-            </Typography>
-            <TextField
-              value={fileExtensionsAudio}
-              onChange={(e) => handleFileExtensionChange(setFileExtensionsAudio, e.target.value)}
+    <Box sx={{ maxWidth: 640, mx: 'auto', py: 2, px: 1 }}>
+      <Stack spacing={2}>
+        {/* General Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<AppearanceIcon fontSize="small" />} title={t('config.appearance')} />
+          <SettingRow label={t('config.appearance')}>
+            <ToggleButtonGroup
+              value={displayMode}
+              exclusive
+              onChange={(_e, value) => {
+                if (value !== null) {
+                  setDisplayMode(value as Protocol.DisplayMode);
+                  handleChange();
+                }
+              }}
               size="small"
-              fullWidth
-            />
-          </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.imageFileExtensions')}
-            </Typography>
-            <TextField
-              value={fileExtensionsImage}
-              onChange={(e) => handleFileExtensionChange(setFileExtensionsImage, e.target.value)}
+            >
+              <ToggleButton value={Protocol.DisplayMode.Auto} sx={{ px: 1.5, gap: 0.5 }}>
+                <AutoIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption">{t('config.autoMode')}</Typography>
+              </ToggleButton>
+              <ToggleButton value={Protocol.DisplayMode.Light} sx={{ px: 1.5, gap: 0.5 }}>
+                <LightIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption">{t('config.lightMode')}</Typography>
+              </ToggleButton>
+              <ToggleButton value={Protocol.DisplayMode.Dark} sx={{ px: 1.5, gap: 0.5 }}>
+                <DarkIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption">{t('config.darkMode')}</Typography>
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </SettingRow>
+          <SettingRow label={t('config.language')}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <Select
+                value={language}
+                onChange={(e) => {
+                  setLanguage(e.target.value as Protocol.Language);
+                  handleChange();
+                }}
+              >
+                {Protocol.getLanguages().map((lang) => (
+                  <MenuItem key={lang} value={lang}>
+                    {Protocol.getLanguageLabel(lang)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </SettingRow>
+        </Paper>
+
+        {/* File Handling Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<FolderIcon fontSize="small" />} title={t('config.fileExtensions')} />
+          <SettingRow label={t('config.appendOnFileDrop')}>
+            <Switch
+              checked={appendOnFileDrop}
+              onChange={(e) => {
+                setAppendOnFileDrop(e.target.checked);
+                handleChange();
+              }}
               size="small"
-              fullWidth
             />
+          </SettingRow>
+          <SettingRow label={t('config.directoryMode')}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <Select
+                value={directoryMode}
+                onChange={(e) => {
+                  setDirectoryMode(e.target.value as Protocol.ConfigDirectoryMode);
+                  handleChange();
+                }}
+              >
+                {Protocol.getConfigDirectoryModes().map((mode) => (
+                  <MenuItem key={mode} value={mode}>
+                    {mode}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </SettingRow>
+          <Box sx={{ mt: 2 }}>
+            <Stack spacing={1.5}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                  <AudioIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {t('config.audioFileExtensions')}
+                  </Typography>
+                </Box>
+                <TextField
+                  value={fileExtensionsAudio}
+                  onChange={(e) => handleFileExtensionChange(setFileExtensionsAudio, e.target.value)}
+                  size="small"
+                  fullWidth
+                  placeholder="mp3, flac, wav, aac..."
+                />
+              </Box>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                  <VideoIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {t('config.videoFileExtensions')}
+                  </Typography>
+                </Box>
+                <TextField
+                  value={fileExtensionsVideo}
+                  onChange={(e) => handleFileExtensionChange(setFileExtensionsVideo, e.target.value)}
+                  size="small"
+                  fullWidth
+                  placeholder="mp4, mkv, avi, mov..."
+                />
+              </Box>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                  <AppearanceIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {t('config.imageFileExtensions')}
+                  </Typography>
+                </Box>
+                <TextField
+                  value={fileExtensionsImage}
+                  onChange={(e) => handleFileExtensionChange(setFileExtensionsImage, e.target.value)}
+                  size="small"
+                  fullWidth
+                  placeholder="jpg, png, gif, webp..."
+                />
+              </Box>
+            </Stack>
           </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.videoFileExtensions')}
-            </Typography>
-            <TextField
-              value={fileExtensionsVideo}
-              onChange={(e) => handleFileExtensionChange(setFileExtensionsVideo, e.target.value)}
-              size="small"
-              fullWidth
-            />
-          </Box>
-        </Box>
-      </Box>
+        </Paper>
 
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.bitRate')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.precision')}
-            </Typography>
-            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 100 }}>
-              <Select
-                value={bitRatePrecision}
-                onChange={(e) => {
-                  setBitRatePrecision(e.target.value as Protocol.FormatPrecision);
-                  handleChange();
-                }}
-              >
-                {Protocol.getFormatPrecisions().map((p) => (
-                  <MenuItem key={p} value={p}>
-                    {Protocol.getFormatPrecisionLabel(p)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+        {/* Formatting Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<BitRateIcon fontSize="small" />} title={t('config.bitRate')} />
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('config.precision')}
+              </Typography>
+              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                <Select
+                  value={bitRatePrecision}
+                  onChange={(e) => {
+                    setBitRatePrecision(e.target.value as Protocol.FormatPrecision);
+                    handleChange();
+                  }}
+                >
+                  {Protocol.getFormatPrecisions().map((p) => (
+                    <MenuItem key={p} value={p}>
+                      {Protocol.getFormatPrecisionLabel(p)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('config.unit')}
+              </Typography>
+              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                <Select
+                  value={bitRateUnit}
+                  onChange={(e) => {
+                    setBitRateUnit(e.target.value as Protocol.FormatUnit);
+                    handleChange();
+                  }}
+                >
+                  {Protocol.getFormatUnits().map((u) => (
+                    <MenuItem key={u} value={u}>
+                      {Protocol.getFormatUnitLabel(u)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
           </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.unit')}
-            </Typography>
-            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 120 }}>
-              <Select
-                value={bitRateUnit}
-                onChange={(e) => {
-                  setBitRateUnit(e.target.value as Protocol.FormatUnit);
-                  handleChange();
-                }}
-              >
-                {Protocol.getFormatUnits().map((u) => (
-                  <MenuItem key={u} value={u}>
-                    {Protocol.getFormatUnitLabel(u)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
-      </Box>
+        </Paper>
 
-      <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'medium', pb: 1, borderBottom: 1, borderColor: 'success.light' }}>
-          {t('config.size')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.precision')}
-            </Typography>
-            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 100 }}>
-              <Select
-                value={sizePrecision}
-                onChange={(e) => {
-                  setSizePrecision(e.target.value as Protocol.FormatPrecision);
-                  handleChange();
-                }}
-              >
-                {Protocol.getFormatPrecisions().map((p) => (
-                  <MenuItem key={p} value={p}>
-                    {Protocol.getFormatPrecisionLabel(p)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<SizeIcon fontSize="small" />} title={t('config.size')} />
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('config.precision')}
+              </Typography>
+              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                <Select
+                  value={sizePrecision}
+                  onChange={(e) => {
+                    setSizePrecision(e.target.value as Protocol.FormatPrecision);
+                    handleChange();
+                  }}
+                >
+                  {Protocol.getFormatPrecisions().map((p) => (
+                    <MenuItem key={p} value={p}>
+                      {Protocol.getFormatPrecisionLabel(p)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('config.unit')}
+              </Typography>
+              <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                <Select
+                  value={sizeUnit}
+                  onChange={(e) => {
+                    setSizeUnit(e.target.value as Protocol.FormatUnit);
+                    handleChange();
+                  }}
+                >
+                  {Protocol.getFormatUnits().map((u) => (
+                    <MenuItem key={u} value={u}>
+                      {Protocol.getFormatUnitLabel(u)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
           </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('config.unit')}
-            </Typography>
-            <FormControl size="small" sx={{ display: 'block', mt: 0.5, minWidth: 120 }}>
-              <Select
-                value={sizeUnit}
-                onChange={(e) => {
-                  setSizeUnit(e.target.value as Protocol.FormatUnit);
-                  handleChange();
-                }}
-              >
-                {Protocol.getFormatUnits().map((u) => (
-                  <MenuItem key={u} value={u}>
-                    {Protocol.getFormatUnitLabel(u)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
-      </Box>
+        </Paper>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-        <Button variant="contained" color="primary" disabled={!isDirty} onClick={handleSave} sx={{ minWidth: 150 }}>
-          {t('config.save')}
-        </Button>
-      </Box>
+        {/* Save Button */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={!isDirty}
+            onClick={handleSave}
+            startIcon={<SaveIcon />}
+            sx={{ minWidth: 180, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            {t('config.save')}
+          </Button>
+        </Box>
+      </Stack>
     </Box>
   );
 }
