@@ -124,11 +124,19 @@
       "trackName": "軌道名稱",
       "language": "語言"
     },
+    "copyCommand": "複製命令",
+    "extract": "提取",
+    "extracting": "正在提取...",
+    "cancel": "取消",
+    "elapsed": "已用時間",
+    "eta": "預計剩餘",
     "noTracks": "未找到軌道。",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge 不可用，請在設定中檢查 MKVToolNix 路徑。{{detail}}",
       "mkvmergeFailed": "mkvmerge 失敗：{{detail}}",
-      "parseError": "解析 mkvmerge 輸出失敗：{{detail}}"
+      "parseError": "解析 mkvmerge 輸出失敗：{{detail}}",
+      "mkvextractNotAvailable": "mkvextract 不可用，請在設定中檢查 MKVToolNix 路徑。{{detail}}",
+      "mkvextractFailed": "mkvextract 失敗：{{detail}}"
     }
   },
   "about": {

@@ -124,11 +124,19 @@
       "trackName": "トラック名",
       "language": "言語"
     },
+    "copyCommand": "コマンドをコピー",
+    "extract": "抽出",
+    "extracting": "抽出中...",
+    "cancel": "キャンセル",
+    "elapsed": "経過",
+    "eta": "残り",
     "noTracks": "トラックが見つかりません。",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
       "mkvmergeFailed": "mkvmerge が失敗しました: {{detail}}",
-      "parseError": "mkvmerge の出力の解析に失敗しました: {{detail}}"
+      "parseError": "mkvmerge の出力の解析に失敗しました: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
+      "mkvextractFailed": "mkvextract が失敗しました: {{detail}}"
     }
   },
   "about": {

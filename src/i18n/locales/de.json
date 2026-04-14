@@ -124,11 +124,19 @@
       "trackName": "Spurname",
       "language": "Sprache"
     },
+    "copyCommand": "Befehl kopieren",
+    "extract": "Extrahieren",
+    "extracting": "Extrahieren...",
+    "cancel": "Abbrechen",
+    "elapsed": "Vergangen",
+    "eta": "Verbleibend",
     "noTracks": "Keine Spuren gefunden.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge ist nicht verfügbar. Bitte überprüfen Sie den MKVToolNix-Pfad in den Einstellungen. {{detail}}",
       "mkvmergeFailed": "mkvmerge fehlgeschlagen: {{detail}}",
-      "parseError": "Fehler beim Parsen der mkvmerge-Ausgabe: {{detail}}"
+      "parseError": "Fehler beim Parsen der mkvmerge-Ausgabe: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract ist nicht verfügbar. Bitte überprüfen Sie den MKVToolNix-Pfad in den Einstellungen. {{detail}}",
+      "mkvextractFailed": "mkvextract fehlgeschlagen: {{detail}}"
     }
   },
   "about": {

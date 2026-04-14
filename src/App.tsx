@@ -155,7 +155,7 @@ function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
   }
 }
 
-function getExtractParams(): { file: string; displayMode: Protocol.DisplayMode; theme: Protocol.Theme; language: Protocol.Language } | null {
+function getExtractParams(): { file: string; displayMode: Protocol.DisplayMode; theme: Protocol.Theme; language: Protocol.Language; mkvToolNixPath: string } | null {
   const params = new URLSearchParams(window.location.search);
   const file = params.get('extract');
   if (!file) return null;
@@ -164,6 +164,7 @@ function getExtractParams(): { file: string; displayMode: Protocol.DisplayMode; 
     displayMode: (params.get('displayMode') as Protocol.DisplayMode) ?? Protocol.DisplayMode.Auto,
     theme: (params.get('theme') as Protocol.Theme) ?? Protocol.Theme.Ocean,
     language: (params.get('language') as Protocol.Language) ?? Protocol.Language.EnUS,
+    mkvToolNixPath: params.get('mkvToolNixPath') ?? '',
   };
 }
 
@@ -337,7 +338,7 @@ function App() {
           color: 'text.primary',
         }}
       >
-        {extractParams ? <Extract file={extractParams.file} /> : <Layout />}
+        {extractParams ? <Extract file={extractParams.file} mkvToolNixPath={extractParams.mkvToolNixPath} /> : <Layout />}
       </Box>
     </ThemeProvider>
   );

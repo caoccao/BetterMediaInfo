@@ -124,11 +124,19 @@
       "trackName": "轨道名称",
       "language": "语言"
     },
+    "copyCommand": "复制命令",
+    "extract": "提取",
+    "extracting": "正在提取...",
+    "cancel": "取消",
+    "elapsed": "已用时间",
+    "eta": "预计剩余",
     "noTracks": "未找到轨道。",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge 不可用，请在设置中检查 MKVToolNix 路径。{{detail}}",
       "mkvmergeFailed": "mkvmerge 失败：{{detail}}",
-      "parseError": "解析 mkvmerge 输出失败：{{detail}}"
+      "parseError": "解析 mkvmerge 输出失败：{{detail}}",
+      "mkvextractNotAvailable": "mkvextract 不可用，请在设置中检查 MKVToolNix 路径。{{detail}}",
+      "mkvextractFailed": "mkvextract 失败：{{detail}}"
     }
   },
   "about": {

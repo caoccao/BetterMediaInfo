@@ -124,11 +124,19 @@
       "trackName": "Track Name",
       "language": "Language"
     },
+    "copyCommand": "Copy Command",
+    "extract": "Extract",
+    "extracting": "Extracting...",
+    "cancel": "Cancel",
+    "elapsed": "Elapsed",
+    "eta": "ETA",
     "noTracks": "No tracks found.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge is not available. Please check the MKVToolNix path in Settings. {{detail}}",
       "mkvmergeFailed": "mkvmerge failed: {{detail}}",
-      "parseError": "Failed to parse mkvmerge output: {{detail}}"
+      "parseError": "Failed to parse mkvmerge output: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract is not available. Please check the MKVToolNix path in Settings. {{detail}}",
+      "mkvextractFailed": "mkvextract failed: {{detail}}"
     }
   },
   "about": {

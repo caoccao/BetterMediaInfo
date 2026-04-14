@@ -30,6 +30,14 @@ export async function getMkvTracks(file: string): Promise<Array<Protocol.MkvTrac
   return await invoke<Array<Protocol.MkvTrack>>("get_mkv_tracks", { file });
 }
 
+export async function runMkvextract(file: string, args: string[]): Promise<void> {
+  return await invoke<void>("run_mkvextract", { file, args });
+}
+
+export async function cancelMkvextract(): Promise<void> {
+  return await invoke<void>("cancel_mkvextract");
+}
+
 export async function getFiles(files: string[]): Promise<string[]> {
   return await invoke<string[]>("get_files", { files });
 }

@@ -6,6 +6,7 @@
     "extract-*"
   ],
   "permissions": [
-    "core:default"
+    "core:default",
+    "clipboard-manager:allow-write-text"
   ]
 }

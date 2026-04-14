@@ -236,6 +236,7 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
           number: props["number"].as_i64().unwrap_or(0),
           track_type: t["type"].as_str().unwrap_or("").to_owned(),
           codec: t["codec"].as_str().unwrap_or("").to_owned(),
+          codec_id: props["codec_id"].as_str().unwrap_or("").to_owned(),
           track_name: props["track_name"].as_str().unwrap_or("").to_owned(),
           language: props["language"].as_str().unwrap_or("und").to_owned(),
         }
@@ -243,6 +244,24 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
     })
     .unwrap_or_default();
   Ok(tracks)
+}
+
+pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Child> {
+  let path = Path::new(file);
+  validate_path_as_file(path)?;
+  let cfg = config::get_config();
+  let mkvextract_path = PathBuf::from(&cfg.mkv.mkv_toolnix_path).join("mkvextract");
+  let mut cmd = std::process::Command::new(&mkvextract_path);
+  cmd.arg(file).arg("tracks").args(args)
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::piped());
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  cmd.spawn()
+    .map_err(|e| anyhow::anyhow!("MKVEXTRACT_NOT_AVAILABLE:{}: {}", mkvextract_path.display(), e))
 }
 
 fn validate_path_as_file(path: &Path) -> Result<()> {

@@ -40,11 +40,13 @@ export function openExtractWindow(file: string) {
   const displayMode = config?.displayMode ?? Protocol.DisplayMode.Auto;
   const theme = config?.theme ?? Protocol.Theme.Ocean;
   const language = config?.language ?? Protocol.Language.EnUS;
+  const mkvToolNixPath = config?.mkv?.mkvToolNixPath ?? '';
   const params = new URLSearchParams({
     extract: file,
     displayMode,
     theme,
     language,
+    mkvToolNixPath,
   });
   const webview = new WebviewWindow(label, {
     url: `/?${params.toString()}`,

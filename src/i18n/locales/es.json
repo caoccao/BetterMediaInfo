@@ -124,11 +124,19 @@
       "trackName": "Nombre de pista",
       "language": "Idioma"
     },
+    "copyCommand": "Copiar comando",
+    "extract": "Extraer",
+    "extracting": "Extrayendo...",
+    "cancel": "Cancelar",
+    "elapsed": "Transcurrido",
+    "eta": "Restante",
     "noTracks": "No se encontraron pistas.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge no está disponible. Verifique la ruta de MKVToolNix en Configuración. {{detail}}",
       "mkvmergeFailed": "mkvmerge falló: {{detail}}",
-      "parseError": "Error al analizar la salida de mkvmerge: {{detail}}"
+      "parseError": "Error al analizar la salida de mkvmerge: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract no está disponible. Verifique la ruta de MKVToolNix en Configuración. {{detail}}",
+      "mkvextractFailed": "mkvextract falló: {{detail}}"
     }
   },
   "about": {

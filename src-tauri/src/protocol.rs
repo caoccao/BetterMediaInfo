@@ -70,6 +70,8 @@ pub struct MkvTrack {
   #[serde(rename = "type")]
   pub track_type: String,
   pub codec: String,
+  #[serde(rename = "codecId")]
+  pub codec_id: String,
   #[serde(rename = "trackName")]
   pub track_name: String,
   pub language: String,

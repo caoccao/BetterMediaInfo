@@ -199,8 +199,16 @@ export interface MkvTrack {
   number: number;
   type: string;
   codec: string;
+  codecId: string;
   trackName: string;
   language: string;
+}
+
+export interface MkvextractProgress {
+  percent: number;
+  done: boolean;
+  cancelled: boolean;
+  error: string | null;
 }
 
 export enum TabType {

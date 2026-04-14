@@ -15,7 +15,10 @@
 * limitations under the License.
 */
 
-use tauri::Manager;
+use std::collections::HashMap;
+use std::io::{BufReader, Read};
+use std::sync::{Arc, Mutex};
+use tauri::{Emitter, Manager};
 
 mod config;
 mod controller;
@@ -23,8 +26,64 @@ mod media_info;
 mod protocol;
 mod streams;
 
+struct MkvextractState {
+  children: Arc<Mutex<HashMap<String, std::process::Child>>>,
+}
+
+#[derive(serde::Serialize, Clone)]
+struct MkvextractProgressEvent {
+  percent: u32,
+  done: bool,
+  cancelled: bool,
+  error: Option<String>,
+}
+
 fn convert_error(error: anyhow::Error) -> String {
   error.to_string()
+}
+
+fn parse_mkvextract_progress(line: &str) -> Option<u32> {
+  let trimmed = line.trim();
+  if trimmed.starts_with("Progress:") {
+    trimmed
+      .trim_start_matches("Progress:")
+      .trim()
+      .trim_end_matches('%')
+      .parse::<u32>()
+      .ok()
+  } else {
+    None
+  }
+}
+
+fn read_mkvextract_output<F>(reader: impl Read, mut on_line: F)
+where
+  F: FnMut(&str),
+{
+  let mut buf_reader = BufReader::new(reader);
+  let mut current_line = Vec::new();
+  let mut byte = [0u8; 1];
+  loop {
+    match buf_reader.read(&mut byte) {
+      Ok(0) => break,
+      Ok(_) => {
+        if byte[0] == b'\r' || byte[0] == b'\n' {
+          if !current_line.is_empty() {
+            let line = String::from_utf8_lossy(&current_line);
+            on_line(&line);
+            current_line.clear();
+          }
+        } else {
+          current_line.push(byte[0]);
+        }
+      }
+      Err(_) => break,
+    }
+  }
+  if !current_line.is_empty() {
+    let line = String::from_utf8_lossy(&current_line);
+    on_line(&line);
+  }
 }
 
 #[tauri::command]
@@ -49,6 +108,67 @@ async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
 async fn get_mkv_tracks(file: String) -> Result<Vec<protocol::MkvTrack>, String> {
   log::debug!("get_mkv_tracks({})", file);
   controller::get_mkv_tracks(file).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn run_mkvextract(
+  window: tauri::Window,
+  file: String,
+  args: Vec<String>,
+  state: tauri::State<'_, MkvextractState>,
+) -> Result<(), String> {
+  log::debug!("run_mkvextract({}, {:?})", file, args);
+  let mut child = controller::spawn_mkvextract(&file, &args).map_err(convert_error)?;
+  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
+  let label = window.label().to_owned();
+  state.children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = state.children.clone();
+  let window_clone = window.clone();
+  tokio::task::spawn_blocking(move || {
+    read_mkvextract_output(stdout, |line| {
+      if let Some(percent) = parse_mkvextract_progress(line) {
+        let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
+          percent,
+          done: false,
+          cancelled: false,
+          error: None,
+        });
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => {
+        match c.wait() {
+          Ok(status) if status.success() => (false, None),
+          Ok(status) => (false, Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1)))),
+          Err(e) => (false, Some(e.to_string())),
+        }
+      }
+      None => (true, None),
+    };
+    let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
+      percent: 100,
+      done: true,
+      cancelled,
+      error,
+    });
+  }).await.map_err(|e| e.to_string())?;
+  Ok(())
+}
+
+#[tauri::command]
+async fn cancel_mkvextract(
+  window: tauri::Window,
+  state: tauri::State<'_, MkvextractState>,
+) -> Result<(), String> {
+  log::debug!("cancel_mkvextract({})", window.label());
+  let label = window.label().to_owned();
+  let child = state.children.lock().unwrap().remove(&label);
+  if let Some(mut child) = child {
+    let _ = child.kill();
+    let _ = child.wait();
+  }
+  Ok(())
 }
 
 #[tauri::command]
@@ -99,6 +219,9 @@ pub fn run() {
   tauri::async_runtime::set(runtime.handle().clone());
 
   tauri::Builder::default()
+    .manage(MkvextractState {
+      children: Arc::new(Mutex::new(HashMap::new())),
+    })
     .plugin(tauri_plugin_cli::init())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_clipboard_manager::init())
@@ -125,6 +248,8 @@ pub fn run() {
       get_config,
       get_files,
       get_mkv_tracks,
+      run_mkvextract,
+      cancel_mkvextract,
       get_parameters,
       get_properties,
       get_stream_count,
