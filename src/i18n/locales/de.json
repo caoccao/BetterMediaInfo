@@ -123,6 +123,12 @@
       "codec": "Codec",
       "trackName": "Spurname",
       "language": "Sprache"
+    },
+    "noTracks": "Keine Spuren gefunden.",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge ist nicht verfügbar. Bitte überprüfen Sie den MKVToolNix-Pfad in den Einstellungen. {{detail}}",
+      "mkvmergeFailed": "mkvmerge fehlgeschlagen: {{detail}}",
+      "parseError": "Fehler beim Parsen der mkvmerge-Ausgabe: {{detail}}"
     }
   },
   "about": {

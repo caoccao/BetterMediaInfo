@@ -210,17 +210,22 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
   validate_path_as_file(path)?;
   let cfg = config::get_config();
   let mkvmerge_path = PathBuf::from(&cfg.mkv.mkv_toolnix_path).join("mkvmerge");
-  let output = std::process::Command::new(&mkvmerge_path)
-    .arg("-J")
-    .arg(&file)
+  let mut cmd = std::process::Command::new(&mkvmerge_path);
+  cmd.arg("-J").arg(&file);
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  let output = cmd
     .output()
-    .map_err(|e| anyhow::anyhow!("Failed to run mkvmerge at {}: {}", mkvmerge_path.display(), e))?;
+    .map_err(|e| anyhow::anyhow!("MKVMERGE_NOT_AVAILABLE:{}: {}", mkvmerge_path.display(), e))?;
   if !output.status.success() {
     let stderr = String::from_utf8_lossy(&output.stderr);
-    return Err(anyhow::anyhow!("mkvmerge failed: {}", stderr));
+    return Err(anyhow::anyhow!("MKVMERGE_FAILED:{}", stderr));
   }
   let json: serde_json::Value = serde_json::from_slice(&output.stdout)
-    .map_err(|e| anyhow::anyhow!("Failed to parse mkvmerge output: {}", e))?;
+    .map_err(|e| anyhow::anyhow!("MKVMERGE_PARSE_ERROR:{}", e))?;
   let tracks = json["tracks"]
     .as_array()
     .map(|arr| {

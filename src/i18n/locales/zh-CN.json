@@ -123,6 +123,12 @@
       "codec": "编码",
       "trackName": "轨道名称",
       "language": "语言"
+    },
+    "noTracks": "未找到轨道。",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge 不可用，请在设置中检查 MKVToolNix 路径。{{detail}}",
+      "mkvmergeFailed": "mkvmerge 失败：{{detail}}",
+      "parseError": "解析 mkvmerge 输出失败：{{detail}}"
     }
   },
   "about": {

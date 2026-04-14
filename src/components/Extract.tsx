@@ -75,10 +75,22 @@ function Extract({ file }: ExtractProps) {
         setLoading(false);
       })
       .catch((err) => {
-        setError(String(err));
+        const msg = String(err);
+        if (msg.includes('MKVMERGE_NOT_AVAILABLE:')) {
+          const detail = msg.split('MKVMERGE_NOT_AVAILABLE:')[1];
+          setError(t('extract.error.mkvmergeNotAvailable', { detail }));
+        } else if (msg.includes('MKVMERGE_FAILED:')) {
+          const detail = msg.split('MKVMERGE_FAILED:')[1];
+          setError(t('extract.error.mkvmergeFailed', { detail }));
+        } else if (msg.includes('MKVMERGE_PARSE_ERROR:')) {
+          const detail = msg.split('MKVMERGE_PARSE_ERROR:')[1];
+          setError(t('extract.error.parseError', { detail }));
+        } else {
+          setError(msg);
+        }
         setLoading(false);
       });
-  }, [file]);
+  }, [file, t]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -100,7 +112,7 @@ function Extract({ file }: ExtractProps) {
           </Typography>
         ) : tracks.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
-            No tracks found.
+            {t('extract.noTracks')}
           </Typography>
         ) : (
           <TableContainer>

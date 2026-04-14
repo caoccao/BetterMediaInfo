@@ -123,6 +123,12 @@
       "codec": "編碼",
       "trackName": "軌道名稱",
       "language": "語言"
+    },
+    "noTracks": "未找到軌道。",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge 不可用，請在設定中檢查 MKVToolNix 路徑。{{detail}}",
+      "mkvmergeFailed": "mkvmerge 失敗：{{detail}}",
+      "parseError": "解析 mkvmerge 輸出失敗：{{detail}}"
     }
   },
   "about": {

@@ -123,6 +123,12 @@
       "codec": "Codec",
       "trackName": "Track Name",
       "language": "Language"
+    },
+    "noTracks": "No tracks found.",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge is not available. Please check the MKVToolNix path in Settings. {{detail}}",
+      "mkvmergeFailed": "mkvmerge failed: {{detail}}",
+      "parseError": "Failed to parse mkvmerge output: {{detail}}"
     }
   },
   "about": {

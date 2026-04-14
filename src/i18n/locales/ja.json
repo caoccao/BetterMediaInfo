@@ -123,6 +123,12 @@
       "codec": "コーデック",
       "trackName": "トラック名",
       "language": "言語"
+    },
+    "noTracks": "トラックが見つかりません。",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
+      "mkvmergeFailed": "mkvmerge が失敗しました: {{detail}}",
+      "parseError": "mkvmerge の出力の解析に失敗しました: {{detail}}"
     }
   },
   "about": {

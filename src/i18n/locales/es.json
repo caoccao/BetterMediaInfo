@@ -123,6 +123,12 @@
       "codec": "Códec",
       "trackName": "Nombre de pista",
       "language": "Idioma"
+    },
+    "noTracks": "No se encontraron pistas.",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge no está disponible. Verifique la ruta de MKVToolNix en Configuración. {{detail}}",
+      "mkvmergeFailed": "mkvmerge falló: {{detail}}",
+      "parseError": "Error al analizar la salida de mkvmerge: {{detail}}"
     }
   },
   "about": {
