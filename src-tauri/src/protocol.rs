@@ -62,3 +62,15 @@ pub struct StreamPropertyValue {
   pub property: String,
   pub value: String,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MkvTrack {
+  pub id: i64,
+  pub number: i64,
+  #[serde(rename = "type")]
+  pub track_type: String,
+  pub codec: String,
+  #[serde(rename = "trackName")]
+  pub track_name: String,
+  pub language: String,
+}

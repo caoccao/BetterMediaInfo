@@ -24,6 +24,7 @@
     "addFiles": "Add Files",
     "addFolder": "Add Folder",
     "json": "Json",
+    "extract": "Extract",
     "details": "Details",
     "delete": "Delete",
     "altNotMediaFiles": "Not Media Files",
@@ -110,7 +111,19 @@
     "themeCoral": "Coral",
     "themeAmber": "Amber",
     "themeSand": "Sand",
-    "themeEmerald": "Emerald"
+    "themeEmerald": "Emerald",
+    "mkv": "MKV",
+    "mkvToolNixPath": "MKVToolNix Path"
+  },
+  "extract": {
+    "header": {
+      "id": "ID",
+      "number": "Number",
+      "type": "Type",
+      "codec": "Codec",
+      "trackName": "Track Name",
+      "language": "Language"
+    }
   },
   "about": {
     "mediaInfoLib": "MediaInfoLib",

@@ -24,6 +24,7 @@
     "addFiles": "添加文件",
     "addFolder": "添加文件夹",
     "json": "Json",
+    "extract": "提取",
     "details": "详情",
     "delete": "删除",
     "altNotMediaFiles": "非媒体文件",
@@ -110,7 +111,19 @@
     "themeCoral": "Coral",
     "themeAmber": "Amber",
     "themeSand": "Sand",
-    "themeEmerald": "Emerald"
+    "themeEmerald": "Emerald",
+    "mkv": "MKV",
+    "mkvToolNixPath": "MKVToolNix 路径"
+  },
+  "extract": {
+    "header": {
+      "id": "ID",
+      "number": "编号",
+      "type": "类型",
+      "codec": "编码",
+      "trackName": "轨道名称",
+      "language": "语言"
+    }
   },
   "about": {
     "mediaInfoLib": "MediaInfoLib",

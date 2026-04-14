@@ -62,6 +62,10 @@ export interface ConfigStreamFormat {
   size: ConfigSize;
 }
 
+export interface ConfigMkv {
+  mkvToolNixPath: string;
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
   displayMode: DisplayMode;
@@ -72,6 +76,7 @@ export interface Config {
   video: ConfigStreamFormat;
   audio: ConfigStreamFormat;
   subtitle: ConfigStreamFormat;
+  mkv: ConfigMkv;
 }
 
 export enum DisplayMode {
@@ -187,6 +192,15 @@ export interface StreamPropertyValue {
   num: number;
   property: string;
   value: string;
+}
+
+export interface MkvTrack {
+  id: number;
+  number: number;
+  type: string;
+  codec: string;
+  trackName: string;
+  language: string;
 }
 
 export enum TabType {

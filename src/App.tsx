@@ -15,11 +15,14 @@
  *   limitations under the License.
  */
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
+import { emit, listen } from '@tauri-apps/api/event';
 import { useAppStore } from './lib/store';
 import * as Protocol from './lib/protocol';
+import { changeLanguage } from './i18n';
 import Layout from './components/Layout';
+import Extract from './components/Extract';
 
 function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
   switch (theme) {
@@ -152,14 +155,77 @@ function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
   }
 }
 
+function getExtractParams(): { file: string; displayMode: Protocol.DisplayMode; theme: Protocol.Theme; language: Protocol.Language } | null {
+  const params = new URLSearchParams(window.location.search);
+  const file = params.get('extract');
+  if (!file) return null;
+  return {
+    file,
+    displayMode: (params.get('displayMode') as Protocol.DisplayMode) ?? Protocol.DisplayMode.Auto,
+    theme: (params.get('theme') as Protocol.Theme) ?? Protocol.Theme.Ocean,
+    language: (params.get('language') as Protocol.Language) ?? Protocol.Language.EnUS,
+  };
+}
+
+const CONFIG_CHANGE_EVENT = 'config-change';
+
+interface ConfigChangeEvent {
+  displayMode: Protocol.DisplayMode;
+  theme: Protocol.Theme;
+  language: Protocol.Language;
+}
+
 function App() {
-  const displayMode = useAppStore((state) => state.config?.displayMode ?? Protocol.DisplayMode.Auto);
-  const selectedTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
+  const extractParams = useMemo(() => getExtractParams(), []);
+  const storeDisplayMode = useAppStore((state) => state.config?.displayMode ?? Protocol.DisplayMode.Auto);
+  const storeTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
+  const storeLanguage = useAppStore((state) => state.config?.language ?? Protocol.Language.EnUS);
   const initConfig = useAppStore((state) => state.initConfig);
 
+  const [extractDisplayMode, setExtractDisplayMode] = useState<Protocol.DisplayMode>(
+    extractParams?.displayMode ?? Protocol.DisplayMode.Auto
+  );
+  const [extractTheme, setExtractTheme] = useState<Protocol.Theme>(
+    extractParams?.theme ?? Protocol.Theme.Ocean
+  );
+
+  const displayMode = extractParams ? extractDisplayMode : storeDisplayMode;
+  const selectedTheme = extractParams ? extractTheme : storeTheme;
+
   useEffect(() => {
-    initConfig();
-  }, [initConfig]);
+    if (!extractParams) {
+      initConfig();
+    }
+  }, [initConfig, extractParams]);
+
+  // Extract window: apply initial language from URL params
+  useEffect(() => {
+    if (extractParams) {
+      changeLanguage(extractParams.language);
+    }
+  }, [extractParams]);
+
+  // Main window: emit appearance changes to extract windows
+  useEffect(() => {
+    if (!extractParams) {
+      emit(CONFIG_CHANGE_EVENT, {
+        displayMode: storeDisplayMode,
+        theme: storeTheme,
+        language: storeLanguage,
+      } as ConfigChangeEvent);
+    }
+  }, [storeDisplayMode, storeTheme, storeLanguage, extractParams]);
+
+  // Extract window: listen for appearance changes from main window
+  useEffect(() => {
+    if (!extractParams) return;
+    const unlisten = listen<ConfigChangeEvent>(CONFIG_CHANGE_EVENT, (event) => {
+      setExtractDisplayMode(event.payload.displayMode);
+      setExtractTheme(event.payload.theme);
+      changeLanguage(event.payload.language);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [extractParams]);
 
   const prefersDarkMode = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -271,7 +337,7 @@ function App() {
           color: 'text.primary',
         }}
       >
-        <Layout />
+        {extractParams ? <Extract file={extractParams.file} /> : <Layout />}
       </Box>
     </ThemeProvider>
   );

@@ -24,6 +24,7 @@
     "addFiles": "ファイルを追加",
     "addFolder": "フォルダを追加",
     "json": "Json",
+    "extract": "抽出",
     "details": "詳細",
     "delete": "削除",
     "altNotMediaFiles": "メディアファイルではありません",
@@ -110,7 +111,19 @@
     "themeCoral": "Coral",
     "themeAmber": "Amber",
     "themeSand": "Sand",
-    "themeEmerald": "Emerald"
+    "themeEmerald": "Emerald",
+    "mkv": "MKV",
+    "mkvToolNixPath": "MKVToolNix パス"
+  },
+  "extract": {
+    "header": {
+      "id": "ID",
+      "number": "番号",
+      "type": "タイプ",
+      "codec": "コーデック",
+      "trackName": "トラック名",
+      "language": "言語"
+    }
   },
   "about": {
     "mediaInfoLib": "MediaInfoLib",

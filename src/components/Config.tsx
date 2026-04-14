@@ -35,6 +35,7 @@ import {
 import {
   BrightnessAuto as AutoIcon,
   ClosedCaption as SubtitleIcon,
+  ContentCut as MkvIcon,
   DarkMode as DarkIcon,
   FolderOpen as FolderIcon,
   LightMode as LightIcon,
@@ -208,6 +209,7 @@ export default function Config() {
   const [videoFormat, setVideoFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [audioFormat, setAudioFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
+  const [mkvToolNixPath, setMkvToolNixPath] = useState('');
   const [formatTab, setFormatTab] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -232,6 +234,7 @@ export default function Config() {
       setVideoFormat(initStreamFormat(config.video));
       setAudioFormat(initStreamFormat(config.audio));
       setSubtitleFormat(initStreamFormat(config.subtitle));
+      setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
     }
   }, [config]);
 
@@ -280,6 +283,7 @@ export default function Config() {
     video: toConfigStreamFormat(videoFormat),
     audio: toConfigStreamFormat(audioFormat),
     subtitle: toConfigStreamFormat(subtitleFormat),
+    mkv: { mkvToolNixPath },
   });
 
   const handleSave = async () => {
@@ -561,6 +565,25 @@ export default function Config() {
               unitLabel={t('config.unit')}
             />
           )}
+        </Paper>
+
+        {/* MKV Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<MkvIcon fontSize="small" />} title={t('config.mkv')} />
+          <Box sx={{ py: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {t('config.mkvToolNixPath')}
+            </Typography>
+            <TextField
+              value={mkvToolNixPath}
+              onChange={(e) => {
+                setMkvToolNixPath(e.target.value);
+                handleChange();
+              }}
+              size="small"
+              fullWidth
+            />
+          </Box>
         </Paper>
 
         {/* Save Button */}

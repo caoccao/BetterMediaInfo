@@ -205,6 +205,41 @@ pub async fn write_text_file(file: String, text: String) -> Result<()> {
   Ok(())
 }
 
+pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
+  let path = Path::new(file.as_str());
+  validate_path_as_file(path)?;
+  let cfg = config::get_config();
+  let mkvmerge_path = PathBuf::from(&cfg.mkv.mkv_toolnix_path).join("mkvmerge");
+  let output = std::process::Command::new(&mkvmerge_path)
+    .arg("-J")
+    .arg(&file)
+    .output()
+    .map_err(|e| anyhow::anyhow!("Failed to run mkvmerge at {}: {}", mkvmerge_path.display(), e))?;
+  if !output.status.success() {
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    return Err(anyhow::anyhow!("mkvmerge failed: {}", stderr));
+  }
+  let json: serde_json::Value = serde_json::from_slice(&output.stdout)
+    .map_err(|e| anyhow::anyhow!("Failed to parse mkvmerge output: {}", e))?;
+  let tracks = json["tracks"]
+    .as_array()
+    .map(|arr| {
+      arr.iter().map(|t| {
+        let props = &t["properties"];
+        MkvTrack {
+          id: t["id"].as_i64().unwrap_or(0),
+          number: props["number"].as_i64().unwrap_or(0),
+          track_type: t["type"].as_str().unwrap_or("").to_owned(),
+          codec: t["codec"].as_str().unwrap_or("").to_owned(),
+          track_name: props["track_name"].as_str().unwrap_or("").to_owned(),
+          language: props["language"].as_str().unwrap_or("und").to_owned(),
+        }
+      }).collect()
+    })
+    .unwrap_or_default();
+  Ok(tracks)
+}
+
 fn validate_path_as_file(path: &Path) -> Result<()> {
   if !path.exists() {
     Err(anyhow::anyhow!("Path {} does not exist.", path.display()))

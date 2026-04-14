@@ -46,6 +46,12 @@ async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+async fn get_mkv_tracks(file: String) -> Result<Vec<protocol::MkvTrack>, String> {
+  log::debug!("get_mkv_tracks({})", file);
+  controller::get_mkv_tracks(file).await.map_err(convert_error)
+}
+
+#[tauri::command]
 async fn get_parameters() -> Result<Vec<protocol::Parameter>, String> {
   log::debug!("get_parameters");
   controller::get_parameters().await.map_err(convert_error)
@@ -102,10 +108,23 @@ pub fn run() {
       let _ = window.set_title("BetterMediaInfo v0.9.0");
       Ok(())
     })
+    .on_window_event(|window, event| {
+      if let tauri::WindowEvent::Destroyed = event {
+        if window.label() == "main" {
+          let app_handle = window.app_handle();
+          for (label, win) in app_handle.webview_windows() {
+            if label != "main" {
+              let _ = win.destroy();
+            }
+          }
+        }
+      }
+    })
     .invoke_handler(tauri::generate_handler![
       get_about,
       get_config,
       get_files,
+      get_mkv_tracks,
       get_parameters,
       get_properties,
       get_stream_count,

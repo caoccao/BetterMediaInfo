@@ -26,6 +26,10 @@ export async function getConfig(): Promise<Protocol.Config> {
   return await invoke<Protocol.Config>("get_config");
 }
 
+export async function getMkvTracks(file: string): Promise<Array<Protocol.MkvTrack>> {
+  return await invoke<Array<Protocol.MkvTrack>>("get_mkv_tracks", { file });
+}
+
 export async function getFiles(files: string[]): Promise<string[]> {
   return await invoke<string[]>("get_files", { files });
 }

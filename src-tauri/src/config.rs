@@ -61,6 +61,8 @@ pub struct Config {
   pub audio: ConfigStreamFormat,
   #[serde(default)]
   pub subtitle: ConfigStreamFormat,
+  #[serde(default)]
+  pub mkv: ConfigMkv,
 }
 
 impl Default for Config {
@@ -75,6 +77,33 @@ impl Default for Config {
       video: Default::default(),
       audio: Default::default(),
       subtitle: Default::default(),
+      mkv: Default::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigMkv {
+  #[serde(rename = "mkvToolNixPath", default = "ConfigMkv::default_mkv_toolnix_path")]
+  pub mkv_toolnix_path: String,
+}
+
+impl ConfigMkv {
+  fn default_mkv_toolnix_path() -> String {
+    if cfg!(target_os = "windows") {
+      r"C:\Program Files\MKVToolNix".to_owned()
+    } else if cfg!(target_os = "macos") {
+      "/Applications/MKVToolNix.app/Contents/MacOS".to_owned()
+    } else {
+      "/usr/bin".to_owned()
+    }
+  }
+}
+
+impl Default for ConfigMkv {
+  fn default() -> Self {
+    Self {
+      mkv_toolnix_path: Self::default_mkv_toolnix_path(),
     }
   }
 }

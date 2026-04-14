@@ -39,6 +39,7 @@ import type { TFunction } from 'i18next';
 import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
+import ContentCutIcon from '@mui/icons-material/ContentCut';
 import NotesIcon from '@mui/icons-material/Notes';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { getMatches } from '@tauri-apps/plugin-cli';
@@ -48,6 +49,7 @@ import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
 import { getPropertiesMap, getStreamCountMap } from '../lib/service';
 import { scanFiles } from '../lib/fs';
+import { openExtractWindow } from '../lib/extract';
 import {
   formatStreamCount,
   transformBitRate,
@@ -512,6 +514,13 @@ export default function List() {
                         <JavascriptIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    {file.toLowerCase().endsWith('.mkv') && (
+                      <Tooltip title={t('list.extract')}>
+                        <IconButton size="small" onClick={() => openExtractWindow(file)}>
+                          <ContentCutIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <Tooltip title={t('list.details')}>
                       <IconButton size="small" onClick={() => openDetails(file)}>
                         <NotesIcon fontSize="small" />
