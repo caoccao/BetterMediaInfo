@@ -200,6 +200,7 @@ function trackIdToKey(id: number): string | null {
 }
 
 function keyToTrackId(key: string): number | null {
+  if (key.length !== 1) { return null; }
   if (key >= '0' && key <= '9') { return parseInt(key); }
   const lower = key.toLowerCase();
   if (lower >= 'a' && lower <= 'z') { return lower.charCodeAt(0) - 'a'.charCodeAt(0) + 10; }
