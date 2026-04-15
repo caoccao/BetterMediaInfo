@@ -126,10 +126,12 @@
     },
     "copyCommand": "Copy Command",
     "extract": "Extract",
+    "browse": "Browse...",
     "extracting": "Extracting...",
     "cancel": "Cancel",
     "elapsed": "Elapsed",
     "eta": "ETA",
+    "extractionComplete": "Extraction completed in {{seconds}} seconds.",
     "noTracks": "No tracks found.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge is not available. Please check the MKVToolNix path in Settings. {{detail}}",

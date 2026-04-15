@@ -26,17 +26,7 @@ mod media_info;
 mod protocol;
 mod streams;
 
-struct MkvextractState {
-  children: Arc<Mutex<HashMap<String, std::process::Child>>>,
-}
-
-#[derive(serde::Serialize, Clone)]
-struct MkvextractProgressEvent {
-  percent: u32,
-  done: bool,
-  cancelled: bool,
-  error: Option<String>,
-}
+use protocol::{MkvextractProgressEvent, MkvextractState};
 
 fn convert_error(error: anyhow::Error) -> String {
   error.to_string()

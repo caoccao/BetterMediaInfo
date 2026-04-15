@@ -126,10 +126,12 @@
     },
     "copyCommand": "Copiar comando",
     "extract": "Extraer",
+    "browse": "Examinar...",
     "extracting": "Extrayendo...",
     "cancel": "Cancelar",
     "elapsed": "Transcurrido",
     "eta": "Restante",
+    "extractionComplete": "Extracción completada en {{seconds}} segundos.",
     "noTracks": "No se encontraron pistas.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge no está disponible. Verifique la ruta de MKVToolNix en Configuración. {{detail}}",

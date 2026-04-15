@@ -26,13 +26,16 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Alert,
   LinearProgress,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Toolbar,
   Tooltip,
   Typography,
@@ -40,6 +43,7 @@ import {
 import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ImageIcon from '@mui/icons-material/Image';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
@@ -49,6 +53,7 @@ import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
 import { basename, dirname, extname, join, sep as getSep } from '@tauri-apps/api/path';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { open } from '@tauri-apps/plugin-dialog';
 import * as Protocol from '../lib/protocol';
 import { getMkvTracks, runMkvextract, cancelMkvextract } from '../lib/service';
 
@@ -149,25 +154,23 @@ function buildOutputFileName(fileNameWithoutExt: string, track: Protocol.MkvTrac
   return `${fileNameWithoutExt}_${track.number}_${track.language}.${ext}`;
 }
 
-async function buildExtractArgs(file: string, tracks: Protocol.MkvTrack[]): Promise<string[]> {
-  const dir = await dirname(file);
+async function buildExtractArgs(file: string, outputDir: string, tracks: Protocol.MkvTrack[]): Promise<string[]> {
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
   const results: string[] = [];
   for (const track of tracks) {
-    const outFile = await join(dir, buildOutputFileName(fileNameWithoutExt, track));
+    const outFile = await join(outputDir, buildOutputFileName(fileNameWithoutExt, track));
     results.push(`${track.id}:${outFile}`);
   }
   return results;
 }
 
-async function buildCommandString(file: string, mkvToolNixPath: string, tracks: Protocol.MkvTrack[]): Promise<string> {
+async function buildCommandString(file: string, outputDir: string, mkvToolNixPath: string, tracks: Protocol.MkvTrack[]): Promise<string> {
   const sep = getSep();
   const mkvextractPath = `${mkvToolNixPath}${sep}mkvextract`;
-  const dir = await dirname(file);
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
   const args: string[] = [];
   for (const track of tracks) {
-    const outFile = await join(dir, buildOutputFileName(fileNameWithoutExt, track));
+    const outFile = await join(outputDir, buildOutputFileName(fileNameWithoutExt, track));
     args.push(`${track.id}:"${outFile}"`);
   }
   return `"${mkvextractPath}" "${file}" tracks ${args.join(' ')}`;
@@ -195,9 +198,16 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [eta, setEta] = useState(0);
+  const [outputDir, setOutputDir] = useState('');
+  const [snackbar, setSnackbar] = useState<string | null>(null);
   const startTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize output directory from file's parent
+  useEffect(() => {
+    dirname(file).then(setOutputDir);
+  }, [file]);
 
   useEffect(() => {
     getMkvTracks(file)
@@ -229,10 +239,15 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
       const { percent, done, cancelled, error: progressError } = event.payload;
       setProgress(percent);
       if (done) {
+        const elapsedSec = Math.round((Date.now() - startTimeRef.current) / 1000);
         setDialogOpen(false);
         setExtracting(false);
-        if (!cancelled && progressError) {
+        if (cancelled) {
+          // Do nothing
+        } else if (progressError) {
           setError(t('extract.error.mkvextractFailed', { detail: progressError }));
+        } else {
+          setSnackbar(t('extract.extractionComplete', { seconds: elapsedSec }));
         }
       }
     });
@@ -274,7 +289,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
 
   const handleCopyCommand = async () => {
     if (!hasSelection) return;
-    const command = await buildCommandString(file, mkvToolNixPath, selectedTracks);
+    const command = await buildCommandString(file, outputDir, mkvToolNixPath, selectedTracks);
     await writeText(command);
   };
 
@@ -285,7 +300,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
     setError(null);
     setDialogOpen(true);
     try {
-      const args = await buildExtractArgs(file, selectedTracks);
+      const args = await buildExtractArgs(file, outputDir, selectedTracks);
       await runMkvextract(file, args);
     } catch (err) {
       const msg = String(err);
@@ -322,6 +337,23 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
       } else if (e.key === 'F3') {
         e.preventDefault();
         handleExtract();
+      } else if (e.key === '*') {
+        setSelectedIds((prev) =>
+          prev.size === tracks.length ? new Set() : new Set(tracks.map((t) => t.id))
+        );
+      } else if (e.key >= '0' && e.key <= '9') {
+        const id = parseInt(e.key);
+        if (tracks.some((t) => t.id === id)) {
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+              next.delete(id);
+            } else {
+              next.add(id);
+            }
+            return next;
+          });
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -335,19 +367,37 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <AppBar position="sticky" elevation={0} color="transparent">
-        <Toolbar variant="dense">
-          <Box sx={{ flex: 1 }} />
+        <Toolbar variant="dense" sx={{ gap: 1 }}>
+          <TextField
+            size="small"
+            value={outputDir}
+            onChange={(e) => setOutputDir(e.target.value)}
+            sx={{ flex: 1, '& .MuiInputBase-root': { height: 32 } }}
+          />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<FolderOpenIcon />}
+            onClick={async () => {
+              const dir = await open({ directory: true, defaultPath: outputDir });
+              if (dir) setOutputDir(dir as string);
+            }}
+            sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}
+          >
+            {t('extract.browse')}
+          </Button>
+        </Toolbar>
+        <Toolbar variant="dense" sx={{ gap: 1, justifyContent: 'center' }}>
           <Tooltip title="F2">
             <span>
-              <Button variant="contained" color="success" size="small" disabled={!hasSelection} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none' }}>
+              <Button variant="outlined" size="small" disabled={!hasSelection} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('extract.copyCommand')}
               </Button>
             </span>
           </Tooltip>
-          <Box sx={{ width: 8 }} />
           <Tooltip title="F3">
             <span>
-              <Button variant="contained" color="success" size="small" disabled={!hasSelection || extracting} onClick={handleExtract} startIcon={<ContentCutIcon />} sx={{ textTransform: 'none' }}>
+              <Button variant="outlined" size="small" disabled={!hasSelection || extracting} onClick={handleExtract} startIcon={<ContentCutIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('extract.extract')}
               </Button>
             </span>
@@ -445,6 +495,16 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
           <Button variant="contained" color="error" onClick={handleCancel}>{t('extract.cancel')}</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbar !== null}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbar(null)} severity="success" variant="filled">
+          {snackbar}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

@@ -51,9 +51,9 @@ export function openExtractWindow(file: string) {
   const webview = new WebviewWindow(label, {
     url: `/?${params.toString()}`,
     title: `Extract - ${file}`,
-    width: 800,
-    height: 600,
-    minWidth: 400,
+    width: 1000,
+    height: 500,
+    minWidth: 600,
     minHeight: 300,
   });
   openExtractWindows.set(file, webview);

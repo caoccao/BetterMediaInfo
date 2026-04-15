@@ -17,6 +17,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use crate::media_info;
 
@@ -75,4 +76,16 @@ pub struct MkvTrack {
   #[serde(rename = "trackName")]
   pub track_name: String,
   pub language: String,
+}
+
+pub struct MkvextractState {
+  pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct MkvextractProgressEvent {
+  pub percent: u32,
+  pub done: bool,
+  pub cancelled: bool,
+  pub error: Option<String>,
 }

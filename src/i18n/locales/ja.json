@@ -126,10 +126,12 @@
     },
     "copyCommand": "コマンドをコピー",
     "extract": "抽出",
+    "browse": "参照...",
     "extracting": "抽出中...",
     "cancel": "キャンセル",
     "elapsed": "経過",
     "eta": "残り",
+    "extractionComplete": "{{seconds}} 秒で抽出が完了しました。",
     "noTracks": "トラックが見つかりません。",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
