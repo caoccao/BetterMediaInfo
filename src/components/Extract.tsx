@@ -81,58 +81,68 @@ function getTrackExtension(codecId: string, trackType: string): string {
     switch (codecId) {
       case 'V_MPEGH/ISO/HEVC': return 'h265';
       case 'V_MPEG4/ISO/AVC': return 'h264';
-      case 'V_MPEG1': return 'mpg';
+      case 'V_MPEG1':
       case 'V_MPEG2': return 'mpg';
       case 'V_MPEG4/ISO/SP':
       case 'V_MPEG4/ISO/ASP':
       case 'V_MPEG4/ISO/AP':
       case 'V_MPEG4/MS/V3': return 'mpeg4';
       case 'V_MS/VFW/FOURCC': return 'avi';
-      case 'V_VP8': return 'ivf';
-      case 'V_VP9': return 'ivf';
+      case 'V_VP8':
+      case 'V_VP9':
       case 'V_AV1': return 'ivf';
       case 'V_THEORA': return 'ogg';
       case 'V_PRORES': return 'prores';
       case 'V_FFV1': return 'ffv1';
     }
-    if (codecId.startsWith('V_REAL/')) return 'rm';
+    if (codecId.startsWith('V_REAL/')) { return 'rm'; }
     return 'bin';
   }
 
   // Audio codecs
   if (codecId.startsWith('A_')) {
-    if (codecId === 'A_AC3' || codecId === 'A_AC3/BSID9' || codecId === 'A_AC3/BSID10') return 'ac3';
-    if (codecId === 'A_EAC3') return 'eac3';
-    if (codecId === 'A_TRUEHD') return 'thd';
-    if (codecId === 'A_MLP') return 'mlp';
-    if (codecId === 'A_MPEG/L1') return 'mp1';
-    if (codecId === 'A_MPEG/L2') return 'mp2';
-    if (codecId === 'A_MPEG/L3') return 'mp3';
-    if (codecId === 'A_FLAC') return 'flac';
-    if (codecId === 'A_VORBIS') return 'ogg';
-    if (codecId === 'A_OPUS') return 'opus';
-    if (codecId.startsWith('A_PCM/')) return 'wav';
-    if (codecId === 'A_WAVPACK4') return 'wv';
-    if (codecId === 'A_TTA1') return 'tta';
-    if (codecId === 'A_ALAC') return 'caf';
-    if (codecId.startsWith('A_AAC')) return 'aac';
-    if (codecId.startsWith('A_DTS')) return 'dts';
-    if (codecId.startsWith('A_REAL/')) return 'rm';
-    return 'bin';
+    switch (codecId) {
+      case 'A_AC3':
+      case 'A_AC3/BSID9':
+      case 'A_AC3/BSID10': return 'ac3';
+      case 'A_EAC3': return 'eac3';
+      case 'A_TRUEHD': return 'thd';
+      case 'A_MLP': return 'mlp';
+      case 'A_MPEG/L1': return 'mp1';
+      case 'A_MPEG/L2': return 'mp2';
+      case 'A_MPEG/L3': return 'mp3';
+      case 'A_FLAC': return 'flac';
+      case 'A_VORBIS': return 'ogg';
+      case 'A_OPUS': return 'opus';
+      case 'A_WAVPACK4': return 'wv';
+      case 'A_TTA1': return 'tta';
+      case 'A_ALAC': return 'caf';
+      default:
+        if (codecId.startsWith('A_PCM/')) { return 'wav'; }
+        if (codecId.startsWith('A_AAC')) { return 'aac'; }
+        if (codecId.startsWith('A_DTS')) { return 'dts'; }
+        if (codecId.startsWith('A_REAL/')) { return 'rm'; }
+        return 'bin';
+    }
   }
 
   // Subtitle codecs
   if (codecId.startsWith('S_')) {
-    if (codecId === 'S_TEXT/UTF8' || codecId === 'S_TEXT/ASCII') return 'srt';
-    if (codecId === 'S_TEXT/ASS' || codecId === 'S_ASS') return 'ass';
-    if (codecId === 'S_TEXT/SSA' || codecId === 'S_SSA') return 'ssa';
-    if (codecId === 'S_TEXT/WEBVTT') return 'vtt';
-    if (codecId === 'S_TEXT/USF') return 'usf';
-    if (codecId === 'S_VOBSUB') return 'sub';
-    if (codecId === 'S_HDMV/PGS') return 'sup';
-    if (codecId === 'S_HDMV/TEXTST') return 'textst';
-    if (codecId === 'S_KATE') return 'ogg';
-    return 'bin';
+    switch (codecId) {
+      case 'S_TEXT/UTF8':
+      case 'S_TEXT/ASCII': return 'srt';
+      case 'S_TEXT/ASS':
+      case 'S_ASS': return 'ass';
+      case 'S_TEXT/SSA':
+      case 'S_SSA': return 'ssa';
+      case 'S_TEXT/WEBVTT': return 'vtt';
+      case 'S_TEXT/USF': return 'usf';
+      case 'S_VOBSUB': return 'sub';
+      case 'S_HDMV/PGS': return 'sup';
+      case 'S_HDMV/TEXTST': return 'textst';
+      case 'S_KATE': return 'ogg';
+      default: return 'bin';
+    }
   }
 
   // Fallback by track type
@@ -181,6 +191,19 @@ function formatTime(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function trackIdToKey(id: number): string | null {
+  if (id >= 0 && id <= 9) { return String(id); }
+  if (id >= 10 && id <= 35) { return String.fromCharCode('a'.charCodeAt(0) + id - 10); }
+  return null;
+}
+
+function keyToTrackId(key: string): number | null {
+  if (key >= '0' && key <= '9') { return parseInt(key); }
+  const lower = key.toLowerCase();
+  if (lower >= 'a' && lower <= 'z') { return lower.charCodeAt(0) - 'a'.charCodeAt(0) + 10; }
+  return null;
 }
 
 interface ExtractProps {
@@ -288,13 +311,13 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
   const hasSelection = selectedTracks.length > 0;
 
   const handleCopyCommand = async () => {
-    if (!hasSelection) return;
+    if (!hasSelection) { return; }
     const command = await buildCommandString(file, outputDir, mkvToolNixPath, selectedTracks);
     await writeText(command);
   };
 
   const handleExtract = async () => {
-    if (!hasSelection || extracting) return;
+    if (!hasSelection || extracting) { return; }
     setExtracting(true);
     setProgress(0);
     setError(null);
@@ -341,9 +364,9 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
         setSelectedIds((prev) =>
           prev.size === tracks.length ? new Set() : new Set(tracks.map((t) => t.id))
         );
-      } else if (e.key >= '0' && e.key <= '9') {
-        const id = parseInt(e.key);
-        if (tracks.some((t) => t.id === id)) {
+      } else {
+        const id = keyToTrackId(e.key);
+        if (id !== null && tracks.some((t) => t.id === id)) {
           setSelectedIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) {
@@ -380,7 +403,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
             startIcon={<FolderOpenIcon />}
             onClick={async () => {
               const dir = await open({ directory: true, defaultPath: outputDir });
-              if (dir) setOutputDir(dir as string);
+              if (dir) { setOutputDir(dir as string); }
             }}
             sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}
           >
@@ -423,14 +446,16 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      checked={tracks.length > 0 && selectedIds.size === tracks.length}
-                      indeterminate={selectedIds.size > 0 && selectedIds.size < tracks.length}
-                      onChange={(e) => {
-                        setSelectedIds(e.target.checked ? new Set(tracks.map((t) => t.id)) : new Set());
-                      }}
-                    />
+                    <Tooltip title="*">
+                      <Checkbox
+                        size="small"
+                        checked={tracks.length > 0 && selectedIds.size === tracks.length}
+                        indeterminate={selectedIds.size > 0 && selectedIds.size < tracks.length}
+                        onChange={(e) => {
+                          setSelectedIds(e.target.checked ? new Set(tracks.map((t) => t.id)) : new Set());
+                        }}
+                      />
+                    </Tooltip>
                   </TableCell>
                   <TableCell>{t('extract.header.id')}</TableCell>
                   <TableCell>{t('extract.header.number')}</TableCell>
@@ -444,21 +469,23 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                 {tracks.map((track) => (
                   <TableRow key={track.id}>
                     <TableCell padding="checkbox">
-                      <Checkbox
-                        size="small"
-                        checked={selectedIds.has(track.id)}
-                        onChange={(e) => {
-                          setSelectedIds((prev) => {
-                            const next = new Set(prev);
-                            if (e.target.checked) {
-                              next.add(track.id);
+                      <Tooltip title={trackIdToKey(track.id) ?? ''}>
+                        <Checkbox
+                          size="small"
+                          checked={selectedIds.has(track.id)}
+                          onChange={(e) => {
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) {
+                                next.add(track.id);
                             } else {
                               next.delete(track.id);
                             }
                             return next;
                           });
                         }}
-                      />
+                        />
+                      </Tooltip>
                     </TableCell>
                     <TableCell>{track.id}</TableCell>
                     <TableCell>{track.number}</TableCell>
