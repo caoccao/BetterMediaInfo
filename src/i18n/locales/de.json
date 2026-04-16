@@ -113,7 +113,12 @@
     "themeSand": "Sand",
     "themeEmerald": "Emerald",
     "mkv": "MKV",
-    "mkvToolNixPath": "MKVToolNix-Pfad"
+    "mkvToolNixPath": "MKVToolNix-Pfad",
+    "update": "Aktualisierung",
+    "checkNewVersion": "Neue Version prüfen",
+    "daily": "Täglich",
+    "weekly": "Wöchentlich",
+    "monthly": "Monatlich"
   },
   "extract": {
     "header": {
@@ -149,6 +154,10 @@
     "property": "Eigenschaft",
     "id": "ID",
     "stream": "Stream"
+  },
+  "update": {
+    "newVersionAvailable": "Eine neue Version {{version}} ist verfügbar.",
+    "skipThisVersion": "Diese Version überspringen"
   },
   "footer": {
     "donate": "Spenden Sie zur Unterstützung der Entwicklung",

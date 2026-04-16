@@ -113,7 +113,12 @@
     "themeSand": "Sand",
     "themeEmerald": "Emerald",
     "mkv": "MKV",
-    "mkvToolNixPath": "Ruta de MKVToolNix"
+    "mkvToolNixPath": "Ruta de MKVToolNix",
+    "update": "Actualización",
+    "checkNewVersion": "Comprobar nueva versión",
+    "daily": "Diario",
+    "weekly": "Semanal",
+    "monthly": "Mensual"
   },
   "extract": {
     "header": {
@@ -149,6 +154,10 @@
     "property": "Propiedad",
     "id": "ID",
     "stream": "Flujo"
+  },
+  "update": {
+    "newVersionAvailable": "Una nueva versión {{version}} está disponible.",
+    "skipThisVersion": "Omitir esta versión"
   },
   "footer": {
     "donate": "Donar para apoyar el desarrollo",

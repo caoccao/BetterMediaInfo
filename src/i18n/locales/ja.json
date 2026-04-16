@@ -113,7 +113,12 @@
     "themeSand": "Sand",
     "themeEmerald": "Emerald",
     "mkv": "MKV",
-    "mkvToolNixPath": "MKVToolNix パス"
+    "mkvToolNixPath": "MKVToolNix パス",
+    "update": "更新",
+    "checkNewVersion": "新バージョンを確認",
+    "daily": "毎日",
+    "weekly": "毎週",
+    "monthly": "毎月"
   },
   "extract": {
     "header": {
@@ -149,6 +154,10 @@
     "property": "プロパティ",
     "id": "ID",
     "stream": "ストリーム"
+  },
+  "update": {
+    "newVersionAvailable": "新しいバージョン {{version}} が利用可能です。",
+    "skipThisVersion": "このバージョンをスキップ"
   },
   "footer": {
     "donate": "開発を支援するために寄付する",

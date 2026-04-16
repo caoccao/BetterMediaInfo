@@ -66,6 +66,19 @@ export interface ConfigMkv {
   mkvToolNixPath: string;
 }
 
+export enum UpdateCheckInterval {
+  Daily = "Daily",
+  Weekly = "Weekly",
+  Monthly = "Monthly",
+}
+
+export interface ConfigUpdate {
+  checkInterval: UpdateCheckInterval;
+  lastChecked: number;
+  lastVersion: string;
+  ignoreVersion: string;
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
   displayMode: DisplayMode;
@@ -77,6 +90,7 @@ export interface Config {
   audio: ConfigStreamFormat;
   subtitle: ConfigStreamFormat;
   mkv: ConfigMkv;
+  update: ConfigUpdate;
 }
 
 export enum DisplayMode {
@@ -202,6 +216,11 @@ export interface MkvTrack {
   codecId: string;
   trackName: string;
   language: string;
+}
+
+export interface UpdateCheckResult {
+  hasUpdate: boolean;
+  latestVersion: string | null;
 }
 
 export interface MkvextractProgress {

@@ -63,6 +63,8 @@ pub struct Config {
   pub subtitle: ConfigStreamFormat,
   #[serde(default)]
   pub mkv: ConfigMkv,
+  #[serde(default)]
+  pub update: ConfigUpdate,
 }
 
 impl Default for Config {
@@ -78,7 +80,44 @@ impl Default for Config {
       audio: Default::default(),
       subtitle: Default::default(),
       mkv: Default::default(),
+      update: Default::default(),
     }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigUpdate {
+  #[serde(rename = "checkInterval", default)]
+  pub check_interval: UpdateCheckInterval,
+  #[serde(rename = "lastChecked", default)]
+  pub last_checked: i64,
+  #[serde(rename = "lastVersion", default)]
+  pub last_version: String,
+  #[serde(rename = "ignoreVersion", default)]
+  pub ignore_version: String,
+}
+
+impl Default for ConfigUpdate {
+  fn default() -> Self {
+    Self {
+      check_interval: Default::default(),
+      last_checked: 0,
+      last_version: String::new(),
+      ignore_version: String::new(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum UpdateCheckInterval {
+  Daily,
+  Weekly,
+  Monthly,
+}
+
+impl Default for UpdateCheckInterval {
+  fn default() -> Self {
+    Self::Weekly
   }
 }
 

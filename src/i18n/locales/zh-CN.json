@@ -113,7 +113,12 @@
     "themeSand": "Sand",
     "themeEmerald": "Emerald",
     "mkv": "MKV",
-    "mkvToolNixPath": "MKVToolNix 路径"
+    "mkvToolNixPath": "MKVToolNix 路径",
+    "update": "更新",
+    "checkNewVersion": "检查新版本",
+    "daily": "每天",
+    "weekly": "每周",
+    "monthly": "每月"
   },
   "extract": {
     "header": {
@@ -149,6 +154,10 @@
     "property": "属性",
     "id": "ID",
     "stream": "流"
+  },
+  "update": {
+    "newVersionAvailable": "新版本 {{version}} 已发布。",
+    "skipThisVersion": "跳过此版本"
   },
   "footer": {
     "donate": "捐赠以支持开发",

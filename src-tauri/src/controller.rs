@@ -50,6 +50,26 @@ static ALL_PROPERTIES_MAP: Lazy<HashMap<MediaInfoStreamKind, Vec<String>>> = Laz
   all_properties_map
 });
 
+pub fn check_for_updates() -> Result<UpdateCheckResult> {
+  let app_version = get_app_version();
+  log::info!("Checking for updates. Current version: {}", app_version);
+  let resp = ureq::get("https://api.github.com/repos/caoccao/BetterMediaInfo/releases")
+    .set("User-Agent", "BetterMediaInfo")
+    .call()
+    .map_err(|e| anyhow::anyhow!("Failed to fetch releases: {}", e))?;
+  let json: serde_json::Value = resp.into_json()
+    .map_err(|e| anyhow::anyhow!("Failed to parse releases: {}", e))?;
+  if let Some(first) = json.as_array().and_then(|arr| arr.first()) {
+    let tag = first["tag_name"].as_str().unwrap_or("");
+    log::info!("Latest release tag: {}", tag);
+    if is_newer_version(tag, app_version) {
+      let version = tag.trim_start_matches('v').to_owned();
+      return Ok(UpdateCheckResult { has_update: true, latest_version: Some(version) });
+    }
+  }
+  Ok(UpdateCheckResult { has_update: false, latest_version: None })
+}
+
 pub async fn get_about() -> Result<About> {
   let media_info = MediaInfo::new();
   let media_info_version = media_info.getOption(MediaInfoGetOption::InfoVersion)?;
@@ -193,16 +213,8 @@ pub async fn get_properties(file: String, properties: Option<Vec<StreamProperty>
   Ok(stream_property_maps)
 }
 
-pub async fn set_config(config: config::Config) -> Result<config::Config> {
-  config::set_config(config)?;
-  Ok(config::get_config())
-}
-
-pub async fn write_text_file(file: String, text: String) -> Result<()> {
-  let path = Path::new(file.as_str());
-  let mut file = File::create(path)?;
-  file.write_all(text.as_bytes())?;
-  Ok(())
+pub fn get_app_version() -> &'static str {
+  env!("CARGO_PKG_VERSION")
 }
 
 pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
@@ -246,6 +258,26 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
   Ok(tracks)
 }
 
+pub fn is_newer_version(latest: &str, current: &str) -> bool {
+  let latest = latest.trim_start_matches('v');
+  let current = current.trim_start_matches('v');
+  let latest_parts: Vec<u32> = latest.split('.').filter_map(|s| s.parse().ok()).collect();
+  let current_parts: Vec<u32> = current.split('.').filter_map(|s| s.parse().ok()).collect();
+  let len = latest_parts.len().max(current_parts.len());
+  for i in 0..len {
+    let l = latest_parts.get(i).copied().unwrap_or(0);
+    let c = current_parts.get(i).copied().unwrap_or(0);
+    if l > c { return true; }
+    if l < c { return false; }
+  }
+  false
+}
+
+pub async fn set_config(config: config::Config) -> Result<config::Config> {
+  config::set_config(config)?;
+  Ok(config::get_config())
+}
+
 pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Child> {
   let path = Path::new(file);
   validate_path_as_file(path)?;
@@ -262,6 +294,13 @@ pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Chi
   }
   cmd.spawn()
     .map_err(|e| anyhow::anyhow!("MKVEXTRACT_NOT_AVAILABLE:{}: {}", mkvextract_path.display(), e))
+}
+
+pub async fn write_text_file(file: String, text: String) -> Result<()> {
+  let path = Path::new(file.as_str());
+  let mut file = File::create(path)?;
+  file.write_all(text.as_bytes())?;
+  Ok(())
 }
 
 fn validate_path_as_file(path: &Path) -> Result<()> {

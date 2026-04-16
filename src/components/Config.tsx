@@ -43,6 +43,7 @@ import {
   Palette as AppearanceIcon,
   Save as SaveIcon,
   Tune as FormatIcon,
+  Update as UpdateIcon,
   VideoFile as VideoIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -210,6 +211,7 @@ export default function Config() {
   const [audioFormat, setAudioFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
+  const [updateCheckInterval, setUpdateCheckInterval] = useState<Protocol.UpdateCheckInterval>(Protocol.UpdateCheckInterval.Weekly);
   const [formatTab, setFormatTab] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -235,6 +237,7 @@ export default function Config() {
       setAudioFormat(initStreamFormat(config.audio));
       setSubtitleFormat(initStreamFormat(config.subtitle));
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
+      setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
     }
   }, [config]);
 
@@ -284,6 +287,7 @@ export default function Config() {
     audio: toConfigStreamFormat(audioFormat),
     subtitle: toConfigStreamFormat(subtitleFormat),
     mkv: { mkvToolNixPath },
+    update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
   });
 
   const handleSave = async () => {
@@ -583,6 +587,29 @@ export default function Config() {
               size="small"
               fullWidth
             />
+          </Box>
+        </Paper>
+
+        {/* Update Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<UpdateIcon fontSize="small" />} title={t('config.update')} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {t('config.checkNewVersion')}
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <Select
+                value={updateCheckInterval}
+                onChange={(e) => {
+                  setUpdateCheckInterval(e.target.value as Protocol.UpdateCheckInterval);
+                  handleChange();
+                }}
+              >
+                <MenuItem value={Protocol.UpdateCheckInterval.Daily}>{t('config.daily')}</MenuItem>
+                <MenuItem value={Protocol.UpdateCheckInterval.Weekly}>{t('config.weekly')}</MenuItem>
+                <MenuItem value={Protocol.UpdateCheckInterval.Monthly}>{t('config.monthly')}</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
         </Paper>
 

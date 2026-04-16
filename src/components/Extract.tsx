@@ -199,11 +199,9 @@ function trackIdToKey(id: number): string | null {
   return null;
 }
 
-function keyToTrackId(key: string): number | null {
-  if (key.length !== 1) { return null; }
-  if (key >= '0' && key <= '9') { return parseInt(key); }
-  const lower = key.toLowerCase();
-  if (lower >= 'a' && lower <= 'z') { return lower.charCodeAt(0) - 'a'.charCodeAt(0) + 10; }
+function codeToTrackId(code: string): number | null {
+  if (code.startsWith('Digit')) { return parseInt(code.charAt(5)); }  // 'Digit0'-'Digit9' → 0-9
+  if (code.startsWith('Key')) { return code.charCodeAt(3) - 0x41 + 10; }  // 'KeyA'-'KeyZ' → 10-35
   return null;
 }
 
@@ -366,7 +364,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
           prev.size === tracks.length ? new Set() : new Set(tracks.map((t) => t.id))
         );
       } else {
-        const id = keyToTrackId(e.key);
+        const id = codeToTrackId(e.code);
         if (id !== null && tracks.some((t) => t.id === id)) {
           setSelectedIds((prev) => {
             const next = new Set(prev);

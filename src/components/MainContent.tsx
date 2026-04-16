@@ -15,9 +15,13 @@
  *   limitations under the License.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
+  Alert,
   Box,
+  Checkbox,
+  FormControlLabel,
+  Link,
   Tabs,
   Tab,
   IconButton,
@@ -33,11 +37,12 @@ import { useTranslation } from 'react-i18next';
 import { getCurrentWindow, type DragDropEvent } from '@tauri-apps/api/window';
 import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import Editor from '@monaco-editor/react';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { scanFiles } from '../lib/fs';
-import { writeTextFile } from '../lib/service';
+import { getUpdateResult, skipVersion, writeTextFile } from '../lib/service';
 import { openSaveJsonCodeFileDialog } from '../lib/dialog';
 import { shrinkFileName } from '../lib/format';
 import List from './List';
@@ -57,6 +62,10 @@ export default function MainContent() {
   const [tabControls, setTabControls] = useState<TabControl[]>([
     { type: Protocol.TabType.List, index: 0, value: null },
   ]);
+
+  const [newVersion, setNewVersion] = useState<string | null>(null);
+  const [skipChecked, setSkipChecked] = useState(false);
+  const updatePollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const config = useAppStore((state) => state.config);
   const dialogJsonCode = useAppStore((state) => state.dialogJsonCode);
@@ -200,6 +209,32 @@ export default function MainContent() {
     };
   }, [tabIndex, tabControls.length]);
 
+  // Poll for update check result
+  useEffect(() => {
+    updatePollRef.current = setInterval(async () => {
+      try {
+        const result = await getUpdateResult();
+        if (result) {
+          if (updatePollRef.current) {
+            clearInterval(updatePollRef.current);
+            updatePollRef.current = undefined;
+          }
+          if (result.hasUpdate && result.latestVersion) {
+            setNewVersion(result.latestVersion);
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }, 1000);
+    return () => {
+      if (updatePollRef.current) {
+        clearInterval(updatePollRef.current);
+        updatePollRef.current = undefined;
+      }
+    };
+  }, []);
+
   // File drop handling
   useEffect(() => {
     let cancelFileDrop: UnlistenFn | null = null;
@@ -315,6 +350,37 @@ export default function MainContent() {
 
   return (
     <Box sx={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {newVersion && (
+        <Alert
+          severity="info"
+          onClose={async () => {
+            if (skipChecked) {
+              await skipVersion(newVersion);
+            }
+            setNewVersion(null);
+            setSkipChecked(false);
+          }}
+          sx={{ flexShrink: 0, '& .MuiAlert-message': { flex: 1 } }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => shellOpen('https://github.com/caoccao/BetterMediaInfo/releases')}
+              sx={{ cursor: 'pointer' }}
+            >
+              {t('update.newVersionAvailable', { version: newVersion })}
+            </Link>
+            <Box sx={{ flex: 1 }} />
+            <FormControlLabel
+              control={<Checkbox size="small" sx={{ p: 0.5 }} checked={skipChecked} onChange={(e) => setSkipChecked(e.target.checked)} />}
+              label={t('update.skipThisVersion')}
+              slotProps={{ typography: { variant: 'body2' } }}
+              sx={{ mr: 0 }}
+            />
+          </Box>
+        </Alert>
+      )}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
         <Tabs
           value={tabIndex}

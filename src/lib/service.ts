@@ -22,6 +22,14 @@ export async function getAbout(): Promise<Protocol.About> {
   return await invoke<Protocol.About>("get_about");
 }
 
+export async function getUpdateResult(): Promise<Protocol.UpdateCheckResult | null> {
+  return await invoke<Protocol.UpdateCheckResult | null>("get_update_result");
+}
+
+export async function skipVersion(version: string): Promise<void> {
+  return await invoke<void>("skip_version", { version });
+}
+
 export async function getConfig(): Promise<Protocol.Config> {
   return await invoke<Protocol.Config>("get_config");
 }
