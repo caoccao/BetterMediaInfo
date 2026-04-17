@@ -33,16 +33,18 @@ fn convert_error(error: anyhow::Error) -> String {
 }
 
 #[tauri::command]
-fn get_update_result(state: tauri::State<'_, UpdateCheckState>) -> Option<UpdateCheckResult> {
-  state.result.lock().unwrap().clone()
-}
-
-#[tauri::command]
-fn skip_version(version: String) -> Result<(), String> {
-  log::debug!("skip_version({})", version);
-  let mut cfg = config::get_config();
-  cfg.update.ignore_version = version;
-  config::set_config(cfg).map_err(convert_error)
+async fn cancel_mkvextract(
+  window: tauri::Window,
+  state: tauri::State<'_, MkvextractState>,
+) -> Result<(), String> {
+  log::debug!("cancel_mkvextract({})", window.label());
+  let label = window.label().to_owned();
+  let child = state.children.lock().unwrap().remove(&label);
+  if let Some(mut child) = child {
+    let _ = child.kill();
+    let _ = child.wait();
+  }
+  Ok(())
 }
 
 #[tauri::command]
@@ -70,73 +72,6 @@ async fn get_mkv_tracks(file: String) -> Result<Vec<protocol::MkvTrack>, String>
 }
 
 #[tauri::command]
-async fn is_mkvmerge_found(path: String) -> Result<protocol::MkvmergeStatus, String> {
-  log::debug!("is_mkvmerge_found({})", path);
-  mkvtoolnix::is_mkvmerge_found(path).await.map_err(convert_error)
-}
-
-#[tauri::command]
-async fn run_mkvextract(
-  window: tauri::Window,
-  file: String,
-  args: Vec<String>,
-  state: tauri::State<'_, MkvextractState>,
-) -> Result<(), String> {
-  log::debug!("run_mkvextract({}, {:?})", file, args);
-  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args).map_err(convert_error)?;
-  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
-  let label = window.label().to_owned();
-  state.children.lock().unwrap().insert(label.clone(), child);
-  let children_arc = state.children.clone();
-  let window_clone = window.clone();
-  tokio::task::spawn_blocking(move || {
-    mkvtoolnix::read_mkvextract_output(stdout, |line| {
-      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
-        let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
-          percent,
-          done: false,
-          cancelled: false,
-          error: None,
-        });
-      }
-    });
-    let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, error) = match child {
-      Some(mut c) => {
-        match c.wait() {
-          Ok(status) if status.success() => (false, None),
-          Ok(status) => (false, Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1)))),
-          Err(e) => (false, Some(e.to_string())),
-        }
-      }
-      None => (true, None),
-    };
-    let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
-      percent: 100,
-      done: true,
-      cancelled,
-      error,
-    });
-  }).await.map_err(|e| e.to_string())?;
-  Ok(())
-}
-
-#[tauri::command]
-async fn cancel_mkvextract(
-  window: tauri::Window,
-  state: tauri::State<'_, MkvextractState>,
-) -> Result<(), String> {
-  log::debug!("cancel_mkvextract({})", window.label());
-  let label = window.label().to_owned();
-  let child = state.children.lock().unwrap().remove(&label);
-  if let Some(mut child) = child {
-    let _ = child.kill();
-    let _ = child.wait();
-  }
-  Ok(())
-}
-
-#[tauri::command]
 async fn get_parameters() -> Result<Vec<protocol::Parameter>, String> {
   log::debug!("get_parameters");
   controller::get_parameters().await.map_err(convert_error)
@@ -160,15 +95,14 @@ async fn get_stream_count(file: String) -> Result<Vec<protocol::StreamCount>, St
 }
 
 #[tauri::command]
-async fn set_config(config: config::Config) -> Result<config::Config, String> {
-  log::debug!("set_config({:?})", config);
-  controller::set_config(config).await.map_err(convert_error)
+fn get_update_result(state: tauri::State<'_, UpdateCheckState>) -> Option<UpdateCheckResult> {
+  state.result.lock().unwrap().clone()
 }
 
 #[tauri::command]
-async fn write_text_file(file: String, text: String) -> Result<(), String> {
-  log::debug!("write_text_file({})", file);
-  controller::write_text_file(file, text).await.map_err(convert_error)
+async fn is_mkvmerge_found(path: String) -> Result<protocol::MkvmergeStatus, String> {
+  log::debug!("is_mkvmerge_found({})", path);
+  mkvtoolnix::is_mkvmerge_found(path).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -288,4 +222,70 @@ pub fn run() {
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
+}
+
+#[tauri::command]
+async fn run_mkvextract(
+  window: tauri::Window,
+  file: String,
+  args: Vec<String>,
+  state: tauri::State<'_, MkvextractState>,
+) -> Result<(), String> {
+  log::debug!("run_mkvextract({}, {:?})", file, args);
+  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args).map_err(convert_error)?;
+  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
+  let label = window.label().to_owned();
+  state.children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = state.children.clone();
+  let window_clone = window.clone();
+  tokio::task::spawn_blocking(move || {
+    mkvtoolnix::read_mkvextract_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
+        let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
+          percent,
+          done: false,
+          cancelled: false,
+          error: None,
+        });
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => {
+        match c.wait() {
+          Ok(status) if status.success() => (false, None),
+          Ok(status) => (false, Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1)))),
+          Err(e) => (false, Some(e.to_string())),
+        }
+      }
+      None => (true, None),
+    };
+    let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
+      percent: 100,
+      done: true,
+      cancelled,
+      error,
+    });
+  }).await.map_err(|e| e.to_string())?;
+  Ok(())
+}
+
+#[tauri::command]
+async fn set_config(config: config::Config) -> Result<config::Config, String> {
+  log::debug!("set_config({:?})", config);
+  controller::set_config(config).await.map_err(convert_error)
+}
+
+#[tauri::command]
+fn skip_version(version: String) -> Result<(), String> {
+  log::debug!("skip_version({})", version);
+  let mut cfg = config::get_config();
+  cfg.update.ignore_version = version;
+  config::set_config(cfg).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn write_text_file(file: String, text: String) -> Result<(), String> {
+  log::debug!("write_text_file({})", file);
+  controller::write_text_file(file, text).await.map_err(convert_error)
 }
