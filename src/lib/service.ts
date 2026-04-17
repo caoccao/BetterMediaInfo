@@ -38,6 +38,10 @@ export async function getMkvTracks(file: string): Promise<Array<Protocol.MkvTrac
   return await invoke<Array<Protocol.MkvTrack>>("get_mkv_tracks", { file });
 }
 
+export async function isMkvmergeFound(path: string): Promise<Protocol.MkvmergeStatus> {
+  return await invoke<Protocol.MkvmergeStatus>("is_mkvmerge_found", { path });
+}
+
 export async function runMkvextract(file: string, args: string[]): Promise<void> {
   return await invoke<void>("run_mkvextract", { file, args });
 }

@@ -16,13 +16,13 @@
 */
 
 use std::collections::HashMap;
-use std::io::{BufReader, Read};
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
 mod config;
 mod controller;
 mod media_info;
+mod mkvtoolnix;
 mod protocol;
 mod streams;
 
@@ -30,50 +30,6 @@ use protocol::{MkvextractProgressEvent, MkvextractState, UpdateCheckResult, Upda
 
 fn convert_error(error: anyhow::Error) -> String {
   error.to_string()
-}
-
-fn parse_mkvextract_progress(line: &str) -> Option<u32> {
-  let trimmed = line.trim();
-  if trimmed.starts_with("Progress:") {
-    trimmed
-      .trim_start_matches("Progress:")
-      .trim()
-      .trim_end_matches('%')
-      .parse::<u32>()
-      .ok()
-  } else {
-    None
-  }
-}
-
-fn read_mkvextract_output<F>(reader: impl Read, mut on_line: F)
-where
-  F: FnMut(&str),
-{
-  let mut buf_reader = BufReader::new(reader);
-  let mut current_line = Vec::new();
-  let mut byte = [0u8; 1];
-  loop {
-    match buf_reader.read(&mut byte) {
-      Ok(0) => break,
-      Ok(_) => {
-        if byte[0] == b'\r' || byte[0] == b'\n' {
-          if !current_line.is_empty() {
-            let line = String::from_utf8_lossy(&current_line);
-            on_line(&line);
-            current_line.clear();
-          }
-        } else {
-          current_line.push(byte[0]);
-        }
-      }
-      Err(_) => break,
-    }
-  }
-  if !current_line.is_empty() {
-    let line = String::from_utf8_lossy(&current_line);
-    on_line(&line);
-  }
 }
 
 #[tauri::command]
@@ -110,7 +66,13 @@ async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
 #[tauri::command]
 async fn get_mkv_tracks(file: String) -> Result<Vec<protocol::MkvTrack>, String> {
   log::debug!("get_mkv_tracks({})", file);
-  controller::get_mkv_tracks(file).await.map_err(convert_error)
+  mkvtoolnix::get_mkv_tracks(file).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn is_mkvmerge_found(path: String) -> Result<protocol::MkvmergeStatus, String> {
+  log::debug!("is_mkvmerge_found({})", path);
+  mkvtoolnix::is_mkvmerge_found(path).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -121,15 +83,15 @@ async fn run_mkvextract(
   state: tauri::State<'_, MkvextractState>,
 ) -> Result<(), String> {
   log::debug!("run_mkvextract({}, {:?})", file, args);
-  let mut child = controller::spawn_mkvextract(&file, &args).map_err(convert_error)?;
+  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args).map_err(convert_error)?;
   let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
   let label = window.label().to_owned();
   state.children.lock().unwrap().insert(label.clone(), child);
   let children_arc = state.children.clone();
   let window_clone = window.clone();
   tokio::task::spawn_blocking(move || {
-    read_mkvextract_output(stdout, |line| {
-      if let Some(percent) = parse_mkvextract_progress(line) {
+    mkvtoolnix::read_mkvextract_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
         let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
           percent,
           done: false,
@@ -315,6 +277,7 @@ pub fn run() {
       skip_version,
       get_files,
       get_mkv_tracks,
+      is_mkvmerge_found,
       run_mkvextract,
       cancel_mkvextract,
       get_parameters,

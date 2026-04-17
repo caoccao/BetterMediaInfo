@@ -78,6 +78,13 @@ pub struct MkvTrack {
   pub language: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MkvmergeStatus {
+  pub found: bool,
+  #[serde(rename = "mkvToolNixPath")]
+  pub mkv_toolnix_path: String,
+}
+
 pub struct MkvextractState {
   pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
 }

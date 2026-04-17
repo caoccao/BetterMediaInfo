@@ -218,6 +218,11 @@ export interface MkvTrack {
   language: string;
 }
 
+export interface MkvmergeStatus {
+  found: boolean;
+  mkvToolNixPath: string;
+}
+
 export interface UpdateCheckResult {
   hasUpdate: boolean;
   latestVersion: string | null;

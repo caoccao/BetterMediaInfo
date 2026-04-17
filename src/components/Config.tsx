@@ -46,9 +46,10 @@ import {
   Update as UpdateIcon,
   VideoFile as VideoIcon,
 } from '@mui/icons-material';
+import { open } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
-import { setConfig as saveConfig } from '../lib/service';
+import { isMkvmergeFound, setConfig as saveConfig } from '../lib/service';
 import { useAppStore } from '../lib/store';
 import { changeLanguage } from '../i18n';
 
@@ -211,10 +212,12 @@ export default function Config() {
   const [audioFormat, setAudioFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
+  const [mkvmergeFound, setMkvmergeFound] = useState(false);
   const [updateCheckInterval, setUpdateCheckInterval] = useState<Protocol.UpdateCheckInterval>(Protocol.UpdateCheckInterval.Weekly);
   const [formatTab, setFormatTab] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
 
   const config = useAppStore((state) => state.config);
@@ -307,6 +310,17 @@ export default function Config() {
     }
   };
 
+  const handleBrowseMkvToolNixPath = async () => {
+    const directory = await open({
+      directory: true,
+      defaultPath: mkvToolNixPath.trim() || undefined,
+    });
+    if (typeof directory === 'string' && directory.length > 0) {
+      setMkvToolNixPath(directory);
+      handleChange();
+    }
+  };
+
   // Update store immediately when appearance/language changes
   useEffect(() => {
     if (!isInitializedRef.current || !config) return;
@@ -325,6 +339,45 @@ export default function Config() {
     if (!isInitializedRef.current) return;
     changeLanguage(language);
   }, [language]);
+
+  // Validate MKVToolNix path from backend and show mkvmerge availability.
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    if (mkvToolNixCheckDebounceRef.current) {
+      clearTimeout(mkvToolNixCheckDebounceRef.current);
+    }
+    let isCancelled = false;
+    mkvToolNixCheckDebounceRef.current = setTimeout(async () => {
+      try {
+        const status = await isMkvmergeFound(mkvToolNixPath.trim());
+        if (!isCancelled) {
+          setMkvmergeFound(status.found);
+          if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
+            setMkvToolNixPath(status.mkvToolNixPath);
+            if (config && config.mkv?.mkvToolNixPath !== status.mkvToolNixPath) {
+              setStoreConfig({
+                ...config,
+                mkv: {
+                  ...(config.mkv ?? { mkvToolNixPath: status.mkvToolNixPath }),
+                  mkvToolNixPath: status.mkvToolNixPath,
+                },
+              });
+            }
+          }
+        }
+      } catch {
+        if (!isCancelled) {
+          setMkvmergeFound(false);
+        }
+      }
+    }, 250);
+    return () => {
+      isCancelled = true;
+      if (mkvToolNixCheckDebounceRef.current) {
+        clearTimeout(mkvToolNixCheckDebounceRef.current);
+      }
+    };
+  }, [mkvToolNixPath, config, setStoreConfig]);
 
   // Update store immediately when stream format changes
   useEffect(() => {
@@ -578,15 +631,35 @@ export default function Config() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('config.mkvToolNixPath')}
             </Typography>
-            <TextField
-              value={mkvToolNixPath}
-              onChange={(e) => {
-                setMkvToolNixPath(e.target.value);
-                handleChange();
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TextField
+                value={mkvToolNixPath}
+                onChange={(e) => {
+                  setMkvToolNixPath(e.target.value);
+                  handleChange();
+                }}
+                size="small"
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleBrowseMkvToolNixPath}
+                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+              >
+                {t('config.browse')}
+              </Button>
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0.75,
+                display: 'block',
+                color: mkvmergeFound ? 'success.main' : 'error.main',
               }}
-              size="small"
-              fullWidth
-            />
+            >
+              {mkvmergeFound ? t('config.mkvmergeFound') : t('config.mkvmergeNotFound')}
+            </Typography>
           </Box>
         </Paper>
 

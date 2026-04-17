@@ -80,6 +80,10 @@ pub async fn get_about() -> Result<About> {
   })
 }
 
+pub fn get_app_version() -> &'static str {
+  env!("CARGO_PKG_VERSION")
+}
+
 pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
 }
@@ -213,51 +217,6 @@ pub async fn get_properties(file: String, properties: Option<Vec<StreamProperty>
   Ok(stream_property_maps)
 }
 
-pub fn get_app_version() -> &'static str {
-  env!("CARGO_PKG_VERSION")
-}
-
-pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
-  let path = Path::new(file.as_str());
-  validate_path_as_file(path)?;
-  let cfg = config::get_config();
-  let mkvmerge_path = PathBuf::from(&cfg.mkv.mkv_toolnix_path).join("mkvmerge");
-  let mut cmd = std::process::Command::new(&mkvmerge_path);
-  cmd.arg("-J").arg(&file);
-  #[cfg(target_os = "windows")]
-  {
-    use std::os::windows::process::CommandExt;
-    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-  }
-  let output = cmd
-    .output()
-    .map_err(|e| anyhow::anyhow!("MKVMERGE_NOT_AVAILABLE:{}: {}", mkvmerge_path.display(), e))?;
-  if !output.status.success() {
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    return Err(anyhow::anyhow!("MKVMERGE_FAILED:{}", stderr));
-  }
-  let json: serde_json::Value = serde_json::from_slice(&output.stdout)
-    .map_err(|e| anyhow::anyhow!("MKVMERGE_PARSE_ERROR:{}", e))?;
-  let tracks = json["tracks"]
-    .as_array()
-    .map(|arr| {
-      arr.iter().map(|t| {
-        let props = &t["properties"];
-        MkvTrack {
-          id: t["id"].as_i64().unwrap_or(0),
-          number: props["number"].as_i64().unwrap_or(0),
-          track_type: t["type"].as_str().unwrap_or("").to_owned(),
-          codec: t["codec"].as_str().unwrap_or("").to_owned(),
-          codec_id: props["codec_id"].as_str().unwrap_or("").to_owned(),
-          track_name: props["track_name"].as_str().unwrap_or("").to_owned(),
-          language: props["language"].as_str().unwrap_or("und").to_owned(),
-        }
-      }).collect()
-    })
-    .unwrap_or_default();
-  Ok(tracks)
-}
-
 pub fn is_newer_version(latest: &str, current: &str) -> bool {
   let latest = latest.trim_start_matches('v');
   let current = current.trim_start_matches('v');
@@ -276,24 +235,6 @@ pub fn is_newer_version(latest: &str, current: &str) -> bool {
 pub async fn set_config(config: config::Config) -> Result<config::Config> {
   config::set_config(config)?;
   Ok(config::get_config())
-}
-
-pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Child> {
-  let path = Path::new(file);
-  validate_path_as_file(path)?;
-  let cfg = config::get_config();
-  let mkvextract_path = PathBuf::from(&cfg.mkv.mkv_toolnix_path).join("mkvextract");
-  let mut cmd = std::process::Command::new(&mkvextract_path);
-  cmd.arg(file).arg("tracks").args(args)
-    .stdout(std::process::Stdio::piped())
-    .stderr(std::process::Stdio::piped());
-  #[cfg(target_os = "windows")]
-  {
-    use std::os::windows::process::CommandExt;
-    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-  }
-  cmd.spawn()
-    .map_err(|e| anyhow::anyhow!("MKVEXTRACT_NOT_AVAILABLE:{}: {}", mkvextract_path.display(), e))
 }
 
 pub async fn write_text_file(file: String, text: String) -> Result<()> {
