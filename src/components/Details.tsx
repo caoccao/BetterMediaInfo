@@ -233,7 +233,7 @@ export default function Details({ file }: DetailsProps) {
           </Box>
         ) : filteredAllProperties.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <img src="images/empty.gif" alt={t('details.altNotFound')} />
+            <img src="images/empty.png" alt={t('details.altNotFound')} />
           </Box>
         ) : (
           filteredAllProperties.map((properties) =>
