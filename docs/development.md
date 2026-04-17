@@ -187,7 +187,13 @@ node BetterMediaInfo\src-tauri\scripts\patch_tauri_conf.cjs
 
 ## UI
 
-* [Svelte UX](https://svelte-ux.techniq.dev/)
-* [tailwindcss](https://tailwindcss.com/)
-* [Google Fonts](https://fonts.google.com/icons)
-* [svhighlight](https://github.com/bennymi/svhighlight)
+* [React 19](https://react.dev/)
+* [TypeScript](https://www.typescriptlang.org/)
+* [Material-UI (MUI) v7](https://mui.com/)
+* [MUI X Data Grid](https://mui.com/x/react-data-grid/)
+* [Emotion](https://emotion.sh/)
+* [Monaco Editor](https://microsoft.github.io/monaco-editor/)
+* [Zustand](https://zustand.docs.pmnd.rs/)
+* [react-i18next](https://react.i18next.com/)
+* [Vite](https://vite.dev/)
+* [Tauri v2](https://tauri.app/)
