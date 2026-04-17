@@ -45,6 +45,7 @@
       "language": "Sprache",
       "resolution": "Auflösung",
       "hdr": "HDR",
+      "dv": "DV",
       "scanType": "Abtastmodus",
       "default": "D",
       "forced": "F",

@@ -45,6 +45,7 @@
       "language": "Langue",
       "resolution": "Résolution",
       "hdr": "HDR",
+      "dv": "DV",
       "scanType": "Type de balayage",
       "default": "D",
       "forced": "F",

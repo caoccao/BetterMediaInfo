@@ -45,6 +45,7 @@
       "language": "Language",
       "resolution": "Resolution",
       "hdr": "HDR",
+      "dv": "DV",
       "scanType": "Scan Type",
       "default": "D",
       "forced": "F",

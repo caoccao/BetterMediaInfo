@@ -45,6 +45,7 @@
       "language": "言語",
       "resolution": "解像度",
       "hdr": "HDR",
+      "dv": "DV",
       "scanType": "走査方式",
       "default": "D",
       "forced": "F",

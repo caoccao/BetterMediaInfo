@@ -117,6 +117,11 @@ export function transformDefault(value: string | undefined | null): string {
   return value ? value : "";
 }
 
+export function transformDolbyVision(value: string | undefined | null): string {
+  if (!value) return "";
+  return value.includes("Dolby Vision") ? "Yes" : "";
+}
+
 export function transformDuration(value: string | undefined | null): string {
   if (value) {
     const duration = parseInt(value);

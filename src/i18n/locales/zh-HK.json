@@ -45,6 +45,7 @@
       "language": "語言",
       "resolution": "解像度",
       "hdr": "HDR",
+      "dv": "DV",
       "scanType": "掃描類型",
       "default": "D",
       "forced": "F",
