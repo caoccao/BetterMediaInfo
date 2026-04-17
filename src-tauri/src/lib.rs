@@ -130,7 +130,7 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .setup(|app| {
       let window = app.get_webview_window("main").unwrap();
-      let _ = window.set_title("BetterMediaInfo v0.9.0");
+      let _ = window.set_title(&format!("BetterMediaInfo v{}", controller::get_app_version()));
 
       // Check for updates in background
       let update_state = app.state::<UpdateCheckState>();

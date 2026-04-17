@@ -237,13 +237,6 @@ pub async fn set_config(config: config::Config) -> Result<config::Config> {
   Ok(config::get_config())
 }
 
-pub async fn write_text_file(file: String, text: String) -> Result<()> {
-  let path = Path::new(file.as_str());
-  let mut file = File::create(path)?;
-  file.write_all(text.as_bytes())?;
-  Ok(())
-}
-
 fn validate_path_as_file(path: &Path) -> Result<()> {
   if !path.exists() {
     Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
@@ -252,4 +245,11 @@ fn validate_path_as_file(path: &Path) -> Result<()> {
   } else {
     Ok(())
   }
+}
+
+pub async fn write_text_file(file: String, text: String) -> Result<()> {
+  let path = Path::new(file.as_str());
+  let mut file = File::create(path)?;
+  file.write_all(text.as_bytes())?;
+  Ok(())
 }

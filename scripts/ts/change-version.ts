@@ -102,9 +102,6 @@ class ChangeVersion {
     this._change("src-tauri/tauri.conf.json", [
       /^  "version":\s*"(?<version>\d+\.\d+\.\d+)"/gim,
     ]);
-    this._change("src-tauri/src/lib.rs", [
-      /"BetterMediaInfo v(?<version>\d+\.\d+\.\d+)"/gi,
-    ]);
   }
 }
 

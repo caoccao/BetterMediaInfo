@@ -16,6 +16,7 @@
 */
 
 use anyhow::Result;
+#[cfg(target_os = "macos")]
 use std::cmp::Ordering;
 #[cfg(target_os = "macos")]
 use std::fs;
@@ -74,6 +75,7 @@ where
   }
 }
 
+#[cfg(target_os = "macos")]
 fn compare_version_parts(left: &[u32], right: &[u32]) -> Ordering {
   let len = left.len().max(right.len());
   for i in 0..len {
@@ -87,6 +89,7 @@ fn compare_version_parts(left: &[u32], right: &[u32]) -> Ordering {
   Ordering::Equal
 }
 
+#[cfg(target_os = "macos")]
 fn parse_version_parts(version: &str) -> Vec<u32> {
   version
     .split('.')
