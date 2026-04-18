@@ -45,7 +45,7 @@ import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import ImageIcon from '@mui/icons-material/Image';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import SmartButtonIcon from '@mui/icons-material/SmartButton';
@@ -73,7 +73,7 @@ function TrackTypeIcon({ type }: { type: string }) {
     case 'images':
       return <Tooltip title="images"><ImageIcon sx={sx} /></Tooltip>;
     default:
-      return <Tooltip title={type}><HelpOutlineIcon sx={sx} /></Tooltip>;
+      return <Tooltip title={type}><HelpOutlineOutlinedIcon sx={sx} /></Tooltip>;
   }
 }
 
