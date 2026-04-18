@@ -138,6 +138,7 @@
     "browse": "Examinar...",
     "extracting": "Extrayendo...",
     "cancel": "Cancelar",
+    "close": "Cerrar",
     "elapsed": "Transcurrido",
     "eta": "Restante",
     "extractionComplete": "Extracción completada en {{seconds}} segundos.",

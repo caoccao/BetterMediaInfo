@@ -138,6 +138,7 @@
     "browse": "浏览...",
     "extracting": "正在提取...",
     "cancel": "取消",
+    "close": "关闭",
     "elapsed": "已用时间",
     "eta": "预计剩余",
     "extractionComplete": "提取完成，耗时 {{seconds}} 秒。",

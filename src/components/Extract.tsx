@@ -40,6 +40,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
@@ -52,6 +53,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
 import { basename, dirname, extname, join, sep as getSep } from '@tauri-apps/api/path';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as Protocol from '../lib/protocol';
@@ -341,6 +343,11 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
     await cancelMkvextract();
   };
 
+  const handleClose = async () => {
+    if (extracting) { return; }
+    await getCurrentWindow().close();
+  };
+
   // Cancel extraction when window closes
   useEffect(() => {
     return () => { cancelMkvextract(); };
@@ -353,7 +360,10 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'F2') {
+      if (e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'w' || e.key === 'W')) {
+        e.preventDefault();
+        handleClose();
+      } else if (e.key === 'F2') {
         e.preventDefault();
         handleCopyCommand();
       } else if (e.key === 'F3') {
@@ -421,6 +431,13 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
             <span>
               <Button variant="outlined" size="small" disabled={!hasSelection || extracting} onClick={handleExtract} startIcon={<ContentCutIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('extract.extract')}
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title="Ctrl+W">
+            <span>
+              <Button variant="outlined" size="small" disabled={extracting} onClick={handleClose} startIcon={<CloseIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+                {t('extract.close')}
               </Button>
             </span>
           </Tooltip>

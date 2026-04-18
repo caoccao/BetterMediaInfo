@@ -138,6 +138,7 @@
     "browse": "Durchsuchen...",
     "extracting": "Extrahieren...",
     "cancel": "Abbrechen",
+    "close": "Schließen",
     "elapsed": "Vergangen",
     "eta": "Verbleibend",
     "extractionComplete": "Extraktion in {{seconds}} Sekunden abgeschlossen.",

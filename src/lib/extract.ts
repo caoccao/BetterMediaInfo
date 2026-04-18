@@ -52,9 +52,9 @@ export function openExtractWindow(file: string) {
     url: `/?${params.toString()}`,
     title: `Extract - ${file}`,
     width: 1000,
-    height: 500,
+    height: 700,
     minWidth: 600,
-    minHeight: 300,
+    minHeight: 500,
   });
   openExtractWindows.set(file, webview);
   webview.once('tauri://destroyed', () => {

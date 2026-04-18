@@ -138,6 +138,7 @@
     "browse": "Browse...",
     "extracting": "Extracting...",
     "cancel": "Cancel",
+    "close": "Close",
     "elapsed": "Elapsed",
     "eta": "ETA",
     "extractionComplete": "Extraction completed in {{seconds}} seconds.",

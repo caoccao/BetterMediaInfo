@@ -138,6 +138,7 @@
     "browse": "参照...",
     "extracting": "抽出中...",
     "cancel": "キャンセル",
+    "close": "閉じる",
     "elapsed": "経過",
     "eta": "残り",
     "extractionComplete": "{{seconds}} 秒で抽出が完了しました。",
