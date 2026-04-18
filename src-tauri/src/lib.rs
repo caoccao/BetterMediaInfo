@@ -20,6 +20,7 @@ use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
 mod config;
+mod constants;
 mod controller;
 mod media_info;
 mod mkvtoolnix;
@@ -130,7 +131,7 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .setup(|app| {
       let window = app.get_webview_window("main").unwrap();
-      let _ = window.set_title(&format!("BetterMediaInfo v{}", controller::get_app_version()));
+      let _ = window.set_title(&format!("{} v{}", constants::APP_NAME, controller::get_app_version()));
 
       // Check for updates in background
       let update_state = app.state::<UpdateCheckState>();

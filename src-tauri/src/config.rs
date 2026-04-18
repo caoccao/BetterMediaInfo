@@ -22,6 +22,8 @@ use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 use std::sync::{OnceLock, RwLock};
 
+use crate::constants::APP_NAME;
+
 static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -249,9 +251,64 @@ impl Config {
   }
 
   fn get_path_buf() -> PathBuf {
-    let mut config_path_buf = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
-    config_path_buf.push("BetterMediaInfo.json");
-    config_path_buf
+    let config_dir = Self::get_config_dir();
+    if !config_dir.exists() {
+      if let Err(err) = std::fs::create_dir_all(&config_dir) {
+        log::warn!("Couldn't create config dir {}: {}", config_dir.display(), err);
+      }
+    }
+    config_dir.join(format!("{}.json", APP_NAME))
+  }
+
+  fn get_exe_dir() -> PathBuf {
+    std::env::current_exe().unwrap().parent().unwrap().to_path_buf()
+  }
+
+  #[cfg(target_os = "linux")]
+  fn get_config_dir() -> PathBuf {
+    if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
+      if !xdg.is_empty() {
+        return PathBuf::from(xdg).join(APP_NAME);
+      }
+    }
+    if let Ok(home) = std::env::var("HOME") {
+      return PathBuf::from(home).join(".config").join(APP_NAME);
+    }
+    Self::get_exe_dir()
+  }
+
+  #[cfg(target_os = "macos")]
+  fn get_config_dir() -> PathBuf {
+    if let Ok(home) = std::env::var("HOME") {
+      return PathBuf::from(home)
+        .join("Library")
+        .join("Application Support")
+        .join(APP_NAME);
+    }
+    Self::get_exe_dir()
+  }
+
+  #[cfg(target_os = "windows")]
+  fn get_config_dir() -> PathBuf {
+    let exe_dir = Self::get_exe_dir();
+    let exe_path_lc = exe_dir.to_string_lossy().to_ascii_lowercase();
+    let starts_with_env = |env_var: &str| -> bool {
+      std::env::var(env_var)
+        .ok()
+        .map(|p| !p.is_empty() && exe_path_lc.starts_with(&p.to_ascii_lowercase()))
+        .unwrap_or(false)
+    };
+    let is_installed = starts_with_env("LOCALAPPDATA")
+      || starts_with_env("ProgramFiles")
+      || starts_with_env("ProgramFiles(x86)");
+    if is_installed {
+      if let Ok(appdata) = std::env::var("APPDATA") {
+        if !appdata.is_empty() {
+          return PathBuf::from(appdata).join(APP_NAME);
+        }
+      }
+    }
+    exe_dir
   }
 
   fn load(path: PathBuf) -> Self {

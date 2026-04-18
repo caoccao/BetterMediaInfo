@@ -24,6 +24,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use crate::config;
+use crate::constants::APP_NAME;
 use crate::media_info::*;
 use crate::protocol::*;
 use crate::streams::*;
@@ -54,7 +55,7 @@ pub fn check_for_updates() -> Result<UpdateCheckResult> {
   let app_version = get_app_version();
   log::info!("Checking for updates. Current version: {}", app_version);
   let resp = ureq::get("https://api.github.com/repos/caoccao/BetterMediaInfo/releases")
-    .set("User-Agent", "BetterMediaInfo")
+    .set("User-Agent", APP_NAME)
     .call()
     .map_err(|e| anyhow::anyhow!("Failed to fetch releases: {}", e))?;
   let json: serde_json::Value = resp.into_json()

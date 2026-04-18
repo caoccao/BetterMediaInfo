@@ -185,6 +185,18 @@ node BetterMediaInfo\src-tauri\scripts\copy_dlls.cjs
 node BetterMediaInfo\src-tauri\scripts\patch_tauri_conf.cjs
 ```
 
+## Config File Location
+
+The config file `BetterMediaInfo.json` is resolved at runtime based on the platform and how the app is launched:
+
+* **Linux**: `$XDG_CONFIG_HOME/BetterMediaInfo/BetterMediaInfo.json` if `XDG_CONFIG_HOME` is set; otherwise `$HOME/.config/BetterMediaInfo/BetterMediaInfo.json`.
+* **macOS**: `$HOME/Library/Application Support/BetterMediaInfo/BetterMediaInfo.json`.
+* **Windows**:
+  * If the executable lives under `%LOCALAPPDATA%`, `%ProgramFiles%`, or `%ProgramFiles(x86)%` (i.e. the app is installed), the config is stored in `%APPDATA%\BetterMediaInfo\BetterMediaInfo.json`.
+  * Otherwise (development mode), the config is stored next to the executable (current behavior).
+
+The config directory is created automatically on first launch if it doesn't exist.
+
 ## UI
 
 * [React 19](https://react.dev/)
