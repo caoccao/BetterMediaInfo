@@ -30,6 +30,30 @@ export async function getLaunchArgs(): Promise<string[]> {
   return await invoke<string[]>("get_launch_args");
 }
 
+export async function registerExtensionsContextMenu(extensions: string[]): Promise<void> {
+  return await invoke<void>("register_extensions_context_menu", { extensions });
+}
+
+export async function unregisterExtensionsContextMenu(extensions: string[]): Promise<void> {
+  return await invoke<void>("unregister_extensions_context_menu", { extensions });
+}
+
+export async function areExtensionsContextMenuRegistered(extensions: string[]): Promise<boolean> {
+  return await invoke<boolean>("are_extensions_context_menu_registered", { extensions });
+}
+
+export async function registerFolderContextMenu(): Promise<void> {
+  return await invoke<void>("register_folder_context_menu");
+}
+
+export async function unregisterFolderContextMenu(): Promise<void> {
+  return await invoke<void>("unregister_folder_context_menu");
+}
+
+export async function isFolderContextMenuRegistered(): Promise<boolean> {
+  return await invoke<boolean>("is_folder_context_menu_registered");
+}
+
 export async function skipVersion(version: string): Promise<void> {
   return await invoke<void>("skip_version", { version });
 }

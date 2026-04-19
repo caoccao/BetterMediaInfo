@@ -21,6 +21,7 @@ use tauri::{Emitter, Manager};
 
 mod config;
 mod constants;
+mod context_menu;
 mod controller;
 mod media_info;
 mod mkvtoolnix;
@@ -103,6 +104,40 @@ fn get_update_result(state: tauri::State<'_, UpdateCheckState>) -> Option<Update
 #[tauri::command]
 fn get_launch_args() -> Vec<String> {
   std::env::args().skip(1).collect()
+}
+
+#[tauri::command]
+fn register_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
+  log::debug!("register_extensions_context_menu({:?})", extensions);
+  context_menu::register_extensions_context_menu(extensions).map_err(convert_error)
+}
+
+#[tauri::command]
+fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
+  log::debug!("unregister_extensions_context_menu({:?})", extensions);
+  context_menu::unregister_extensions_context_menu(extensions).map_err(convert_error)
+}
+
+#[tauri::command]
+fn are_extensions_context_menu_registered(extensions: Vec<String>) -> bool {
+  context_menu::are_extensions_context_menu_registered(extensions)
+}
+
+#[tauri::command]
+fn register_folder_context_menu() -> Result<(), String> {
+  log::debug!("register_folder_context_menu");
+  context_menu::register_folder_context_menu().map_err(convert_error)
+}
+
+#[tauri::command]
+fn unregister_folder_context_menu() -> Result<(), String> {
+  log::debug!("unregister_folder_context_menu");
+  context_menu::unregister_folder_context_menu().map_err(convert_error)
+}
+
+#[tauri::command]
+fn is_folder_context_menu_registered() -> bool {
+  context_menu::is_folder_context_menu_registered()
 }
 
 #[tauri::command]
@@ -214,6 +249,12 @@ pub fn run() {
       get_config,
       get_update_result,
       get_launch_args,
+      register_extensions_context_menu,
+      unregister_extensions_context_menu,
+      are_extensions_context_menu_registered,
+      register_folder_context_menu,
+      unregister_folder_context_menu,
+      is_folder_context_menu_registered,
       skip_version,
       get_files,
       get_mkv_tracks,
