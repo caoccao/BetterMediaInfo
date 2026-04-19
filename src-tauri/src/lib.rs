@@ -106,9 +106,9 @@ fn get_launch_args() -> Vec<String> {
 }
 
 #[tauri::command]
-async fn is_mkvtoolnix_found(path: String) -> Result<protocol::MkvToolNixStatus, String> {
-  log::debug!("is_mkvtoolnix_found({})", path);
-  mkvtoolnix::is_mkvtoolnix_found(path).await.map_err(convert_error)
+async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<protocol::MkvToolNixStatus, String> {
+  log::debug!("is_mkvtoolnix_found({}, {})", path, check_running);
+  mkvtoolnix::is_mkvtoolnix_found(path, check_running).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

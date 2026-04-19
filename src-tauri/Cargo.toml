@@ -37,3 +37,4 @@ widestring = "1.2.1"
 encoding = "0.2.33"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 ureq = { version = "2", features = ["json"] }
+sysinfo = { version = "0.32", default-features = false, features = ["system"] }

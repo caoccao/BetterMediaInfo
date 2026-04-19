@@ -116,6 +116,7 @@
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix パス",
     "browse": "参照",
+    "detect": "検出",
     "mkvtoolnixFound": "MKVToolNix パスで mkvmerge と mkvextract が見つかりました。",
     "mkvtoolnixNotFound": "MKVToolNix パスで mkvmerge または mkvextract が見つかりません。",
     "update": "更新",

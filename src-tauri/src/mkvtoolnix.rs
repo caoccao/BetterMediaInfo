@@ -26,6 +26,30 @@ use std::path::{Path, PathBuf};
 use crate::config;
 use crate::protocol::{MkvTrack, MkvToolNixStatus};
 
+fn mkvtoolnix_gui_process_name() -> &'static str {
+  if cfg!(target_os = "windows") {
+    "mkvtoolnix-gui.exe"
+  } else {
+    "mkvtoolnix-gui"
+  }
+}
+
+fn find_running_process_dir(exe_name: &str) -> Option<PathBuf> {
+  let sys = sysinfo::System::new_all();
+  for process in sys.processes().values() {
+    let name = process.name().to_string_lossy();
+    if !name.eq_ignore_ascii_case(exe_name) {
+      continue;
+    }
+    if let Some(exe) = process.exe() {
+      if let Some(parent) = exe.parent() {
+        return Some(parent.to_path_buf());
+      }
+    }
+  }
+  None
+}
+
 struct MkvToolNixResolution {
   path: PathBuf,
   auto_detected: bool,
@@ -308,7 +332,24 @@ fn derive_attachment_subtype(file_name: &str, content_type: &str) -> String {
   String::new()
 }
 
-pub async fn is_mkvtoolnix_found(path: String) -> Result<MkvToolNixStatus> {
+pub async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
+  if check_running {
+    if let Some(dir) = find_running_process_dir(mkvtoolnix_gui_process_name()) {
+      let has_tools = ["mkvmerge", "mkvextract"].iter().all(|t| has_tool(&dir, t));
+      if has_tools {
+        let path_string = dir.to_string_lossy().to_string();
+        let mut cfg = config::get_config();
+        if cfg.mkv.mkv_toolnix_path != path_string {
+          cfg.mkv.mkv_toolnix_path = path_string.clone();
+          config::set_config(cfg)?;
+        }
+        return Ok(MkvToolNixStatus {
+          found: true,
+          mkv_toolnix_path: path_string,
+        });
+      }
+    }
+  }
   let trimmed_path = path.trim();
   if trimmed_path.is_empty() {
     return Ok(MkvToolNixStatus {

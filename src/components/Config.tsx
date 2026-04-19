@@ -321,6 +321,27 @@ export default function Config() {
     }
   };
 
+  const handleDetectMkvToolNix = async () => {
+    try {
+      const status = await isMkvtoolnixFound(mkvToolNixPath.trim(), true);
+      setMkvtoolnixFound(status.found);
+      if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
+        setMkvToolNixPath(status.mkvToolNixPath);
+        if (config && config.mkv?.mkvToolNixPath !== status.mkvToolNixPath) {
+          setStoreConfig({
+            ...config,
+            mkv: {
+              ...(config.mkv ?? { mkvToolNixPath: status.mkvToolNixPath }),
+              mkvToolNixPath: status.mkvToolNixPath,
+            },
+          });
+        }
+      }
+    } catch {
+      setMkvtoolnixFound(false);
+    }
+  };
+
   // Update store immediately when appearance/language changes
   useEffect(() => {
     if (!isInitializedRef.current || !config) return;
@@ -648,6 +669,14 @@ export default function Config() {
                 sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
               >
                 {t('config.browse')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleDetectMkvToolNix}
+                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+              >
+                {t('config.detect')}
               </Button>
             </Box>
             <Typography

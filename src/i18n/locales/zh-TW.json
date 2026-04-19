@@ -116,6 +116,7 @@
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix 路徑",
     "browse": "瀏覽",
+    "detect": "偵測",
     "mkvtoolnixFound": "已在 MKVToolNix 路徑下找到 mkvmerge 和 mkvextract。",
     "mkvtoolnixNotFound": "未在 MKVToolNix 路徑下找到 mkvmerge 或 mkvextract。",
     "update": "更新",

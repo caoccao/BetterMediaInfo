@@ -116,6 +116,7 @@
     "mkv": "MKV",
     "mkvToolNixPath": "Ruta de MKVToolNix",
     "browse": "Examinar",
+    "detect": "Detectar",
     "mkvtoolnixFound": "mkvmerge y mkvextract se encontraron en la ruta de MKVToolNix.",
     "mkvtoolnixNotFound": "mkvmerge o mkvextract no se encontró en la ruta de MKVToolNix.",
     "update": "Actualización",

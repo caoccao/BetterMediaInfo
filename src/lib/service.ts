@@ -42,8 +42,8 @@ export async function getMkvTracks(file: string): Promise<Array<Protocol.MkvTrac
   return await invoke<Array<Protocol.MkvTrack>>("get_mkv_tracks", { file });
 }
 
-export async function isMkvtoolnixFound(path: string): Promise<Protocol.MkvToolNixStatus> {
-  return await invoke<Protocol.MkvToolNixStatus>("is_mkvtoolnix_found", { path });
+export async function isMkvtoolnixFound(path: string, checkRunning: boolean = false): Promise<Protocol.MkvToolNixStatus> {
+  return await invoke<Protocol.MkvToolNixStatus>("is_mkvtoolnix_found", { path, checkRunning });
 }
 
 export async function runMkvextract(file: string, args: string[]): Promise<void> {
