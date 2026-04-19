@@ -29,6 +29,7 @@ use crate::protocol::{MkvTrack, MkvToolNixStatus};
 struct MkvToolNixResolution {
   path: PathBuf,
   auto_detected: bool,
+  found: bool,
 }
 
 pub(crate) fn parse_mkvextract_progress(line: &str) -> Option<u32> {
@@ -136,7 +137,7 @@ fn is_default_macos_mkvtoolnix_path(path: &str) -> bool {
 }
 
 #[cfg(target_os = "macos")]
-fn find_latest_versioned_macos_mkvtoolnix_path(tool: &str) -> Option<PathBuf> {
+fn find_latest_versioned_macos_mkvtoolnix_path(tools: &[&str]) -> Option<PathBuf> {
   let entries = fs::read_dir("/Applications").ok()?;
   let mut latest: Option<(Vec<u32>, PathBuf)> = None;
   for entry in entries.flatten() {
@@ -154,7 +155,7 @@ fn find_latest_versioned_macos_mkvtoolnix_path(tool: &str) -> Option<PathBuf> {
       continue;
     }
     let mkvtoolnix_path = entry.path().join("Contents").join("MacOS");
-    if !has_tool(&mkvtoolnix_path, tool) {
+    if !tools.iter().all(|t| has_tool(&mkvtoolnix_path, t)) {
       continue;
     }
     match &latest {
@@ -169,22 +170,24 @@ fn find_latest_versioned_macos_mkvtoolnix_path(tool: &str) -> Option<PathBuf> {
   latest.map(|(_, path)| path)
 }
 
-fn resolve_mkvtoolnix(path: &str, tool: &str) -> MkvToolNixResolution {
+fn resolve_mkvtoolnix(path: &str, tools: &[&str]) -> MkvToolNixResolution {
   let trimmed_path = path.trim();
   let configured_path = PathBuf::from(trimmed_path);
-  if has_tool(&configured_path, tool) {
+  if tools.iter().all(|t| has_tool(&configured_path, t)) {
     return MkvToolNixResolution {
       path: configured_path,
       auto_detected: false,
+      found: true,
     };
   }
   #[cfg(target_os = "macos")]
   {
     if is_default_macos_mkvtoolnix_path(trimmed_path) {
-      if let Some(latest_path) = find_latest_versioned_macos_mkvtoolnix_path(tool) {
+      if let Some(latest_path) = find_latest_versioned_macos_mkvtoolnix_path(tools) {
         return MkvToolNixResolution {
           path: latest_path,
           auto_detected: true,
+          found: true,
         };
       }
     }
@@ -192,6 +195,7 @@ fn resolve_mkvtoolnix(path: &str, tool: &str) -> MkvToolNixResolution {
   MkvToolNixResolution {
     path: configured_path,
     auto_detected: false,
+    found: false,
   }
 }
 
@@ -213,7 +217,7 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
   let path = Path::new(file.as_str());
   validate_path_as_file(path)?;
   let cfg = config::get_config();
-  let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, "mkvmerge");
+  let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, &["mkvmerge"]);
   persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   let mkvmerge_path = get_tool_path(&resolution.path, "mkvmerge");
   let mut cmd = std::process::Command::new(&mkvmerge_path);
@@ -312,13 +316,12 @@ pub async fn is_mkvtoolnix_found(path: String) -> Result<MkvToolNixStatus> {
       mkv_toolnix_path: String::new(),
     });
   }
-  let resolution = resolve_mkvtoolnix(trimmed_path, "mkvmerge");
-  let found = has_tool(&resolution.path, "mkvmerge") && has_tool(&resolution.path, "mkvextract");
-  if found {
+  let resolution = resolve_mkvtoolnix(trimmed_path, &["mkvmerge", "mkvextract"]);
+  if resolution.found {
     persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   }
   Ok(MkvToolNixStatus {
-    found,
+    found: resolution.found,
     mkv_toolnix_path: resolution.path.to_string_lossy().to_string(),
   })
 }
@@ -327,7 +330,7 @@ pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Chi
   let path = Path::new(file);
   validate_path_as_file(path)?;
   let cfg = config::get_config();
-  let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, "mkvextract");
+  let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, &["mkvextract"]);
   persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   let mkvextract_path = get_tool_path(&resolution.path, "mkvextract");
   let mut cmd = std::process::Command::new(&mkvextract_path);
