@@ -218,7 +218,7 @@ export interface MkvTrack {
   language: string;
 }
 
-export interface MkvmergeStatus {
+export interface MkvToolNixStatus {
   found: boolean;
   mkvToolNixPath: string;
 }

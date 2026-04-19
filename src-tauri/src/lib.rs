@@ -101,9 +101,9 @@ fn get_update_result(state: tauri::State<'_, UpdateCheckState>) -> Option<Update
 }
 
 #[tauri::command]
-async fn is_mkvmerge_found(path: String) -> Result<protocol::MkvmergeStatus, String> {
-  log::debug!("is_mkvmerge_found({})", path);
-  mkvtoolnix::is_mkvmerge_found(path).await.map_err(convert_error)
+async fn is_mkvtoolnix_found(path: String) -> Result<protocol::MkvToolNixStatus, String> {
+  log::debug!("is_mkvtoolnix_found({})", path);
+  mkvtoolnix::is_mkvtoolnix_found(path).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -212,7 +212,7 @@ pub fn run() {
       skip_version,
       get_files,
       get_mkv_tracks,
-      is_mkvmerge_found,
+      is_mkvtoolnix_found,
       run_mkvextract,
       cancel_mkvextract,
       get_parameters,

@@ -79,7 +79,7 @@ pub struct MkvTrack {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MkvmergeStatus {
+pub struct MkvToolNixStatus {
   pub found: bool,
   #[serde(rename = "mkvToolNixPath")]
   pub mkv_toolnix_path: String,

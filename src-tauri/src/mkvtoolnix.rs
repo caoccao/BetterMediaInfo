@@ -24,7 +24,7 @@ use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use crate::config;
-use crate::protocol::{MkvTrack, MkvmergeStatus};
+use crate::protocol::{MkvTrack, MkvToolNixStatus};
 
 struct MkvToolNixResolution {
   path: PathBuf,
@@ -304,20 +304,20 @@ fn derive_attachment_subtype(file_name: &str, content_type: &str) -> String {
   String::new()
 }
 
-pub async fn is_mkvmerge_found(path: String) -> Result<MkvmergeStatus> {
+pub async fn is_mkvtoolnix_found(path: String) -> Result<MkvToolNixStatus> {
   let trimmed_path = path.trim();
   if trimmed_path.is_empty() {
-    return Ok(MkvmergeStatus {
+    return Ok(MkvToolNixStatus {
       found: false,
       mkv_toolnix_path: String::new(),
     });
   }
   let resolution = resolve_mkvtoolnix(trimmed_path, "mkvmerge");
-  let found = has_tool(&resolution.path, "mkvmerge");
+  let found = has_tool(&resolution.path, "mkvmerge") && has_tool(&resolution.path, "mkvextract");
   if found {
     persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   }
-  Ok(MkvmergeStatus {
+  Ok(MkvToolNixStatus {
     found,
     mkv_toolnix_path: resolution.path.to_string_lossy().to_string(),
   })

@@ -49,7 +49,7 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
-import { isMkvmergeFound, setConfig as saveConfig } from '../lib/service';
+import { isMkvtoolnixFound, setConfig as saveConfig } from '../lib/service';
 import { useAppStore } from '../lib/store';
 import { changeLanguage } from '../i18n';
 
@@ -212,7 +212,7 @@ export default function Config() {
   const [audioFormat, setAudioFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
-  const [mkvmergeFound, setMkvmergeFound] = useState(false);
+  const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
   const [updateCheckInterval, setUpdateCheckInterval] = useState<Protocol.UpdateCheckInterval>(Protocol.UpdateCheckInterval.Weekly);
   const [formatTab, setFormatTab] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
@@ -349,9 +349,9 @@ export default function Config() {
     let isCancelled = false;
     mkvToolNixCheckDebounceRef.current = setTimeout(async () => {
       try {
-        const status = await isMkvmergeFound(mkvToolNixPath.trim());
+        const status = await isMkvtoolnixFound(mkvToolNixPath.trim());
         if (!isCancelled) {
-          setMkvmergeFound(status.found);
+          setMkvtoolnixFound(status.found);
           if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
             setMkvToolNixPath(status.mkvToolNixPath);
             if (config && config.mkv?.mkvToolNixPath !== status.mkvToolNixPath) {
@@ -367,7 +367,7 @@ export default function Config() {
         }
       } catch {
         if (!isCancelled) {
-          setMkvmergeFound(false);
+          setMkvtoolnixFound(false);
         }
       }
     }, 250);
@@ -655,10 +655,10 @@ export default function Config() {
               sx={{
                 mt: 0.75,
                 display: 'block',
-                color: mkvmergeFound ? 'success.main' : 'error.main',
+                color: mkvtoolnixFound ? 'success.main' : 'error.main',
               }}
             >
-              {mkvmergeFound ? t('config.mkvmergeFound') : t('config.mkvmergeNotFound')}
+              {mkvtoolnixFound ? t('config.mkvtoolnixFound') : t('config.mkvtoolnixNotFound')}
             </Typography>
           </Box>
         </Paper>
