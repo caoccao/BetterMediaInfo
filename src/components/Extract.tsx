@@ -26,9 +26,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Alert,
   LinearProgress,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -59,6 +57,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as Protocol from '../lib/protocol';
+import { useAppStore } from '../lib/store';
 import { getMkvTracks, runMkvextract, cancelMkvextract } from '../lib/service';
 
 function TrackTypeIcon({ type }: { type: string }) {
@@ -291,7 +290,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
   const [elapsed, setElapsed] = useState(0);
   const [eta, setEta] = useState(0);
   const [outputDir, setOutputDir] = useState('');
-  const [snackbar, setSnackbar] = useState<string | null>(null);
+  const setDialogNotification = useAppStore((state) => state.setDialogNotification);
   const startTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
@@ -339,7 +338,10 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
         } else if (progressError) {
           setError(t('extract.error.mkvextractFailed', { detail: progressError }));
         } else {
-          setSnackbar(t('extract.extractionComplete', { seconds: elapsedSec }));
+          setDialogNotification({
+            title: t('extract.extractionComplete', { seconds: elapsedSec }),
+            type: Protocol.DialogNotificationType.Info,
+          });
         }
       }
     });
@@ -610,16 +612,6 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
           <Button variant="contained" color="error" onClick={handleCancel}>{t('extract.cancel')}</Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        open={snackbar !== null}
-        autoHideDuration={5000}
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSnackbar(null)} severity="success" variant="filled">
-          {snackbar}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

@@ -69,7 +69,6 @@ export default function MainContent() {
 
   const config = useAppStore((state) => state.config);
   const dialogJsonCode = useAppStore((state) => state.dialogJsonCode);
-  const dialogNotification = useAppStore((state) => state.dialogNotification);
   const mediaDetailedFiles = useAppStore((state) => state.mediaDetailedFiles);
   const tabAboutStatus = useAppStore((state) => state.tabAboutStatus);
   const tabSettingsStatus = useAppStore((state) => state.tabSettingsStatus);
@@ -443,27 +442,6 @@ export default function MainContent() {
           );
         })}
       </Box>
-
-      {/* Notification Dialog */}
-      <Dialog open={dialogNotification !== null} onClose={() => setDialogNotification(null)} maxWidth="md">
-        <DialogTitle
-          sx={{
-            textAlign: 'center',
-            wordBreak: 'break-word',
-            color:
-              dialogNotification?.type === Protocol.DialogNotificationType.Error
-                ? 'error.main'
-                : 'success.main',
-          }}
-        >
-          {dialogNotification?.title}
-        </DialogTitle>
-        <DialogActions sx={{ justifyContent: 'center' }}>
-          <Button variant="outlined" onClick={() => setDialogNotification(null)}>
-            {t('dialog.close')}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* JSON Code Dialog */}
       <Dialog

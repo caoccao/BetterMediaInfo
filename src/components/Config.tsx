@@ -229,6 +229,7 @@ export default function Config() {
   const isWindows = useMemo(() => typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent), []);
   const [updateCheckInterval, setUpdateCheckInterval] = useState<Protocol.UpdateCheckInterval>(Protocol.UpdateCheckInterval.Weekly);
   const [formatTab, setFormatTab] = useState(0);
+  const [fileExtensionsTab, setFileExtensionsTab] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -349,27 +350,17 @@ export default function Config() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isWindows, fileExtensionsVideo, fileExtensionsAudio, fileExtensionsImage]);
 
-  const handleToggleExtensionsContextMenu = async (
+  const handleRegisterExtensionsContextMenu = async (
     extensions: string[],
-    registered: boolean,
     setRegistered: (v: boolean) => void,
   ) => {
     try {
-      if (registered) {
-        await unregisterExtensionsContextMenu(extensions);
-        setRegistered(false);
-        setDialogNotification({
-          title: t('config.contextMenuUnregistered'),
-          type: Protocol.DialogNotificationType.Info,
-        });
-      } else {
-        await registerExtensionsContextMenu(extensions);
-        setRegistered(true);
-        setDialogNotification({
-          title: t('config.contextMenuRegistered'),
-          type: Protocol.DialogNotificationType.Info,
-        });
-      }
+      await registerExtensionsContextMenu(extensions);
+      setRegistered(true);
+      setDialogNotification({
+        title: t('config.contextMenuRegistered'),
+        type: Protocol.DialogNotificationType.Info,
+      });
     } catch (error) {
       setDialogNotification({
         title: error ? error.toString() : t('config.contextMenuFailed'),
@@ -378,23 +369,17 @@ export default function Config() {
     }
   };
 
-  const handleToggleFolderContextMenu = async () => {
+  const handleUnregisterExtensionsContextMenu = async (
+    extensions: string[],
+    setRegistered: (v: boolean) => void,
+  ) => {
     try {
-      if (folderContextMenuRegistered) {
-        await unregisterFolderContextMenu();
-        setFolderContextMenuRegistered(false);
-        setDialogNotification({
-          title: t('config.contextMenuUnregistered'),
-          type: Protocol.DialogNotificationType.Info,
-        });
-      } else {
-        await registerFolderContextMenu();
-        setFolderContextMenuRegistered(true);
-        setDialogNotification({
-          title: t('config.contextMenuRegistered'),
-          type: Protocol.DialogNotificationType.Info,
-        });
-      }
+      await unregisterExtensionsContextMenu(extensions);
+      setRegistered(false);
+      setDialogNotification({
+        title: t('config.contextMenuUnregistered'),
+        type: Protocol.DialogNotificationType.Info,
+      });
     } catch (error) {
       setDialogNotification({
         title: error ? error.toString() : t('config.contextMenuFailed'),
@@ -402,6 +387,39 @@ export default function Config() {
       });
     }
   };
+
+  const handleRegisterFolderContextMenu = async () => {
+    try {
+      await registerFolderContextMenu();
+      setFolderContextMenuRegistered(true);
+      setDialogNotification({
+        title: t('config.contextMenuRegistered'),
+        type: Protocol.DialogNotificationType.Info,
+      });
+    } catch (error) {
+      setDialogNotification({
+        title: error ? error.toString() : t('config.contextMenuFailed'),
+        type: Protocol.DialogNotificationType.Error,
+      });
+    }
+  };
+
+  const handleUnregisterFolderContextMenu = async () => {
+    try {
+      await unregisterFolderContextMenu();
+      setFolderContextMenuRegistered(false);
+      setDialogNotification({
+        title: t('config.contextMenuUnregistered'),
+        type: Protocol.DialogNotificationType.Info,
+      });
+    } catch (error) {
+      setDialogNotification({
+        title: error ? error.toString() : t('config.contextMenuFailed'),
+        type: Protocol.DialogNotificationType.Error,
+      });
+    }
+  };
+
 
   const handleDetectMkvToolNix = async () => {
     try {
@@ -617,120 +635,174 @@ export default function Config() {
               </Select>
             </FormControl>
           </SettingRow>
-          <Box sx={{ mt: 2 }}>
+          <Tabs
+            value={fileExtensionsTab}
+            onChange={(_e, v) => setFileExtensionsTab(v)}
+            sx={{ mt: 2, mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab
+              icon={<VideoIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              label={t('config.video')}
+              sx={{ minHeight: 36, textTransform: 'none' }}
+            />
+            <Tab
+              icon={<AudioIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              label={t('config.audio')}
+              sx={{ minHeight: 36, textTransform: 'none' }}
+            />
+            <Tab
+              icon={<AppearanceIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              label={t('config.image')}
+              sx={{ minHeight: 36, textTransform: 'none' }}
+            />
+            {isWindows && (
+              <Tab
+                icon={<FolderIcon sx={{ fontSize: 16 }} />}
+                iconPosition="start"
+                label={t('config.folder')}
+                sx={{ minHeight: 36, textTransform: 'none' }}
+              />
+            )}
+          </Tabs>
+          {fileExtensionsTab === 0 && (
             <Stack spacing={1.5}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                  <VideoIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography variant="caption" color="text.secondary">
-                    {t('config.videoFileExtensions')}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    value={fileExtensionsVideo}
-                    onChange={(e) => handleFileExtensionChange(setFileExtensionsVideo, e.target.value)}
+              <TextField
+                value={fileExtensionsVideo}
+                onChange={(e) => handleFileExtensionChange(setFileExtensionsVideo, e.target.value)}
+                size="small"
+                fullWidth
+                placeholder="mp4, mkv, avi, mov..."
+              />
+              {isWindows && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
                     size="small"
-                    fullWidth
-                    placeholder="mp4, mkv, avi, mov..."
-                  />
-                  {isWindows && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleToggleExtensionsContextMenu(
-                        convertFileExtensions(fileExtensionsVideo),
-                        videoContextMenuRegistered,
-                        setVideoContextMenuRegistered,
-                      )}
-                      sx={{ textTransform: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
-                    >
-                      {videoContextMenuRegistered
-                        ? t('config.unregisterContextMenu')
-                        : t('config.registerContextMenu')}
-                    </Button>
-                  )}
-                </Box>
-              </Box>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                  <AudioIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography variant="caption" color="text.secondary">
-                    {t('config.audioFileExtensions')}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    value={fileExtensionsAudio}
-                    onChange={(e) => handleFileExtensionChange(setFileExtensionsAudio, e.target.value)}
+                    disabled={convertFileExtensions(fileExtensionsVideo).length === 0 || videoContextMenuRegistered}
+                    onClick={() => handleRegisterExtensionsContextMenu(
+                      convertFileExtensions(fileExtensionsVideo),
+                      setVideoContextMenuRegistered,
+                    )}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {t('config.registerContextMenu')}
+                  </Button>
+                  <Button
+                    variant="outlined"
                     size="small"
-                    fullWidth
-                    placeholder="mp3, flac, wav, aac..."
-                  />
-                  {isWindows && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleToggleExtensionsContextMenu(
-                        convertFileExtensions(fileExtensionsAudio),
-                        audioContextMenuRegistered,
-                        setAudioContextMenuRegistered,
-                      )}
-                      sx={{ textTransform: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
-                    >
-                      {audioContextMenuRegistered
-                        ? t('config.unregisterContextMenu')
-                        : t('config.registerContextMenu')}
-                    </Button>
-                  )}
+                    disabled={!videoContextMenuRegistered}
+                    onClick={() => handleUnregisterExtensionsContextMenu(
+                      convertFileExtensions(fileExtensionsVideo),
+                      setVideoContextMenuRegistered,
+                    )}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {t('config.unregisterContextMenu')}
+                  </Button>
                 </Box>
-              </Box>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                  <AppearanceIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography variant="caption" color="text.secondary">
-                    {t('config.imageFileExtensions')}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    value={fileExtensionsImage}
-                    onChange={(e) => handleFileExtensionChange(setFileExtensionsImage, e.target.value)}
-                    size="small"
-                    fullWidth
-                    placeholder="jpg, png, gif, webp..."
-                  />
-                  {isWindows && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleToggleExtensionsContextMenu(
-                        convertFileExtensions(fileExtensionsImage),
-                        imageContextMenuRegistered,
-                        setImageContextMenuRegistered,
-                      )}
-                      sx={{ textTransform: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
-                    >
-                      {imageContextMenuRegistered
-                        ? t('config.unregisterContextMenu')
-                        : t('config.registerContextMenu')}
-                    </Button>
-                  )}
-                </Box>
-              </Box>
+              )}
             </Stack>
-          </Box>
-          {isWindows && (
-            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          )}
+          {fileExtensionsTab === 1 && (
+            <Stack spacing={1.5}>
+              <TextField
+                value={fileExtensionsAudio}
+                onChange={(e) => handleFileExtensionChange(setFileExtensionsAudio, e.target.value)}
+                size="small"
+                fullWidth
+                placeholder="mp3, flac, wav, aac..."
+              />
+              {isWindows && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={convertFileExtensions(fileExtensionsAudio).length === 0 || audioContextMenuRegistered}
+                    onClick={() => handleRegisterExtensionsContextMenu(
+                      convertFileExtensions(fileExtensionsAudio),
+                      setAudioContextMenuRegistered,
+                    )}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {t('config.registerContextMenu')}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={!audioContextMenuRegistered}
+                    onClick={() => handleUnregisterExtensionsContextMenu(
+                      convertFileExtensions(fileExtensionsAudio),
+                      setAudioContextMenuRegistered,
+                    )}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {t('config.unregisterContextMenu')}
+                  </Button>
+                </Box>
+              )}
+            </Stack>
+          )}
+          {fileExtensionsTab === 2 && (
+            <Stack spacing={1.5}>
+              <TextField
+                value={fileExtensionsImage}
+                onChange={(e) => handleFileExtensionChange(setFileExtensionsImage, e.target.value)}
+                size="small"
+                fullWidth
+                placeholder="jpg, png, gif, webp..."
+              />
+              {isWindows && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={convertFileExtensions(fileExtensionsImage).length === 0 || imageContextMenuRegistered}
+                    onClick={() => handleRegisterExtensionsContextMenu(
+                      convertFileExtensions(fileExtensionsImage),
+                      setImageContextMenuRegistered,
+                    )}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {t('config.registerContextMenu')}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={!imageContextMenuRegistered}
+                    onClick={() => handleUnregisterExtensionsContextMenu(
+                      convertFileExtensions(fileExtensionsImage),
+                      setImageContextMenuRegistered,
+                    )}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {t('config.unregisterContextMenu')}
+                  </Button>
+                </Box>
+              )}
+            </Stack>
+          )}
+          {fileExtensionsTab === 3 && isWindows && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
                 size="small"
-                onClick={handleToggleFolderContextMenu}
+                disabled={folderContextMenuRegistered}
+                onClick={handleRegisterFolderContextMenu}
                 sx={{ textTransform: 'none' }}
               >
-                {folderContextMenuRegistered
-                  ? t('config.unregisterFolderContextMenu')
-                  : t('config.registerFolderContextMenu')}
+                {t('config.registerFolderContextMenu')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={!folderContextMenuRegistered}
+                onClick={handleUnregisterFolderContextMenu}
+                sx={{ textTransform: 'none' }}
+              >
+                {t('config.unregisterFolderContextMenu')}
               </Button>
             </Box>
           )}

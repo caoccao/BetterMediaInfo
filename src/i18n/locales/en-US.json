@@ -89,6 +89,8 @@
     "formatting": "Formatting",
     "video": "Video",
     "audio": "Audio",
+    "image": "Image",
+    "folder": "Folder",
     "subtitle": "Subtitle",
     "bitRate": "Bit Rate",
     "size": "Size",

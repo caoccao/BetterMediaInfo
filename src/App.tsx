@@ -23,6 +23,7 @@ import * as Protocol from './lib/protocol';
 import { changeLanguage } from './i18n';
 import Layout from './components/Layout';
 import Extract from './components/Extract';
+import NotificationSnackbar from './components/NotificationSnackbar';
 
 function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
   switch (theme) {
@@ -339,6 +340,7 @@ function App() {
         }}
       >
         {extractParams ? <Extract file={extractParams.file} mkvToolNixPath={extractParams.mkvToolNixPath} /> : <Layout />}
+        <NotificationSnackbar />
       </Box>
     </ThemeProvider>
   );
