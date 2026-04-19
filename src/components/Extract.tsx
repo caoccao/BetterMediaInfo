@@ -40,6 +40,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import AttachmentIcon from '@mui/icons-material/Attachment';
 import CloseIcon from '@mui/icons-material/Close';
 import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -49,6 +50,7 @@ import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import ImageIcon from '@mui/icons-material/Image';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import SmartButtonIcon from '@mui/icons-material/SmartButton';
+import TocIcon from '@mui/icons-material/Toc';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
@@ -68,12 +70,27 @@ function TrackTypeIcon({ type }: { type: string }) {
       return <Tooltip title="audio"><MusicNoteIcon sx={sx} /></Tooltip>;
     case 'subtitles':
       return <Tooltip title="subtitles"><ClosedCaptionIcon sx={sx} /></Tooltip>;
+    case 'chapters':
+      return <Tooltip title="chapters"><TocIcon sx={sx} /></Tooltip>;
+    case 'attachment':
+      return <Tooltip title="attachment"><AttachmentIcon sx={sx} /></Tooltip>;
     case 'buttons':
       return <Tooltip title="buttons"><SmartButtonIcon sx={sx} /></Tooltip>;
     case 'images':
       return <Tooltip title="images"><ImageIcon sx={sx} /></Tooltip>;
     default:
       return <Tooltip title={type}><HelpOutlineOutlinedIcon sx={sx} /></Tooltip>;
+  }
+}
+
+function attachmentExtension(codec: string): string {
+  const lower = codec.toLowerCase();
+  switch (lower) {
+    case 'jpeg': return 'jpg';
+    case 'x-truetype-font': return 'ttf';
+    case 'x-opentype-font':
+    case 'font-sfnt': return 'otf';
+    default: return lower || 'bin';
   }
 }
 
@@ -152,6 +169,8 @@ function getTrackExtension(codecId: string, trackType: string): string {
     case 'video': return 'bin';
     case 'audio': return 'bin';
     case 'subtitles': return 'srt';
+    case 'chapters': return 'xml';
+    case 'attachment': return attachmentExtension(codecId);
     default: return 'bin';
   }
 }
@@ -163,15 +182,53 @@ async function getFileNameWithoutExt(filePath: string): Promise<string> {
 
 function buildOutputFileName(fileNameWithoutExt: string, track: Protocol.MkvTrack): string {
   const ext = getTrackExtension(track.codecId, track.type);
-  return `${fileNameWithoutExt}_${track.number}_${track.language}.${ext}`;
+  if (track.type === 'chapters' || track.type === 'attachment') {
+    return `${fileNameWithoutExt}.${track.id}.${ext}`;
+  }
+  return `${fileNameWithoutExt}.${track.id}.${track.language}.${ext}`;
+}
+
+interface ModeSegments {
+  tracks: string[];
+  chapters: string[];
+  attachments: string[];
+}
+
+async function buildModeSegments(
+  outputDir: string,
+  fileNameWithoutExt: string,
+  tracks: Protocol.MkvTrack[],
+  quote: (s: string) => string,
+): Promise<ModeSegments> {
+  const result: ModeSegments = { tracks: [], chapters: [], attachments: [] };
+  for (const track of tracks) {
+    const outFile = await join(outputDir, buildOutputFileName(fileNameWithoutExt, track));
+    if (track.type === 'chapters') {
+      result.chapters.push(quote(outFile));
+    } else if (track.type === 'attachment') {
+      result.attachments.push(`${track.id}:${quote(outFile)}`);
+    } else {
+      result.tracks.push(`${track.id}:${quote(outFile)}`);
+    }
+  }
+  return result;
 }
 
 async function buildExtractArgs(file: string, outputDir: string, tracks: Protocol.MkvTrack[]): Promise<string[]> {
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
+  const segments = await buildModeSegments(outputDir, fileNameWithoutExt, tracks, (s) => s);
   const results: string[] = [];
-  for (const track of tracks) {
-    const outFile = await join(outputDir, buildOutputFileName(fileNameWithoutExt, track));
-    results.push(`${track.id}:${outFile}`);
+  if (segments.tracks.length > 0) {
+    results.push('tracks');
+    results.push(...segments.tracks);
+  }
+  if (segments.chapters.length > 0) {
+    results.push('chapters');
+    results.push(segments.chapters[0]);
+  }
+  if (segments.attachments.length > 0) {
+    results.push('attachments');
+    results.push(...segments.attachments);
   }
   return results;
 }
@@ -180,12 +237,19 @@ async function buildCommandString(file: string, outputDir: string, mkvToolNixPat
   const sep = getSep();
   const mkvextractPath = `${mkvToolNixPath}${sep}mkvextract`;
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
-  const args: string[] = [];
-  for (const track of tracks) {
-    const outFile = await join(outputDir, buildOutputFileName(fileNameWithoutExt, track));
-    args.push(`${track.id}:"${outFile}"`);
+  const quote = (s: string) => `"${s}"`;
+  const segments = await buildModeSegments(outputDir, fileNameWithoutExt, tracks, quote);
+  const parts: string[] = [];
+  if (segments.tracks.length > 0) {
+    parts.push('tracks', ...segments.tracks);
   }
-  return `"${mkvextractPath}" "${file}" tracks ${args.join(' ')}`;
+  if (segments.chapters.length > 0) {
+    parts.push('chapters', segments.chapters[0]);
+  }
+  if (segments.attachments.length > 0) {
+    parts.push('attachments', ...segments.attachments);
+  }
+  return `"${mkvextractPath}" "${file}" ${parts.join(' ')}`;
 }
 
 function formatTime(seconds: number): string {
@@ -195,13 +259,17 @@ function formatTime(seconds: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function trackIdToKey(id: number): string | null {
-  if (id >= 0 && id <= 9) { return String(id); }
-  if (id >= 10 && id <= 35) { return String.fromCharCode('a'.charCodeAt(0) + id - 10); }
+function trackKey(track: Protocol.MkvTrack): string {
+  return `${track.type}:${track.id}`;
+}
+
+function indexToKey(index: number): string | null {
+  if (index >= 0 && index <= 9) { return String(index); }
+  if (index >= 10 && index <= 35) { return String.fromCharCode('a'.charCodeAt(0) + index - 10); }
   return null;
 }
 
-function codeToTrackId(code: string): number | null {
+function codeToIndex(code: string): number | null {
   if (code.startsWith('Digit')) { return parseInt(code.charAt(5)); }  // 'Digit0'-'Digit9' → 0-9
   if (code.startsWith('Key')) { return code.charCodeAt(3) - 0x41 + 10; }  // 'KeyA'-'KeyZ' → 10-35
   return null;
@@ -215,7 +283,7 @@ interface ExtractProps {
 function Extract({ file, mkvToolNixPath }: ExtractProps) {
   const { t } = useTranslation();
   const [tracks, setTracks] = useState<Protocol.MkvTrack[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [extracting, setExtracting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -308,7 +376,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
     }
   }, [progress, elapsed]);
 
-  const selectedTracks = tracks.filter((track) => selectedIds.has(track.id));
+  const selectedTracks = tracks.filter((track) => selectedKeys.has(trackKey(track)));
   const hasSelection = selectedTracks.length > 0;
 
   const handleCopyCommand = async () => {
@@ -370,18 +438,19 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
         e.preventDefault();
         handleExtract();
       } else if (e.key === '*') {
-        setSelectedIds((prev) =>
-          prev.size === tracks.length ? new Set() : new Set(tracks.map((t) => t.id))
+        setSelectedKeys((prev) =>
+          prev.size === tracks.length ? new Set() : new Set(tracks.map(trackKey))
         );
       } else {
-        const id = codeToTrackId(e.code);
-        if (id !== null && tracks.some((t) => t.id === id)) {
-          setSelectedIds((prev) => {
+        const index = codeToIndex(e.code);
+        if (index !== null && index < tracks.length) {
+          const key = trackKey(tracks[index]);
+          setSelectedKeys((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-              next.delete(id);
+            if (next.has(key)) {
+              next.delete(key);
             } else {
-              next.add(id);
+              next.add(key);
             }
             return next;
           });
@@ -465,10 +534,10 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                     <Tooltip title="*">
                       <Checkbox
                         size="small"
-                        checked={tracks.length > 0 && selectedIds.size === tracks.length}
-                        indeterminate={selectedIds.size > 0 && selectedIds.size < tracks.length}
+                        checked={tracks.length > 0 && selectedKeys.size === tracks.length}
+                        indeterminate={selectedKeys.size > 0 && selectedKeys.size < tracks.length}
                         onChange={(e) => {
-                          setSelectedIds(e.target.checked ? new Set(tracks.map((t) => t.id)) : new Set());
+                          setSelectedKeys(e.target.checked ? new Set(tracks.map(trackKey)) : new Set());
                         }}
                       />
                     </Tooltip>
@@ -482,24 +551,26 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tracks.map((track) => (
-                  <TableRow key={track.id}>
+                {tracks.map((track, index) => {
+                  const key = trackKey(track);
+                  return (
+                  <TableRow key={key}>
                     <TableCell padding="checkbox">
-                      <Tooltip title={trackIdToKey(track.id) ?? ''}>
+                      <Tooltip title={indexToKey(index) ?? ''}>
                         <Checkbox
                           size="small"
-                          checked={selectedIds.has(track.id)}
+                          checked={selectedKeys.has(key)}
                           onChange={(e) => {
-                            setSelectedIds((prev) => {
+                            setSelectedKeys((prev) => {
                               const next = new Set(prev);
                               if (e.target.checked) {
-                                next.add(track.id);
-                            } else {
-                              next.delete(track.id);
-                            }
-                            return next;
-                          });
-                        }}
+                                next.add(key);
+                              } else {
+                                next.delete(key);
+                              }
+                              return next;
+                            });
+                          }}
                         />
                       </Tooltip>
                     </TableCell>
@@ -510,7 +581,8 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                     <TableCell>{track.trackName}</TableCell>
                     <TableCell>{track.language}</TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>

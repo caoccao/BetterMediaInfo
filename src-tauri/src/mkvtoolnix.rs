@@ -232,7 +232,7 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
   }
   let json: serde_json::Value = serde_json::from_slice(&output.stdout)
     .map_err(|e| anyhow::anyhow!("MKVMERGE_PARSE_ERROR:{}", e))?;
-  let tracks = json["tracks"]
+  let mut tracks: Vec<MkvTrack> = json["tracks"]
     .as_array()
     .map(|arr| {
       arr.iter().map(|t| {
@@ -249,7 +249,59 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
       }).collect()
     })
     .unwrap_or_default();
+
+  let chapter_entries: i64 = json["chapters"]
+    .as_array()
+    .and_then(|arr| arr.first())
+    .and_then(|v| v["num_entries"].as_i64())
+    .unwrap_or(0);
+  if chapter_entries > 0 {
+    tracks.push(MkvTrack {
+      id: 0,
+      number: 0,
+      track_type: "chapters".to_owned(),
+      codec: "xml".to_owned(),
+      codec_id: "xml".to_owned(),
+      track_name: String::new(),
+      language: String::new(),
+    });
+  }
+
+  if let Some(atts) = json["attachments"].as_array() {
+    for att in atts {
+      let id = att["id"].as_i64().unwrap_or(0);
+      let file_name = att["file_name"].as_str().unwrap_or("").to_owned();
+      let content_type = att["content_type"].as_str().unwrap_or("").to_owned();
+      let subtype = derive_attachment_subtype(&file_name, &content_type);
+      tracks.push(MkvTrack {
+        id,
+        number: 0,
+        track_type: "attachment".to_owned(),
+        codec: subtype.clone(),
+        codec_id: subtype,
+        track_name: file_name,
+        language: String::new(),
+      });
+    }
+  }
+
   Ok(tracks)
+}
+
+fn derive_attachment_subtype(file_name: &str, content_type: &str) -> String {
+  if let Some(ext_pos) = file_name.rfind('.') {
+    let ext = &file_name[ext_pos + 1..];
+    if !ext.is_empty() {
+      return ext.to_ascii_lowercase();
+    }
+  }
+  if let Some(slash) = content_type.find('/') {
+    let subtype = &content_type[slash + 1..];
+    if !subtype.is_empty() {
+      return subtype.to_ascii_lowercase();
+    }
+  }
+  String::new()
 }
 
 pub async fn is_mkvmerge_found(path: String) -> Result<MkvmergeStatus> {
@@ -279,7 +331,7 @@ pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Chi
   persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   let mkvextract_path = get_tool_path(&resolution.path, "mkvextract");
   let mut cmd = std::process::Command::new(&mkvextract_path);
-  cmd.arg(file).arg("tracks").args(args)
+  cmd.arg(file).args(args)
     .stdout(std::process::Stdio::piped())
     .stderr(std::process::Stdio::piped());
   #[cfg(target_os = "windows")]
