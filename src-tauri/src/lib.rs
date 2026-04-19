@@ -101,6 +101,11 @@ fn get_update_result(state: tauri::State<'_, UpdateCheckState>) -> Option<Update
 }
 
 #[tauri::command]
+fn get_launch_args() -> Vec<String> {
+  std::env::args().skip(1).collect()
+}
+
+#[tauri::command]
 async fn is_mkvtoolnix_found(path: String) -> Result<protocol::MkvToolNixStatus, String> {
   log::debug!("is_mkvtoolnix_found({})", path);
   mkvtoolnix::is_mkvtoolnix_found(path).await.map_err(convert_error)
@@ -125,7 +130,6 @@ pub fn run() {
     .manage(UpdateCheckState {
       result: Arc::new(Mutex::new(None)),
     })
-    .plugin(tauri_plugin_cli::init())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_shell::init())
@@ -209,6 +213,7 @@ pub fn run() {
       get_about,
       get_config,
       get_update_result,
+      get_launch_args,
       skip_version,
       get_files,
       get_mkv_tracks,

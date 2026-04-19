@@ -24,19 +24,6 @@
       "csp": null
     }
   },
-  "plugins": {
-    "cli": {
-      "description": "BetterMediaInfo",
-      "longDescription": "BetterMediaInfo",
-      "args": [
-        {
-          "name": "fileOrDirectory",
-          "index": 1,
-          "takesValue": true
-        }
-      ]
-    }
-  },
   "bundle": {
     "active": true,
     "targets": "all",

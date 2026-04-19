@@ -26,6 +26,10 @@ export async function getUpdateResult(): Promise<Protocol.UpdateCheckResult | nu
   return await invoke<Protocol.UpdateCheckResult | null>("get_update_result");
 }
 
+export async function getLaunchArgs(): Promise<string[]> {
+  return await invoke<string[]>("get_launch_args");
+}
+
 export async function skipVersion(version: string): Promise<void> {
   return await invoke<void>("skip_version", { version });
 }

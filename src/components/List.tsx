@@ -42,12 +42,11 @@ import JavascriptIcon from '@mui/icons-material/Javascript';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import NotesIcon from '@mui/icons-material/Notes';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { getMatches } from '@tauri-apps/plugin-cli';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getPropertiesMap, getStreamCountMap } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import {
@@ -298,18 +297,14 @@ export default function List() {
 
   // Load CLI arguments
   useEffect(() => {
-    getMatches()
-      .then((matches) => {
-        const argMatch = matches.args['fileOrDirectory'];
-        if (argMatch) {
-          const fileOrDirectory = argMatch.value;
-          if (fileOrDirectory && typeof fileOrDirectory === 'string') {
-            scanFiles([fileOrDirectory as string]);
-          }
+    getLaunchArgs()
+      .then((args) => {
+        if (args.length > 0) {
+          scanFiles(args);
         }
       })
       .catch((error) => {
-        console.warn('CLI matches not available:', error);
+        console.warn('CLI args not available:', error);
       });
   }, []);
 

@@ -37,7 +37,3 @@ widestring = "1.2.1"
 encoding = "0.2.33"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 ureq = { version = "2", features = ["json"] }
-
-[target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
-# https://crates.io/crates/tauri-plugin-cli
-tauri-plugin-cli = "2.4"
