@@ -79,6 +79,21 @@ export interface ConfigUpdate {
   ignoreVersion: string;
 }
 
+export interface ConfigWindowPosition {
+  x: number;
+  y: number;
+}
+
+export interface ConfigWindowSize {
+  width: number;
+  height: number;
+}
+
+export interface ConfigWindow {
+  position: ConfigWindowPosition;
+  size: ConfigWindowSize;
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
   displayMode: DisplayMode;
@@ -91,6 +106,7 @@ export interface Config {
   subtitle: ConfigStreamFormat;
   mkv: ConfigMkv;
   update: ConfigUpdate;
+  window: ConfigWindow;
 }
 
 export enum DisplayMode {

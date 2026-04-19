@@ -305,6 +305,7 @@ export default function Config() {
     subtitle: toConfigStreamFormat(subtitleFormat),
     mkv: { mkvToolNixPath },
     update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
+    window: config?.window ?? { position: { x: -1, y: -1 }, size: { width: 1200, height: 900 } },
   });
 
   const handleSave = async () => {

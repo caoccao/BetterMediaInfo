@@ -67,6 +67,8 @@ pub struct Config {
   pub mkv: ConfigMkv,
   #[serde(default)]
   pub update: ConfigUpdate,
+  #[serde(default)]
+  pub window: ConfigWindow,
 }
 
 impl Default for Config {
@@ -83,7 +85,49 @@ impl Default for Config {
       subtitle: Default::default(),
       mkv: Default::default(),
       update: Default::default(),
+      window: Default::default(),
     }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigWindow {
+  #[serde(default)]
+  pub position: ConfigWindowPosition,
+  #[serde(default)]
+  pub size: ConfigWindowSize,
+}
+
+impl Default for ConfigWindow {
+  fn default() -> Self {
+    Self {
+      position: Default::default(),
+      size: Default::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigWindowPosition {
+  pub x: i32,
+  pub y: i32,
+}
+
+impl Default for ConfigWindowPosition {
+  fn default() -> Self {
+    Self { x: -1, y: -1 }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigWindowSize {
+  pub width: u32,
+  pub height: u32,
+}
+
+impl Default for ConfigWindowSize {
+  fn default() -> Self {
+    Self { width: 1200, height: 900 }
   }
 }
 

@@ -16,8 +16,11 @@
 */
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
+
+static WINDOW_READY: AtomicBool = AtomicBool::new(false);
 
 mod config;
 mod constants;
@@ -172,10 +175,27 @@ pub fn run() {
       let window = app.get_webview_window("main").unwrap();
       let _ = window.set_title(&format!("{} v{}", constants::APP_NAME, controller::get_app_version()));
 
+      // Restore window size and position from config
+      let cfg = config::get_config();
+      let _ = window.set_size(tauri::LogicalSize::new(
+        cfg.window.size.width,
+        cfg.window.size.height,
+      ));
+      if cfg.window.position.x < 0 || cfg.window.position.y < 0 {
+        let _ = window.center();
+      } else {
+        let _ = window.set_position(tauri::LogicalPosition::new(
+          cfg.window.position.x,
+          cfg.window.position.y,
+        ));
+      }
+      let _ = window.show();
+      let _ = window.set_focus();
+      WINDOW_READY.store(true, Ordering::SeqCst);
+
       // Check for updates in background
       let update_state = app.state::<UpdateCheckState>();
       let result_arc = update_state.result.clone();
-      let cfg = config::get_config();
       let interval_seconds: i64 = match cfg.update.check_interval {
         config::UpdateCheckInterval::Daily => 86400,
         config::UpdateCheckInterval::Weekly => 604800,
@@ -233,8 +253,11 @@ pub fn run() {
       Ok(())
     })
     .on_window_event(|window, event| {
-      if let tauri::WindowEvent::Destroyed = event {
-        if window.label() == "main" {
+      if window.label() != "main" {
+        return;
+      }
+      match event {
+        tauri::WindowEvent::Destroyed => {
           let app_handle = window.app_handle();
           for (label, win) in app_handle.webview_windows() {
             if label != "main" {
@@ -242,6 +265,25 @@ pub fn run() {
             }
           }
         }
+        tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => {
+          if !WINDOW_READY.load(Ordering::SeqCst) {
+            return;
+          }
+          let Ok(scale) = window.scale_factor() else { return; };
+          let Ok(pos) = window.outer_position() else { return; };
+          let Ok(size) = window.inner_size() else { return; };
+          let logical_pos: tauri::LogicalPosition<i32> = pos.to_logical(scale);
+          let logical_size: tauri::LogicalSize<u32> = size.to_logical(scale);
+          let mut cfg = config::get_config();
+          cfg.window.position.x = logical_pos.x;
+          cfg.window.position.y = logical_pos.y;
+          cfg.window.size.width = logical_size.width;
+          cfg.window.size.height = logical_size.height;
+          if let Err(err) = config::set_config(cfg) {
+            log::error!("Couldn't save window state because {}", err);
+          }
+        }
+        _ => {}
       }
     })
     .invoke_handler(tauri::generate_handler![
