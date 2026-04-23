@@ -53,42 +53,42 @@ function precisionToDecimalPlaces(precision: Protocol.FormatPrecision): number {
 function unitToTiers(unit: Protocol.FormatUnit): FormatTier[] {
   switch (unit) {
     case Protocol.FormatUnit.K:
-      return [{ divisor: 1e3, label: "K" }];
+      return [{ divisor: 1024, label: "K" }];
     case Protocol.FormatUnit.KM:
       return [
-        { divisor: 1e3, label: "K" },
-        { divisor: 1e6, label: "M" },
+        { divisor: 1024, label: "K" },
+        { divisor: 1048576, label: "M" },
       ];
     case Protocol.FormatUnit.KMG:
       return [
-        { divisor: 1e3, label: "K" },
-        { divisor: 1e6, label: "M" },
-        { divisor: 1e9, label: "G" },
+        { divisor: 1024, label: "K" },
+        { divisor: 1048576, label: "M" },
+        { divisor: 1073741824, label: "G" },
       ];
     case Protocol.FormatUnit.KMGT:
       return [
-        { divisor: 1e3, label: "K" },
-        { divisor: 1e6, label: "M" },
-        { divisor: 1e9, label: "G" },
-        { divisor: 1e12, label: "T" },
+        { divisor: 1024, label: "K" },
+        { divisor: 1048576, label: "M" },
+        { divisor: 1073741824, label: "G" },
+        { divisor: 1099511627776, label: "T" },
       ];
     case Protocol.FormatUnit.KMi:
       return [
-        { divisor: 1024, label: "Ki" },
-        { divisor: 1048576, label: "Mi" },
+        { divisor: 1e3, label: "Ki" },
+        { divisor: 1e6, label: "Mi" },
       ];
     case Protocol.FormatUnit.KMiGi:
       return [
-        { divisor: 1024, label: "Ki" },
-        { divisor: 1048576, label: "Mi" },
-        { divisor: 1073741824, label: "Gi" },
+        { divisor: 1e3, label: "Ki" },
+        { divisor: 1e6, label: "Mi" },
+        { divisor: 1e9, label: "Gi" },
       ];
     case Protocol.FormatUnit.KMiGiTi:
       return [
-        { divisor: 1024, label: "Ki" },
-        { divisor: 1048576, label: "Mi" },
-        { divisor: 1073741824, label: "Gi" },
-        { divisor: 1099511627776, label: "Ti" },
+        { divisor: 1e3, label: "Ki" },
+        { divisor: 1e6, label: "Mi" },
+        { divisor: 1e9, label: "Gi" },
+        { divisor: 1e12, label: "Ti" },
       ];
   }
 }
@@ -161,49 +161,6 @@ export function transformSamplingRate(
   return "";
 }
 
-function unitToSizeTiers(unit: Protocol.FormatUnit): FormatTier[] {
-  switch (unit) {
-    case Protocol.FormatUnit.K:
-      return [{ divisor: 1e3, label: "K" }];
-    case Protocol.FormatUnit.KM:
-      return [
-        { divisor: 1e3, label: "K" },
-        { divisor: 1e6, label: "M" },
-      ];
-    case Protocol.FormatUnit.KMG:
-      return [
-        { divisor: 1e3, label: "K" },
-        { divisor: 1e6, label: "M" },
-        { divisor: 1e9, label: "G" },
-      ];
-    case Protocol.FormatUnit.KMGT:
-      return [
-        { divisor: 1e3, label: "K" },
-        { divisor: 1e6, label: "M" },
-        { divisor: 1e9, label: "G" },
-        { divisor: 1e12, label: "T" },
-      ];
-    case Protocol.FormatUnit.KMi:
-      return [
-        { divisor: 1024, label: "Ki" },
-        { divisor: 1048576, label: "Mi" },
-      ];
-    case Protocol.FormatUnit.KMiGi:
-      return [
-        { divisor: 1024, label: "Ki" },
-        { divisor: 1048576, label: "Mi" },
-        { divisor: 1073741824, label: "Gi" },
-      ];
-    case Protocol.FormatUnit.KMiGiTi:
-      return [
-        { divisor: 1024, label: "Ki" },
-        { divisor: 1048576, label: "Mi" },
-        { divisor: 1073741824, label: "Gi" },
-        { divisor: 1099511627776, label: "Ti" },
-      ];
-  }
-}
-
 export function transformSize(
   value: string | undefined | null,
   precision: Protocol.FormatPrecision = Protocol.FormatPrecision.Two,
@@ -213,7 +170,7 @@ export function transformSize(
 
   const size = parseInt(value);
   const decimalPlaces = precisionToDecimalPlaces(precision);
-  const tiers = unitToSizeTiers(unit);
+  const tiers = unitToTiers(unit);
 
   for (let i = tiers.length - 1; i >= 0; i--) {
     if (size > tiers[i].divisor) {
