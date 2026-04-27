@@ -51,9 +51,9 @@ import SmartButtonIcon from '@mui/icons-material/SmartButton';
 import TocIcon from '@mui/icons-material/Toc';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import { useTranslation } from 'react-i18next';
-import { listen } from '@tauri-apps/api/event';
 import { basename, dirname, extname, join, sep as getSep } from '@tauri-apps/api/path';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as Protocol from '../lib/protocol';
@@ -326,7 +326,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
 
   // Listen for mkvextract progress events
   useEffect(() => {
-    const unlisten = listen<Protocol.MkvextractProgress>('mkvextract-progress', (event) => {
+    const unlisten = getCurrentWebviewWindow().listen<Protocol.MkvextractProgress>('mkvextract-progress', (event) => {
       const { percent, done, cancelled, error: progressError } = event.payload;
       setProgress(percent);
       if (done) {

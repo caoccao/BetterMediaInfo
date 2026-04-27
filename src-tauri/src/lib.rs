@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, EventTarget, Manager};
 
 static WINDOW_READY: AtomicBool = AtomicBool::new(false);
 
@@ -328,9 +328,10 @@ async fn run_mkvextract(
   let children_arc = state.children.clone();
   let window_clone = window.clone();
   tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
     mkvtoolnix::read_mkvextract_output(stdout, |line| {
       if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
-        let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
+        let _ = window_clone.emit_to(target.clone(), "mkvextract-progress", MkvextractProgressEvent {
           percent,
           done: false,
           cancelled: false,
@@ -349,7 +350,7 @@ async fn run_mkvextract(
       }
       None => (true, None),
     };
-    let _ = window_clone.emit("mkvextract-progress", MkvextractProgressEvent {
+    let _ = window_clone.emit_to(target, "mkvextract-progress", MkvextractProgressEvent {
       percent: 100,
       done: true,
       cancelled,
