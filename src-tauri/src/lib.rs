@@ -30,6 +30,8 @@ mod media_info;
 mod mkvtoolnix;
 mod protocol;
 mod streams;
+#[cfg(target_os = "windows")]
+mod taskbar;
 
 use protocol::{MkvextractProgressEvent, MkvextractState, UpdateCheckResult, UpdateCheckState};
 
@@ -327,10 +329,20 @@ async fn run_mkvextract(
   state.children.lock().unwrap().insert(label.clone(), child);
   let children_arc = state.children.clone();
   let window_clone = window.clone();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
   tokio::task::spawn_blocking(move || {
     let target = EventTarget::webview_window(&label);
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
     mkvtoolnix::read_mkvextract_output(stdout, |line| {
       if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
+        #[cfg(target_os = "windows")]
+        if let Some(hwnd) = hwnd_raw {
+          taskbar::set_progress(hwnd, percent);
+        }
         let _ = window_clone.emit_to(target.clone(), "mkvextract-progress", MkvextractProgressEvent {
           percent,
           done: false,
@@ -350,6 +362,14 @@ async fn run_mkvextract(
       }
       None => (true, None),
     };
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
     let _ = window_clone.emit_to(target, "mkvextract-progress", MkvextractProgressEvent {
       percent: 100,
       done: true,

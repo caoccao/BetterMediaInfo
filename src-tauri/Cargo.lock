@@ -22,6 +22,7 @@ dependencies = [
  "tokio",
  "ureq",
  "widestring",
+ "windows 0.61.3",
  "winreg 0.56.0",
 ]
 

@@ -556,12 +556,28 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                 {tracks.map((track, index) => {
                   const key = trackKey(track);
                   return (
-                  <TableRow key={key}>
+                  <TableRow
+                    key={key}
+                    hover
+                    onClick={() => {
+                      setSelectedKeys((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(key)) {
+                          next.delete(key);
+                        } else {
+                          next.add(key);
+                        }
+                        return next;
+                      });
+                    }}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell padding="checkbox">
                       <Tooltip title={indexToKey(index) ?? ''}>
                         <Checkbox
                           size="small"
                           checked={selectedKeys.has(key)}
+                          onClick={(e) => e.stopPropagation()}
                           onChange={(e) => {
                             setSelectedKeys((prev) => {
                               const next = new Set(prev);
