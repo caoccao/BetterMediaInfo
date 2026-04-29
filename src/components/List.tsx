@@ -70,7 +70,7 @@ enum OrderByType {
 
 interface PropertyDefinition {
   align: 'left' | 'right' | 'center';
-  format: (value: any, rowData: Record<string, string>, rowIndex: number) => string;
+  format: (value: any, rowData: Record<string, string>) => string;
   header: string | null;
   inCardView: boolean;
   inListView: boolean;
@@ -81,7 +81,7 @@ interface PropertyDefinition {
 
 function createPropertyDef(
   name: string,
-  format: (value: any, rowData: Record<string, string>, rowIndex: number) => string = transformDefault,
+  format: (value: any, rowData: Record<string, string>) => string = transformDefault,
   header: string | null = null
 ): PropertyDefinition {
   return {
@@ -96,10 +96,10 @@ function createPropertyDef(
   };
 }
 
-type Formatter = (value: any, rowData: Record<string, string>, rowIndex: number) => string;
+type Formatter = (value: any, rowData: Record<string, string>) => string;
 
 function createBitRateFormatter(streamFormat: Protocol.ConfigStreamFormat | undefined): Formatter {
-  return (value, _rowData, _rowIndex) => {
+  return (value, _rowData) => {
     const precision = streamFormat?.bitRate?.precision ?? Protocol.FormatPrecision.Two;
     const unit = streamFormat?.bitRate?.unit ?? Protocol.FormatUnit.KMGT;
     return transformBitRate(value, precision, unit);
@@ -107,7 +107,7 @@ function createBitRateFormatter(streamFormat: Protocol.ConfigStreamFormat | unde
 }
 
 function createSizeFormatter(streamFormat: Protocol.ConfigStreamFormat | undefined): Formatter {
-  return (value, _rowData, _rowIndex) => {
+  return (value, _rowData) => {
     const precision = streamFormat?.size?.precision ?? Protocol.FormatPrecision.Two;
     const unit = streamFormat?.size?.unit ?? Protocol.FormatUnit.KMGT;
     return transformSize(value, precision, unit);
@@ -371,14 +371,11 @@ export default function List() {
             sortable: prop.orderByType !== OrderByType.None,
             type: prop.orderByType === OrderByType.Number ? 'number' : 'string',
             valueGetter: (value: any) => value ?? '',
-            valueFormatter: (value: any, row: any) => {
-              const rowIndex = dataOfListView.findIndex((r) => r.file === row.file);
-              return prop.format(value, row, rowIndex);
-            },
+            valueFormatter: (value: any, row: any) => prop.format(value, row),
             headerClassName: `header-${stream}`,
           }))
       );
-  }, [dataOfListView, commonPropertiesMap]);
+  }, [commonPropertiesMap]);
 
   const rowsOfDataGrid = useMemo((): GridRowsProp => {
     return dataOfListView.map((row) => ({
@@ -578,7 +575,7 @@ export default function List() {
                                       borderRight: `1px solid ${STREAM_KIND_COLORS[stream]}`,
                                     }}
                                   >
-                                    {prop.format(map.propertyMap[prop.name], map.propertyMap, idx)}
+                                    {prop.format(map.propertyMap[prop.name], map.propertyMap)}
                                   </TableCell>
                                 ))}
                             </TableRow>

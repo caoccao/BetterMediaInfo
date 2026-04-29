@@ -140,7 +140,6 @@ export function transformFPS(value: string | undefined | null): string {
 export function transformResolution(
   _value: any,
   rowData: Record<string, string>,
-  _rowIndex: number
 ) {
   if (rowData["Height"] && rowData["Width"]) {
     return `${rowData["Width"]}x${rowData["Height"]}`;
@@ -184,7 +183,6 @@ export function transformSize(
 export function transformTime(
   _value: any,
   rowData: Record<string, string>,
-  _rowIndex: number
 ): string {
   if (rowData["Duration"] || rowData["General:Duration"]) {
     const duration = parseInt(
