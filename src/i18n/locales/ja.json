@@ -152,6 +152,7 @@
     "elapsed": "経過",
     "eta": "残り",
     "extractionComplete": "{{seconds}} 秒で抽出が完了しました。",
+    "closeWhenDone": "抽出完了時にウィンドウを閉じる",
     "noTracks": "トラックが見つかりません。",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",

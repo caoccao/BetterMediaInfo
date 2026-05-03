@@ -26,6 +26,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   LinearProgress,
   Table,
   TableBody,
@@ -57,7 +58,6 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as Protocol from '../lib/protocol';
-import { useAppStore } from '../lib/store';
 import { getMkvTracks, runMkvextract, cancelMkvextract } from '../lib/service';
 
 function TrackTypeIcon({ type }: { type: string }) {
@@ -290,10 +290,14 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
   const [elapsed, setElapsed] = useState(0);
   const [eta, setEta] = useState(0);
   const [outputDir, setOutputDir] = useState('');
-  const setDialogNotification = useAppStore((state) => state.setDialogNotification);
+  const [closeWhenDone, setCloseWhenDone] = useState(false);
+  const closeWhenDoneRef = useRef(false);
+  const [completion, setCompletion] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const startTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => { closeWhenDoneRef.current = closeWhenDone; }, [closeWhenDone]);
 
   // Initialize output directory from file's parent
   useEffect(() => {
@@ -331,16 +335,23 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
       setProgress(percent);
       if (done) {
         const elapsedSec = Math.round((Date.now() - startTimeRef.current) / 1000);
-        setDialogOpen(false);
         setExtracting(false);
         if (cancelled) {
-          // Do nothing
+          setDialogOpen(false);
+          setCompletion(null);
         } else if (progressError) {
-          setError(t('extract.error.mkvextractFailed', { detail: progressError }));
+          setCompletion({
+            type: 'error',
+            message: t('extract.error.mkvextractFailed', { detail: progressError }),
+          });
+        } else if (closeWhenDoneRef.current) {
+          setDialogOpen(false);
+          setCompletion(null);
+          getCurrentWindow().close();
         } else {
-          setDialogNotification({
-            title: t('extract.extractionComplete', { seconds: elapsedSec }),
-            type: Protocol.DialogNotificationType.Info,
+          setCompletion({
+            type: 'success',
+            message: t('extract.extractionComplete', { seconds: elapsedSec }),
           });
         }
       }
@@ -350,7 +361,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
 
   // Timer for elapsed / ETA
   useEffect(() => {
-    if (dialogOpen) {
+    if (extracting) {
       startTimeRef.current = Date.now();
       setElapsed(0);
       setEta(0);
@@ -368,7 +379,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
         timerRef.current = undefined;
       }
     };
-  }, [dialogOpen]);
+  }, [extracting]);
 
   // Recompute ETA when progress or elapsed changes
   useEffect(() => {
@@ -392,6 +403,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
     setExtracting(true);
     setProgress(0);
     setError(null);
+    setCompletion(null);
     setDialogOpen(true);
     try {
       const args = await buildExtractArgs(file, outputDir, selectedTracks);
@@ -609,23 +621,50 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
       <Dialog open={dialogOpen} maxWidth="sm" fullWidth>
         <DialogTitle>{t('extract.extracting')}</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
-            <LinearProgress variant="determinate" value={progress} sx={{ flex: 1 }} />
-            <Typography variant="body2" sx={{ minWidth: 40, textAlign: 'right' }}>
-              {progress}%
+          {completion ? (
+            <Typography variant="body2" color={completion.type === 'error' ? 'error' : 'text.primary'} sx={{ mt: 1 }}>
+              {completion.message}
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
-            <Typography variant="caption" color="text.secondary">
-              {t('extract.elapsed')}: {formatTime(elapsed)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t('extract.eta')}: {progress > 0 && progress < 100 ? formatTime(eta) : '--:--:--'}
-            </Typography>
-          </Box>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                <LinearProgress variant="determinate" value={progress} sx={{ flex: 1 }} />
+                <Typography variant="body2" sx={{ minWidth: 40, textAlign: 'right' }}>
+                  {progress}%
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('extract.elapsed')}: {formatTime(elapsed)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t('extract.eta')}: {progress > 0 && progress < 100 ? formatTime(eta) : '--:--:--'}
+                </Typography>
+              </Box>
+            </>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button variant="contained" color="error" onClick={handleCancel}>{t('extract.cancel')}</Button>
+        <DialogActions sx={completion ? undefined : { justifyContent: 'space-between' }}>
+          {completion ? (
+            <Button variant="contained" onClick={() => { setDialogOpen(false); setCompletion(null); }}>
+              {t('extract.close')}
+            </Button>
+          ) : (
+            <>
+              <FormControlLabel
+                sx={{ ml: 0 }}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={closeWhenDone}
+                    onChange={(e) => setCloseWhenDone(e.target.checked)}
+                  />
+                }
+                label={<Typography variant="body2">{t('extract.closeWhenDone')}</Typography>}
+              />
+              <Button variant="contained" color="error" onClick={handleCancel}>{t('extract.cancel')}</Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

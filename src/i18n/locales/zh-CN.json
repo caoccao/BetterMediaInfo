@@ -152,6 +152,7 @@
     "elapsed": "已用时间",
     "eta": "预计剩余",
     "extractionComplete": "提取完成，耗时 {{seconds}} 秒。",
+    "closeWhenDone": "提取完成后关闭窗口",
     "noTracks": "未找到轨道。",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge 不可用，请在设置中检查 MKVToolNix 路径。{{detail}}",

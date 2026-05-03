@@ -152,6 +152,7 @@
     "elapsed": "Transcurrido",
     "eta": "Restante",
     "extractionComplete": "Extracción completada en {{seconds}} segundos.",
+    "closeWhenDone": "Cerrar la ventana cuando termine la extracción",
     "noTracks": "No se encontraron pistas.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge no está disponible. Verifique la ruta de MKVToolNix en Configuración. {{detail}}",

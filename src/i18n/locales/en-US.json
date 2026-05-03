@@ -152,6 +152,7 @@
     "elapsed": "Elapsed",
     "eta": "ETA",
     "extractionComplete": "Extraction completed in {{seconds}} seconds.",
+    "closeWhenDone": "Close window when extraction is done",
     "noTracks": "No tracks found.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge is not available. Please check the MKVToolNix path in Settings. {{detail}}",
