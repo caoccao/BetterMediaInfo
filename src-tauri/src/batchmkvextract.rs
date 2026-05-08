@@ -130,6 +130,21 @@ pub async fn is_batchmkvextract_found(
   })
 }
 
+#[cfg(target_os = "macos")]
+fn find_macos_app_bundle(bin: &Path) -> Option<PathBuf> {
+  // The Mach-O binary lives at `<bundle>.app/Contents/MacOS/BatchMkvExtract`,
+  // so the `.app` ancestor is at most three levels up. Walk a bounded number
+  // of parents instead of looping unbounded.
+  let mut current = bin.parent()?;
+  for _ in 0..4 {
+    if current.extension().and_then(|s| s.to_str()) == Some("app") {
+      return Some(current.to_path_buf());
+    }
+    current = current.parent()?;
+  }
+  None
+}
+
 pub fn spawn_batchmkvextract(file: &str) -> Result<()> {
   let file_path = Path::new(file);
   if !file_path.exists() {
@@ -143,8 +158,35 @@ pub fn spawn_batchmkvextract(file: &str) -> Result<()> {
       dir.display()
     )
   })?;
+
+  // On macOS, going through `open` lets Launch Services activate the bundle
+  // cleanly — spawning the bundle's Mach-O binary directly causes a brief
+  // window flash because the child never goes through proper app activation.
+  #[cfg(target_os = "macos")]
+  {
+    if let Some(app_bundle) = find_macos_app_bundle(&bin) {
+      let mut cmd = std::process::Command::new("/usr/bin/open");
+      cmd
+        .arg("-a")
+        .arg(&app_bundle)
+        .arg("--args")
+        .arg(file)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+      cmd
+        .spawn()
+        .map_err(|e| anyhow::anyhow!("Failed to launch BatchMkvExtract via open: {}", e))?;
+      return Ok(());
+    }
+  }
+
   let mut cmd = std::process::Command::new(&bin);
-  cmd.arg(file);
+  cmd
+    .arg(file)
+    .stdin(std::process::Stdio::null())
+    .stdout(std::process::Stdio::null())
+    .stderr(std::process::Stdio::null());
   #[cfg(target_os = "windows")]
   {
     use std::os::windows::process::CommandExt;
