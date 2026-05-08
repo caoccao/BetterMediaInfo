@@ -2,6 +2,8 @@
 
 [![Linux Build](https://github.com/caoccao/BetterMediaInfo/actions/workflows/linux_build.yml/badge.svg)](https://github.com/caoccao/BetterMediaInfo/actions/workflows/linux_build.yml) [![MacOS Build](https://github.com/caoccao/BetterMediaInfo/actions/workflows/macos_build.yml/badge.svg)](https://github.com/caoccao/BetterMediaInfo/actions/workflows/macos_build.yml) [![Windows Build](https://github.com/caoccao/BetterMediaInfo/actions/workflows/windows_build.yml/badge.svg)](https://github.com/caoccao/BetterMediaInfo/actions/workflows/windows_build.yml)
 
+![BetterMediaInfo](src-tauri/icons/icon.png)
+
 BetterMediaInfo is a better GUI for [MediaInfo](https://github.com/MediaArea/MediaInfo). Why? Because I'm not a fan of the official MediaInfo GUI.
 
 BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/MediaInfoLib).
