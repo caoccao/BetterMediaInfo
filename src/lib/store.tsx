@@ -42,6 +42,7 @@ interface AppState {
   // Media files
   mediaFiles: string[];
   mediaDetailedFiles: string[];
+  selectedDetailFile: string | null;
   mediaFileToAllPropertiesMap: Map<string, Array<Protocol.StreamPropertyMap>>;
   mediaFileToCommonPropertyMap: Map<string, Array<Protocol.StreamPropertyMap>>;
   mediaFileToStreamCountMap: Map<string, Map<Protocol.StreamKind, Protocol.StreamCount>>;
@@ -71,6 +72,7 @@ interface AppState {
   setMediaDetailedFiles: (files: string[]) => void;
   addMediaDetailedFile: (file: string) => void;
   removeMediaDetailedFile: (file: string) => void;
+  setSelectedDetailFile: (file: string | null) => void;
   deleteMediaFile: (file: string) => void;
   setMediaFileAllProperties: (file: string, properties: Array<Protocol.StreamPropertyMap>) => void;
   setMediaFileCommonProperties: (file: string, properties: Array<Protocol.StreamPropertyMap>) => void;
@@ -89,6 +91,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   dialogNotification: null,
   mediaFiles: [],
   mediaDetailedFiles: [],
+  selectedDetailFile: null,
   mediaFileToAllPropertiesMap: new Map(),
   mediaFileToCommonPropertyMap: new Map(),
   mediaFileToStreamCountMap: new Map(),
@@ -149,6 +152,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { mediaDetailedFiles } = get();
     set({ mediaDetailedFiles: mediaDetailedFiles.filter((f) => f !== file) });
   },
+  setSelectedDetailFile: (file) => set({ selectedDetailFile: file }),
 
   deleteMediaFile: (file) => {
     const state = get();

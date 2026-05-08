@@ -70,12 +70,14 @@ export default function MainContent() {
   const config = useAppStore((state) => state.config);
   const dialogJsonCode = useAppStore((state) => state.dialogJsonCode);
   const mediaDetailedFiles = useAppStore((state) => state.mediaDetailedFiles);
+  const selectedDetailFile = useAppStore((state) => state.selectedDetailFile);
   const tabAboutStatus = useAppStore((state) => state.tabAboutStatus);
   const tabSettingsStatus = useAppStore((state) => state.tabSettingsStatus);
   const setDialogJsonCode = useAppStore((state) => state.setDialogJsonCode);
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
   const setTabAboutStatus = useAppStore((state) => state.setTabAboutStatus);
   const setTabSettingsStatus = useAppStore((state) => state.setTabSettingsStatus);
+  const setSelectedDetailFile = useAppStore((state) => state.setSelectedDetailFile);
   const removeMediaDetailedFile = useAppStore((state) => state.removeMediaDetailedFile);
 
   const appendOnFileDrop = config?.appendOnFileDrop ?? true;
@@ -163,6 +165,19 @@ export default function MainContent() {
       }
     }
   }, [tabSettingsStatus, tabControls, setTabSettingsStatus]);
+
+  useEffect(() => {
+    if (selectedDetailFile === null) {
+      return;
+    }
+    const detailTab = tabControls.find(
+      (c) => c.type === Protocol.TabType.Details && c.value === selectedDetailFile
+    );
+    if (detailTab) {
+      setTabIndex(detailTab.index);
+      setSelectedDetailFile(null);
+    }
+  }, [selectedDetailFile, tabControls, setSelectedDetailFile]);
 
   // Keyboard shortcuts
   useEffect(() => {

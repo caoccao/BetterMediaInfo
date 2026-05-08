@@ -477,6 +477,7 @@ export default function List() {
   const setMediaFileAllProperties = useAppStore((state) => state.setMediaFileAllProperties);
   const deleteMediaFile = useAppStore((state) => state.deleteMediaFile);
   const addMediaDetailedFile = useAppStore((state) => state.addMediaDetailedFile);
+  const setSelectedDetailFile = useAppStore((state) => state.setSelectedDetailFile);
   const setDialogJsonCode = useAppStore((state) => state.setDialogJsonCode);
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
 
@@ -710,6 +711,7 @@ export default function List() {
   const openDetails = useCallback(
     async (file: string) => {
       addMediaDetailedFile(file);
+      setSelectedDetailFile(file);
       const existingProps = useAppStore.getState().mediaFileToAllPropertiesMap.get(file);
       if (!existingProps) {
         try {
@@ -723,7 +725,7 @@ export default function List() {
         }
       }
     },
-    [addMediaDetailedFile, setMediaFileAllProperties, setDialogNotification]
+    [addMediaDetailedFile, setSelectedDetailFile, setMediaFileAllProperties, setDialogNotification]
   );
 
   const handleOpenBatchMkvExtract = useCallback(
