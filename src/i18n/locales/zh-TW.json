@@ -172,6 +172,7 @@
     }
   },
   "about": {
+    "tagline": "現代化的 MediaInfo 桌面圖形介面",
     "mediaInfoLib": "MediaInfoLib",
     "author": "作者",
     "github": "Github",

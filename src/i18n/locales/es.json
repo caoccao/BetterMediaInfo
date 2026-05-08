@@ -172,6 +172,7 @@
     }
   },
   "about": {
+    "tagline": "Una GUI de escritorio moderna para MediaInfo",
     "mediaInfoLib": "MediaInfoLib",
     "author": "Autor",
     "github": "Github",

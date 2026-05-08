@@ -172,6 +172,7 @@
     }
   },
   "about": {
+    "tagline": "Une interface de bureau moderne pour MediaInfo",
     "mediaInfoLib": "MediaInfoLib",
     "author": "Auteur",
     "github": "Github",

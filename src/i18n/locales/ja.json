@@ -172,6 +172,7 @@
     }
   },
   "about": {
+    "tagline": "MediaInfo のモダンなデスクトップ GUI",
     "mediaInfoLib": "MediaInfoLib",
     "author": "作者",
     "github": "Github",

@@ -172,6 +172,7 @@
     }
   },
   "about": {
+    "tagline": "Eine moderne Desktop-Oberfläche für MediaInfo",
     "mediaInfoLib": "MediaInfoLib",
     "author": "Autor",
     "github": "Github",
