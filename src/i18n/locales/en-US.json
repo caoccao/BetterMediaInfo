@@ -132,7 +132,7 @@
     "contextMenuFailed": "Context menu registration failed.",
     "mkvtoolnixFound": "mkvmerge and mkvextract found under MKVToolNix path.",
     "mkvtoolnixNotFound": "mkvmerge or mkvextract not found under MKVToolNix path.",
-    "integrations": "Integrations",
+    "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "BatchMkvExtract Path",
     "batchMkvExtractFound": "BatchMkvExtract executable found.",
     "batchMkvExtractNotFound": "BatchMkvExtract executable not found.",

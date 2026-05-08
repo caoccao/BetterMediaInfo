@@ -132,7 +132,7 @@
     "contextMenuFailed": "コンテキストメニューの登録に失敗しました。",
     "mkvtoolnixFound": "MKVToolNix パスで mkvmerge と mkvextract が見つかりました。",
     "mkvtoolnixNotFound": "MKVToolNix パスで mkvmerge または mkvextract が見つかりません。",
-    "integrations": "連携",
+    "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "BatchMkvExtract のパス",
     "batchMkvExtractFound": "BatchMkvExtract の実行ファイルが見つかりました。",
     "batchMkvExtractNotFound": "BatchMkvExtract の実行ファイルが見つかりません。",

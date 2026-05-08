@@ -153,9 +153,9 @@ async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<protoc
 }
 
 #[tauri::command]
-async fn is_batchmkvextract_found(path: String) -> Result<protocol::BatchMkvExtractStatus, String> {
-  log::debug!("is_batchmkvextract_found({})", path);
-  batchmkvextract::is_batchmkvextract_found(path).await.map_err(convert_error)
+async fn is_batchmkvextract_found(path: String, check_running: bool) -> Result<protocol::BatchMkvExtractStatus, String> {
+  log::debug!("is_batchmkvextract_found({}, {})", path, check_running);
+  batchmkvextract::is_batchmkvextract_found(path, check_running).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

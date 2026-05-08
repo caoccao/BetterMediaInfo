@@ -132,7 +132,7 @@
     "contextMenuFailed": "Échec de l'enregistrement du menu contextuel.",
     "mkvtoolnixFound": "mkvmerge et mkvextract ont été trouvés dans le chemin MKVToolNix.",
     "mkvtoolnixNotFound": "mkvmerge ou mkvextract n'a pas été trouvé dans le chemin MKVToolNix.",
-    "integrations": "Intégrations",
+    "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "Chemin de BatchMkvExtract",
     "batchMkvExtractFound": "Exécutable BatchMkvExtract trouvé.",
     "batchMkvExtractNotFound": "Exécutable BatchMkvExtract introuvable.",

@@ -441,16 +441,11 @@ export default function Config() {
 
   const handleDetectBatchMkvExtract = async () => {
     try {
-      const status = await isBatchMkvExtractFound(batchMkvExtractPath.trim());
+      const status = await isBatchMkvExtractFound(batchMkvExtractPath.trim(), true);
       setBatchMkvExtractFound(status.found);
       if (status.found && status.path && status.path !== batchMkvExtractPath) {
         setBatchMkvExtractPath(status.path);
-        if (config && config.batchMkvExtract?.path !== status.path) {
-          setStoreConfig({
-            ...config,
-            batchMkvExtract: { path: status.path },
-          });
-        }
+        handleChange();
       }
     } catch {
       setBatchMkvExtractFound(false);
@@ -977,9 +972,9 @@ export default function Config() {
           </Box>
         </Paper>
 
-        {/* Integrations Section */}
+        {/* BatchMkvExtract Section */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<IntegrationIcon fontSize="small" />} title={t('config.integrations')} />
+          <SectionHeader icon={<IntegrationIcon fontSize="small" />} title={t('config.batchMkvExtract')} />
           <Box sx={{ py: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('config.batchMkvExtractPath')}

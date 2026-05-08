@@ -23,6 +23,38 @@ use crate::protocol::BatchMkvExtractStatus;
 
 const TOOL_STEM: &str = "BatchMkvExtract";
 
+fn process_name() -> &'static str {
+  // Windows binaries carry the .exe suffix in sysinfo's process name; Linux
+  // and macOS report the bare executable name. On macOS the running process
+  // is the bundle binary at `<App>.app/Contents/MacOS/BatchMkvExtract`, so
+  // the bare name still matches.
+  if cfg!(target_os = "windows") {
+    "BatchMkvExtract.exe"
+  } else {
+    TOOL_STEM
+  }
+}
+
+fn find_running_process_dir() -> Option<PathBuf> {
+  let exe_name = process_name();
+  let sys = sysinfo::System::new_all();
+  for process in sys.processes().values() {
+    let name = process.name().to_string_lossy();
+    // Process names are case-sensitive on Linux/macOS but conventionally
+    // case-insensitive on Windows; eq_ignore_ascii_case is safe across all
+    // three because the canonical name we look for is unambiguous.
+    if !name.eq_ignore_ascii_case(exe_name) {
+      continue;
+    }
+    if let Some(exe) = process.exe() {
+      if let Some(parent) = exe.parent() {
+        return Some(parent.to_path_buf());
+      }
+    }
+  }
+  None
+}
+
 fn has_executable(path: &Path) -> bool {
   let direct = path.join(TOOL_STEM);
   if direct.exists() && direct.is_file() {
@@ -58,7 +90,25 @@ fn persist_path(path: &Path) -> Result<()> {
   Ok(())
 }
 
-pub async fn is_batchmkvextract_found(path: String) -> Result<BatchMkvExtractStatus> {
+pub async fn is_batchmkvextract_found(
+  path: String,
+  check_running: bool,
+) -> Result<BatchMkvExtractStatus> {
+  if check_running {
+    if let Some(dir) = find_running_process_dir() {
+      // The directory we got back is the directory holding the running
+      // binary. On macOS that's `<App>.app/Contents/MacOS`, which is what
+      // we want to store. On Windows/Linux it's the install directory
+      // (e.g. `C:\Program Files\BatchMkvExtract`, `/usr/bin`).
+      if has_executable(&dir) {
+        persist_path(&dir)?;
+        return Ok(BatchMkvExtractStatus {
+          found: true,
+          path: dir.to_string_lossy().to_string(),
+        });
+      }
+    }
+  }
   let trimmed = path.trim();
   if trimmed.is_empty() {
     return Ok(BatchMkvExtractStatus {

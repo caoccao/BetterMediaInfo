@@ -132,7 +132,7 @@
     "contextMenuFailed": "右鍵選單註冊失敗。",
     "mkvtoolnixFound": "已在 MKVToolNix 路徑下找到 mkvmerge 和 mkvextract。",
     "mkvtoolnixNotFound": "未在 MKVToolNix 路徑下找到 mkvmerge 或 mkvextract。",
-    "integrations": "整合",
+    "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "BatchMkvExtract 路徑",
     "batchMkvExtractFound": "已找到 BatchMkvExtract 執行檔。",
     "batchMkvExtractNotFound": "未找到 BatchMkvExtract 執行檔。",
