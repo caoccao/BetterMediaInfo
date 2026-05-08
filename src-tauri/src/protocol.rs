@@ -85,6 +85,12 @@ pub struct MkvToolNixStatus {
   pub mkv_toolnix_path: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BatchMkvExtractStatus {
+  pub found: bool,
+  pub path: String,
+}
+
 pub struct MkvextractState {
   pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
 }

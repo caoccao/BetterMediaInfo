@@ -22,6 +22,7 @@ use tauri::{Emitter, EventTarget, Manager};
 
 static WINDOW_READY: AtomicBool = AtomicBool::new(false);
 
+mod batchmkvextract;
 mod config;
 mod constants;
 mod context_menu;
@@ -149,6 +150,12 @@ fn is_folder_context_menu_registered() -> bool {
 async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<protocol::MkvToolNixStatus, String> {
   log::debug!("is_mkvtoolnix_found({}, {})", path, check_running);
   mkvtoolnix::is_mkvtoolnix_found(path, check_running).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn is_batchmkvextract_found(path: String) -> Result<protocol::BatchMkvExtractStatus, String> {
+  log::debug!("is_batchmkvextract_found({})", path);
+  batchmkvextract::is_batchmkvextract_found(path).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -303,6 +310,7 @@ pub fn run() {
       get_files,
       get_mkv_tracks,
       is_mkvtoolnix_found,
+      is_batchmkvextract_found,
       run_mkvextract,
       cancel_mkvextract,
       get_parameters,

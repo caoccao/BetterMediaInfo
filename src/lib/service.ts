@@ -70,6 +70,10 @@ export async function isMkvtoolnixFound(path: string, checkRunning: boolean = fa
   return await invoke<Protocol.MkvToolNixStatus>("is_mkvtoolnix_found", { path, checkRunning });
 }
 
+export async function isBatchMkvExtractFound(path: string): Promise<Protocol.BatchMkvExtractStatus> {
+  return await invoke<Protocol.BatchMkvExtractStatus>("is_batchmkvextract_found", { path });
+}
+
 export async function runMkvextract(file: string, args: string[]): Promise<void> {
   return await invoke<void>("run_mkvextract", { file, args });
 }

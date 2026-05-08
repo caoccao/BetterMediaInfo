@@ -65,6 +65,8 @@ pub struct Config {
   pub subtitle: ConfigStreamFormat,
   #[serde(default)]
   pub mkv: ConfigMkv,
+  #[serde(rename = "batchMkvExtract", default)]
+  pub batch_mkv_extract: ConfigBatchMkvExtract,
   #[serde(default)]
   pub update: ConfigUpdate,
   #[serde(default)]
@@ -84,6 +86,7 @@ impl Default for Config {
       audio: Default::default(),
       subtitle: Default::default(),
       mkv: Default::default(),
+      batch_mkv_extract: Default::default(),
       update: Default::default(),
       window: Default::default(),
     }
@@ -189,6 +192,32 @@ impl Default for ConfigMkv {
   fn default() -> Self {
     Self {
       mkv_toolnix_path: Self::default_mkv_toolnix_path(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigBatchMkvExtract {
+  #[serde(default = "ConfigBatchMkvExtract::default_path")]
+  pub path: String,
+}
+
+impl ConfigBatchMkvExtract {
+  fn default_path() -> String {
+    if cfg!(target_os = "windows") {
+      r"C:\Program Files\BatchMkvExtract".to_owned()
+    } else if cfg!(target_os = "macos") {
+      "/Applications/BatchMkvExtract.app/Contents/MacOS".to_owned()
+    } else {
+      "/usr/bin".to_owned()
+    }
+  }
+}
+
+impl Default for ConfigBatchMkvExtract {
+  fn default() -> Self {
+    Self {
+      path: Self::default_path(),
     }
   }
 }

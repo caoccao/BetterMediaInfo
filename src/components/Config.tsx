@@ -37,6 +37,7 @@ import {
   ClosedCaption as SubtitleIcon,
   ContentCut as MkvIcon,
   DarkMode as DarkIcon,
+  Extension as IntegrationIcon,
   FolderOpen as FolderIcon,
   LightMode as LightIcon,
   MusicNote as AudioIcon,
@@ -51,6 +52,7 @@ import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import {
   areExtensionsContextMenuRegistered,
+  isBatchMkvExtractFound,
   isFolderContextMenuRegistered,
   isMkvtoolnixFound,
   registerExtensionsContextMenu,
@@ -222,6 +224,8 @@ export default function Config() {
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
   const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
+  const [batchMkvExtractPath, setBatchMkvExtractPath] = useState('');
+  const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
   const [videoContextMenuRegistered, setVideoContextMenuRegistered] = useState(false);
   const [audioContextMenuRegistered, setAudioContextMenuRegistered] = useState(false);
   const [imageContextMenuRegistered, setImageContextMenuRegistered] = useState(false);
@@ -233,6 +237,7 @@ export default function Config() {
   const [isDirty, setIsDirty] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
 
   const config = useAppStore((state) => state.config);
@@ -255,6 +260,7 @@ export default function Config() {
       setAudioFormat(initStreamFormat(config.audio));
       setSubtitleFormat(initStreamFormat(config.subtitle));
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
+      setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
     }
   }, [config]);
@@ -305,6 +311,7 @@ export default function Config() {
     audio: toConfigStreamFormat(audioFormat),
     subtitle: toConfigStreamFormat(subtitleFormat),
     mkv: { mkvToolNixPath },
+    batchMkvExtract: { path: batchMkvExtractPath },
     update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
     window: config?.window ?? { position: { x: -1, y: -1 }, size: { width: 1200, height: 900 } },
   });
@@ -421,6 +428,35 @@ export default function Config() {
   };
 
 
+  const handleBrowseBatchMkvExtractPath = async () => {
+    const directory = await open({
+      directory: true,
+      defaultPath: batchMkvExtractPath.trim() || undefined,
+    });
+    if (typeof directory === 'string' && directory.length > 0) {
+      setBatchMkvExtractPath(directory);
+      handleChange();
+    }
+  };
+
+  const handleDetectBatchMkvExtract = async () => {
+    try {
+      const status = await isBatchMkvExtractFound(batchMkvExtractPath.trim());
+      setBatchMkvExtractFound(status.found);
+      if (status.found && status.path && status.path !== batchMkvExtractPath) {
+        setBatchMkvExtractPath(status.path);
+        if (config && config.batchMkvExtract?.path !== status.path) {
+          setStoreConfig({
+            ...config,
+            batchMkvExtract: { path: status.path },
+          });
+        }
+      }
+    } catch {
+      setBatchMkvExtractFound(false);
+    }
+  };
+
   const handleDetectMkvToolNix = async () => {
     try {
       const status = await isMkvtoolnixFound(mkvToolNixPath.trim(), true);
@@ -499,6 +535,33 @@ export default function Config() {
       }
     };
   }, [mkvToolNixPath, config, setStoreConfig]);
+
+  // Validate BatchMkvExtract path from backend.
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    if (batchMkvExtractCheckDebounceRef.current) {
+      clearTimeout(batchMkvExtractCheckDebounceRef.current);
+    }
+    let isCancelled = false;
+    batchMkvExtractCheckDebounceRef.current = setTimeout(async () => {
+      try {
+        const status = await isBatchMkvExtractFound(batchMkvExtractPath.trim());
+        if (!isCancelled) {
+          setBatchMkvExtractFound(status.found);
+        }
+      } catch {
+        if (!isCancelled) {
+          setBatchMkvExtractFound(false);
+        }
+      }
+    }, 250);
+    return () => {
+      isCancelled = true;
+      if (batchMkvExtractCheckDebounceRef.current) {
+        clearTimeout(batchMkvExtractCheckDebounceRef.current);
+      }
+    };
+  }, [batchMkvExtractPath]);
 
   // Update store immediately when stream format changes
   useEffect(() => {
@@ -910,6 +973,53 @@ export default function Config() {
               }}
             >
               {mkvtoolnixFound ? t('config.mkvtoolnixFound') : t('config.mkvtoolnixNotFound')}
+            </Typography>
+          </Box>
+        </Paper>
+
+        {/* Integrations Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<IntegrationIcon fontSize="small" />} title={t('config.integrations')} />
+          <Box sx={{ py: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {t('config.batchMkvExtractPath')}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TextField
+                value={batchMkvExtractPath}
+                onChange={(e) => {
+                  setBatchMkvExtractPath(e.target.value);
+                  handleChange();
+                }}
+                size="small"
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleBrowseBatchMkvExtractPath}
+                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+              >
+                {t('config.browse')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleDetectBatchMkvExtract}
+                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+              >
+                {t('config.detect')}
+              </Button>
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0.75,
+                display: 'block',
+                color: batchMkvExtractFound ? 'success.main' : 'error.main',
+              }}
+            >
+              {batchMkvExtractFound ? t('config.batchMkvExtractFound') : t('config.batchMkvExtractNotFound')}
             </Typography>
           </Box>
         </Paper>

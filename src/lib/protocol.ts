@@ -66,6 +66,10 @@ export interface ConfigMkv {
   mkvToolNixPath: string;
 }
 
+export interface ConfigBatchMkvExtract {
+  path: string;
+}
+
 export enum UpdateCheckInterval {
   Daily = "Daily",
   Weekly = "Weekly",
@@ -105,6 +109,7 @@ export interface Config {
   audio: ConfigStreamFormat;
   subtitle: ConfigStreamFormat;
   mkv: ConfigMkv;
+  batchMkvExtract: ConfigBatchMkvExtract;
   update: ConfigUpdate;
   window: ConfigWindow;
 }
@@ -237,6 +242,11 @@ export interface MkvTrack {
 export interface MkvToolNixStatus {
   found: boolean;
   mkvToolNixPath: string;
+}
+
+export interface BatchMkvExtractStatus {
+  found: boolean;
+  path: string;
 }
 
 export interface UpdateCheckResult {
