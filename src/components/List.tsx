@@ -723,7 +723,7 @@ export default function List() {
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
       {fileToPropertyMaps.size === 0 ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <img src="images/empty.png" alt={t('list.altNotMediaFiles')} />
+          <img src="images/bettermediainfo.png" alt={t('list.altNotMediaFiles')} />
         </Box>
       ) : viewType === ViewType.Card ? (
         files.map((file) =>
