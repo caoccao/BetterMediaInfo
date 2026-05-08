@@ -55,19 +55,23 @@ fn find_running_process_dir() -> Option<PathBuf> {
   None
 }
 
-fn has_executable(path: &Path) -> bool {
-  let direct = path.join(TOOL_STEM);
+fn binary_path(dir: &Path) -> Option<PathBuf> {
+  let direct = dir.join(TOOL_STEM);
   if direct.exists() && direct.is_file() {
-    return true;
+    return Some(direct);
   }
   #[cfg(target_os = "windows")]
   {
-    let exe = path.join(format!("{}.exe", TOOL_STEM));
+    let exe = dir.join(format!("{}.exe", TOOL_STEM));
     if exe.exists() && exe.is_file() {
-      return true;
+      return Some(exe);
     }
   }
-  false
+  None
+}
+
+fn has_executable(path: &Path) -> bool {
+  binary_path(path).is_some()
 }
 
 fn resolve(path: &str) -> (PathBuf, bool) {
@@ -124,4 +128,30 @@ pub async fn is_batchmkvextract_found(
     found,
     path: resolved.to_string_lossy().to_string(),
   })
+}
+
+pub fn spawn_batchmkvextract(file: &str) -> Result<()> {
+  let file_path = Path::new(file);
+  if !file_path.exists() {
+    return Err(anyhow::anyhow!("File {} does not exist.", file));
+  }
+  let cfg = config::get_config();
+  let dir = PathBuf::from(&cfg.batch_mkv_extract.path);
+  let bin = binary_path(&dir).ok_or_else(|| {
+    anyhow::anyhow!(
+      "BatchMkvExtract executable not found under {}.",
+      dir.display()
+    )
+  })?;
+  let mut cmd = std::process::Command::new(&bin);
+  cmd.arg(file);
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  cmd
+    .spawn()
+    .map_err(|e| anyhow::anyhow!("Failed to launch BatchMkvExtract: {}", e))?;
+  Ok(())
 }

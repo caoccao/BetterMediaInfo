@@ -52,7 +52,7 @@ import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getLaunchArgs, getPropertiesMap, getStreamCountMap } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, openBatchMkvExtract } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import {
@@ -462,6 +462,7 @@ export default function List() {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [batchMkvExtractAvailable, setBatchMkvExtractAvailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const apiRef = useGridApiRef();
@@ -499,6 +500,26 @@ export default function List() {
       }
     };
   }, [query]);
+
+  // Track whether BatchMkvExtract is reachable so the per-card icon can show.
+  useEffect(() => {
+    const path = config?.batchMkvExtract?.path?.trim() ?? '';
+    if (!path) {
+      setBatchMkvExtractAvailable(false);
+      return;
+    }
+    let cancelled = false;
+    isBatchMkvExtractFound(path)
+      .then((status) => {
+        if (!cancelled) setBatchMkvExtractAvailable(status.found);
+      })
+      .catch(() => {
+        if (!cancelled) setBatchMkvExtractAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.batchMkvExtract?.path]);
 
   // Load file properties on mount and file changes
   useEffect(() => {
@@ -705,6 +726,20 @@ export default function List() {
     [addMediaDetailedFile, setMediaFileAllProperties, setDialogNotification]
   );
 
+  const handleOpenBatchMkvExtract = useCallback(
+    async (file: string) => {
+      try {
+        await openBatchMkvExtract(file);
+      } catch (error) {
+        setDialogNotification({
+          title: error as string,
+          type: Protocol.DialogNotificationType.Error,
+        });
+      }
+    },
+    [setDialogNotification]
+  );
+
   if (files.length === 0) {
     return <EmptyWelcome />;
   }
@@ -747,6 +782,18 @@ export default function List() {
                       <Tooltip title={t('list.extract')}>
                         <IconButton size="small" onClick={() => openExtractWindow(file)}>
                           <ContentCutIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {file.toLowerCase().endsWith('.mkv') && batchMkvExtractAvailable && (
+                      <Tooltip title={t('list.openInBatchMkvExtract')}>
+                        <IconButton size="small" onClick={() => handleOpenBatchMkvExtract(file)}>
+                          <Box
+                            component="img"
+                            src="images/batchmkvextract.png"
+                            alt="BatchMkvExtract"
+                            sx={{ width: 18, height: 18, objectFit: 'contain' }}
+                          />
                         </IconButton>
                       </Tooltip>
                     )}

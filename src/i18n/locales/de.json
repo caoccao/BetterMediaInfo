@@ -29,6 +29,7 @@
     "addFolder": "Ordner hinzufügen",
     "json": "Json",
     "extract": "Extrahieren",
+    "openInBatchMkvExtract": "In BatchMkvExtract öffnen",
     "details": "Details",
     "delete": "Löschen",
     "altNotMediaFiles": "Keine Mediendateien",

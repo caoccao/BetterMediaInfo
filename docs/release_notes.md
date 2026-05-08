@@ -11,6 +11,7 @@
 * Added separate stream format settings for video, audio, and subtitles in configuration.
 * Improved UI responsiveness and overflow handling across layout, list, and details views.
 * Added configurable UI theme selection with 20 built-in themes and immediate preview in Settings.
+* Added BatchMkvExtract integration in Settings with running-process detection on Windows, macOS, and Linux.
 
 ## 0.8.0
 
