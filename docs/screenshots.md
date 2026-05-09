@@ -37,3 +37,13 @@
 * The JS button at the top right allows opening a dialog with all properties in Json format for copying to clipboard or saving to a file.
 
 ![Details View with Json](https://github.com/caoccao/BetterMediaInfo/raw/main/docs/screenshots/details_view_with_json.png)
+
+## Extract
+
+* There is a built-in extractor for extracting tracks of a MKV file.
+
+![Extract with Internal Extractor](https://github.com/caoccao/BetterMediaInfo/raw/main/docs/screenshots/extract_with_internal_extractor.png)
+
+* There is an external extractor BatchMkvExtract for extracting tracks of a MKV file. It has richer features and better user experience.
+
+![Extract with External Extractor](https://github.com/caoccao/BetterMediaInfo/raw/main/docs/screenshots/extract_with_external_extractor.png)
