@@ -825,18 +825,20 @@ export default function List() {
                 }
                 action={(() => {
                   const isMkv = file.toLowerCase().endsWith('.mkv');
+                  const showExtract = isMkv;
+                  const showBatchMkvExtract = isMkv && batchMkvExtractAvailable;
                   const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
-                  const hasFirstGroup = isMkv || showMkvToolNixGui;
+                  const hasFirstGroup = showExtract || showBatchMkvExtract || showMkvToolNixGui;
                   return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {isMkv && (
+                    {showExtract && (
                       <Tooltip title={t('list.extract')}>
                         <IconButton size="small" onClick={() => openExtractWindow(file)}>
                           <ContentCutIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
-                    {isMkv && batchMkvExtractAvailable && (
+                    {showBatchMkvExtract && (
                       <Tooltip title={t('list.openInBatchMkvExtract')}>
                         <IconButton size="small" onClick={() => handleOpenBatchMkvExtract(file)}>
                           <Box
