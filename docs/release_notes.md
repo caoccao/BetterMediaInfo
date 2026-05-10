@@ -3,6 +3,7 @@
 ## 0.10.0
 
 * Added "Open in MkvToolNix GUI" action to the card view for video files when MKVToolNix is configured.
+* Added multi-language support to the Windows installers.
 
 ## 0.9.0
 
