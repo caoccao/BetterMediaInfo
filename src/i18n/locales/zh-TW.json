@@ -30,6 +30,7 @@
     "json": "Json",
     "extract": "擷取",
     "openInBatchMkvExtract": "在 BatchMkvExtract 中開啟",
+    "openInMkvToolNixGui": "在 MkvToolNix GUI 中開啟",
     "details": "詳情",
     "delete": "刪除",
     "altNotMediaFiles": "非媒體檔案",

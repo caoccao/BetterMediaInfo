@@ -30,6 +30,7 @@
     "json": "Json",
     "extract": "抽出",
     "openInBatchMkvExtract": "BatchMkvExtract で開く",
+    "openInMkvToolNixGui": "MkvToolNix GUI で開く",
     "details": "詳細",
     "delete": "削除",
     "altNotMediaFiles": "メディアファイルではありません",

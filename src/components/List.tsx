@@ -22,6 +22,7 @@ import {
   Card,
   CardHeader,
   CardContent,
+  Divider,
   IconButton,
   Link,
   Stack,
@@ -52,7 +53,7 @@ import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, openBatchMkvExtract } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isMkvtoolnixFound, openBatchMkvExtract, openMkvtoolnixGui } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import {
@@ -463,6 +464,7 @@ export default function List() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [batchMkvExtractAvailable, setBatchMkvExtractAvailable] = useState(false);
+  const [mkvtoolnixGuiAvailable, setMkvtoolnixGuiAvailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const apiRef = useGridApiRef();
@@ -521,6 +523,40 @@ export default function List() {
       cancelled = true;
     };
   }, [config?.batchMkvExtract?.path]);
+
+  // Track whether MkvToolNix GUI is reachable so the per-card icon can show.
+  useEffect(() => {
+    const path = config?.mkv?.mkvToolNixPath?.trim() ?? '';
+    if (!path) {
+      setMkvtoolnixGuiAvailable(false);
+      return;
+    }
+    let cancelled = false;
+    isMkvtoolnixFound(path)
+      .then((status) => {
+        if (!cancelled) setMkvtoolnixGuiAvailable(status.found);
+      })
+      .catch(() => {
+        if (!cancelled) setMkvtoolnixGuiAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.mkv?.mkvToolNixPath]);
+
+  const videoExtensionSet = useMemo(() => {
+    const exts = config?.fileExtensions?.video ?? [];
+    return new Set(exts.map((ext) => ext.toLowerCase().replace(/^\./, '')));
+  }, [config?.fileExtensions?.video]);
+
+  const isVideoFile = useCallback(
+    (file: string) => {
+      const dot = file.lastIndexOf('.');
+      if (dot < 0) return false;
+      return videoExtensionSet.has(file.slice(dot + 1).toLowerCase());
+    },
+    [videoExtensionSet]
+  );
 
   // Load file properties on mount and file changes
   useEffect(() => {
@@ -742,6 +778,20 @@ export default function List() {
     [setDialogNotification]
   );
 
+  const handleOpenMkvtoolnixGui = useCallback(
+    async (file: string) => {
+      try {
+        await openMkvtoolnixGui(file);
+      } catch (error) {
+        setDialogNotification({
+          title: error as string,
+          type: Protocol.DialogNotificationType.Error,
+        });
+      }
+    },
+    [setDialogNotification]
+  );
+
   if (files.length === 0) {
     return <EmptyWelcome />;
   }
@@ -773,21 +823,20 @@ export default function List() {
                     {formatStreamCount(mediaFileToStreamCountMap.get(file))}
                   </Typography>
                 }
-                action={
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title={t('list.json')}>
-                      <IconButton size="small" onClick={() => openDialogJsonCode(file)}>
-                        <JavascriptIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    {file.toLowerCase().endsWith('.mkv') && (
+                action={(() => {
+                  const isMkv = file.toLowerCase().endsWith('.mkv');
+                  const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
+                  const hasFirstGroup = isMkv || showMkvToolNixGui;
+                  return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {isMkv && (
                       <Tooltip title={t('list.extract')}>
                         <IconButton size="small" onClick={() => openExtractWindow(file)}>
                           <ContentCutIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
-                    {file.toLowerCase().endsWith('.mkv') && batchMkvExtractAvailable && (
+                    {isMkv && batchMkvExtractAvailable && (
                       <Tooltip title={t('list.openInBatchMkvExtract')}>
                         <IconButton size="small" onClick={() => handleOpenBatchMkvExtract(file)}>
                           <Box
@@ -799,18 +848,40 @@ export default function List() {
                         </IconButton>
                       </Tooltip>
                     )}
+                    {showMkvToolNixGui && (
+                      <Tooltip title={t('list.openInMkvToolNixGui')}>
+                        <IconButton size="small" onClick={() => handleOpenMkvtoolnixGui(file)}>
+                          <Box
+                            component="img"
+                            src="images/mkvmerge.png"
+                            alt="MkvToolNix GUI"
+                            sx={{ width: 18, height: 18, objectFit: 'contain' }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {hasFirstGroup && (
+                      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                    )}
+                    <Tooltip title={t('list.json')}>
+                      <IconButton size="small" onClick={() => openDialogJsonCode(file)}>
+                        <JavascriptIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title={t('list.details')}>
                       <IconButton size="small" onClick={() => openDetails(file)}>
                         <NotesIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                     <Tooltip title={t('list.delete')}>
                       <IconButton size="small" color="error" onClick={() => deleteMediaFile(file)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </Box>
-                }
+                  );
+                })()}
                 sx={{ pb: 0 }}
               />
               <CardContent sx={{ py: 0, '&.MuiCardContent-root:last-child': { pb: 2 } }}>

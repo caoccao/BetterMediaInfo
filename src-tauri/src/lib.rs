@@ -164,6 +164,12 @@ async fn open_batchmkvextract(file: String) -> Result<(), String> {
   batchmkvextract::spawn_batchmkvextract(&file).map_err(convert_error)
 }
 
+#[tauri::command]
+async fn open_mkvtoolnix_gui(file: String) -> Result<(), String> {
+  log::debug!("open_mkvtoolnix_gui({})", file);
+  mkvtoolnix::spawn_mkvtoolnix_gui(&file).map_err(convert_error)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   env_logger::init();
@@ -318,6 +324,7 @@ pub fn run() {
       is_mkvtoolnix_found,
       is_batchmkvextract_found,
       open_batchmkvextract,
+      open_mkvtoolnix_gui,
       run_mkvextract,
       cancel_mkvextract,
       get_parameters,

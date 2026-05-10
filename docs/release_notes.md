@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.10.0
+
+* Added "Open in MkvToolNix GUI" action to the card view for video files when MKVToolNix is configured.
+
 ## 0.9.0
 
 * Added MKV track extraction with MKVToolNix integration, progress tracking, cancellation, and clipboard command copy.

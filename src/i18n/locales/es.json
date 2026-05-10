@@ -30,6 +30,7 @@
     "json": "Json",
     "extract": "Extraer",
     "openInBatchMkvExtract": "Abrir en BatchMkvExtract",
+    "openInMkvToolNixGui": "Abrir en MkvToolNix GUI",
     "details": "Detalles",
     "delete": "Eliminar",
     "altNotMediaFiles": "No son archivos multimedia",
