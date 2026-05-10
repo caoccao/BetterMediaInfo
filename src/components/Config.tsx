@@ -35,9 +35,7 @@ import {
 import {
   BrightnessAuto as AutoIcon,
   ClosedCaption as SubtitleIcon,
-  ContentCut as MkvIcon,
   DarkMode as DarkIcon,
-  Extension as IntegrationIcon,
   FolderOpen as FolderIcon,
   LightMode as LightIcon,
   MusicNote as AudioIcon,
@@ -927,7 +925,17 @@ export default function Config() {
 
         {/* MKV Section */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<MkvIcon fontSize="small" />} title={t('config.mkv')} />
+          <SectionHeader
+            icon={
+              <Box
+                component="img"
+                src="images/mkvmerge.png"
+                alt="MKVToolNix"
+                sx={{ width: 20, height: 20, objectFit: 'contain' }}
+              />
+            }
+            title={t('config.mkv')}
+          />
           <Box sx={{ py: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('config.mkvToolNixPath')}
@@ -974,7 +982,17 @@ export default function Config() {
 
         {/* BatchMkvExtract Section */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<IntegrationIcon fontSize="small" />} title={t('config.batchMkvExtract')} />
+          <SectionHeader
+            icon={
+              <Box
+                component="img"
+                src="images/batchmkvextract.png"
+                alt="BatchMkvExtract"
+                sx={{ width: 20, height: 20, objectFit: 'contain' }}
+              />
+            }
+            title={t('config.batchMkvExtract')}
+          />
           <Box sx={{ py: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('config.batchMkvExtractPath')}
