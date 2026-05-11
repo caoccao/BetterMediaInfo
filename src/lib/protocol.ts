@@ -51,6 +51,7 @@ export enum Language {
   EnUS = "en-US",
   Es = "es",
   Fr = "fr",
+  It = "it",
   Ja = "ja",
   ZhCN = "zh-CN",
   ZhHK = "zh-HK",
