@@ -232,6 +232,8 @@ pub enum Language {
   Es,
   #[serde(rename = "fr")]
   Fr,
+  #[serde(rename = "it")]
+  It,
   #[serde(rename = "ja")]
   Ja,
   #[serde(rename = "zh-CN")]
