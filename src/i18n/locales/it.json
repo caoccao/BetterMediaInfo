@@ -72,7 +72,7 @@
     "value": "Valore",
     "altNotFound": "Non trovato"
   },
-  "configure": {
+  "config": {
     "title": "Impostazioni",
     "appearance": "Aspetto",
     "autoMode": "Modalità automatica",
@@ -100,7 +100,7 @@
     "subtitle": "Sottotitoli",
     "bitRate": "Bitrate",
     "size": "dimensione",
-    "precisione": "Precisione",
+    "precision": "Precisione",
     "unit": "Unità",
     "save": "Salva",
     "settingsSaved": "Impostazioni salvate.",
@@ -131,7 +131,7 @@
     "unregisterFolderContextMenu": "Annulla registrazione menu contestuale cartelle",
     "contextMenuRegistered": "Menu contestuale registrato.",
     "contextMenuUnregistered": "Menu contestuale de-registrato.",
-    "contextMenuFailed": "Registrazione  menu contestuale non riuscita.",
+    "contextMenuFailed": "Registrazione menu contestuale non riuscita.",
     "mkvtoolnixFound": "mkvmerge e mkvextract trovati nel percorso MKVToolNix.",
     "mkvtoolnixNotFound": "mkvmerge o mkvextract non trovati nel percorso MKVToolNix.",
     "batchMkvExtract": "BatchMkvExtract",
@@ -139,7 +139,7 @@
     "batchMkvExtractFound": "Trovato eseguibile BatchMkvExtract.",
     "batchMkvExtractNotFound": "Eseguibile BatchMkvExtract non trovato.",
     "update": "Aggiorna",
-    "checkNewVersion": "Verifica aggironamenti",
+    "checkNewVersion": "Verifica aggiornamenti",
     "daily": "Ogni giorno",
     "weekly": "Ogni settimana",
     "monthly": "Ogni mese"
@@ -162,7 +162,7 @@
     "elapsed": "Trascorso",
     "eta": "Stimato",
     "extractionComplete": "Estrazione completata in {{seconds}} secondi.",
-    "closeWhenDone": "Ad estrazioen completata chiudi la finestra",
+    "closeWhenDone": "Ad estrazione completata chiudi la finestra",
     "noTracks": "Nessuna traccia trovata.",
     "error": {
       "mkvmergeNotAvailable": "mkvmerge non è disponibile. Controlla il percorso MKVToolNix in 'Impostazioni'. {{detail}}",
@@ -176,7 +176,7 @@
     "tagline": "Una moderna GUI desktop per MediaInfo",
     "mediaInfoLib": "MediaInfoLib",
     "author": "Autore",
-    "github": "Github",
+    "github": "GitHub",
     "allStreams": "Tutti i flussi",
     "property": "Proprietà",
     "id": "ID",
