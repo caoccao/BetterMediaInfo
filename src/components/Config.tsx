@@ -40,7 +40,6 @@ import {
   LightMode as LightIcon,
   MusicNote as AudioIcon,
   Palette as AppearanceIcon,
-  Save as SaveIcon,
   Tune as FormatIcon,
   Update as UpdateIcon,
   VideoFile as VideoIcon,
@@ -232,8 +231,7 @@ export default function Config() {
   const [updateCheckInterval, setUpdateCheckInterval] = useState<Protocol.UpdateCheckInterval>(Protocol.UpdateCheckInterval.Weekly);
   const [formatTab, setFormatTab] = useState(0);
   const [fileExtensionsTab, setFileExtensionsTab] = useState(0);
-  const [isDirty, setIsDirty] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
@@ -270,24 +268,6 @@ export default function Config() {
     };
   }, []);
 
-  // Debounced file extension changes with 200ms delay
-  const handleFileExtensionChange = (
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    value: string
-  ) => {
-    setter(value);
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    debounceRef.current = setTimeout(() => {
-      setIsDirty(true);
-    }, 200);
-  };
-
-  const handleChange = () => {
-    setIsDirty(true);
-  };
-
   const convertFileExtensions = (fileExtensions: string): string[] => {
     return fileExtensions
       .split(/[, .]+/g)
@@ -314,23 +294,6 @@ export default function Config() {
     window: config?.window ?? { position: { x: -1, y: -1 }, size: { width: 1200, height: 900 } },
   });
 
-  const handleSave = async () => {
-    try {
-      const newConfig = await saveConfig(createConfig());
-      setStoreConfig(newConfig);
-      setIsDirty(false);
-      setDialogNotification({
-        title: t('config.settingsSaved'),
-        type: Protocol.DialogNotificationType.Info,
-      });
-    } catch (error) {
-      setDialogNotification({
-        title: error ? error.toString() : t('config.settingsSaveError'),
-        type: Protocol.DialogNotificationType.Error,
-      });
-    }
-  };
-
   const handleBrowseMkvToolNixPath = async () => {
     const directory = await open({
       directory: true,
@@ -338,7 +301,6 @@ export default function Config() {
     });
     if (typeof directory === 'string' && directory.length > 0) {
       setMkvToolNixPath(directory);
-      handleChange();
     }
   };
 
@@ -433,7 +395,6 @@ export default function Config() {
     });
     if (typeof directory === 'string' && directory.length > 0) {
       setBatchMkvExtractPath(directory);
-      handleChange();
     }
   };
 
@@ -443,7 +404,6 @@ export default function Config() {
       setBatchMkvExtractFound(status.found);
       if (status.found && status.path && status.path !== batchMkvExtractPath) {
         setBatchMkvExtractPath(status.path);
-        handleChange();
       }
     } catch {
       setBatchMkvExtractFound(false);
@@ -588,8 +548,47 @@ export default function Config() {
     setter: React.Dispatch<React.SetStateAction<StreamFormatState>>
   ) => (next: StreamFormatState) => {
     setter(next);
-    handleChange();
   };
+
+  // Auto-save: persist config to disk whenever any tracked value changes (debounced)
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+    }
+    autoSaveDebounceRef.current = setTimeout(async () => {
+      try {
+        const newConfig = await saveConfig(createConfig());
+        setStoreConfig(newConfig);
+      } catch (error) {
+        setDialogNotification({
+          title: error ? error.toString() : t('config.settingsSaveError'),
+          type: Protocol.DialogNotificationType.Error,
+        });
+      }
+    }, 300);
+    return () => {
+      if (autoSaveDebounceRef.current) {
+        clearTimeout(autoSaveDebounceRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    appendOnFileDrop,
+    displayMode,
+    theme,
+    language,
+    directoryMode,
+    fileExtensionsAudio,
+    fileExtensionsImage,
+    fileExtensionsVideo,
+    videoFormat,
+    audioFormat,
+    subtitleFormat,
+    mkvToolNixPath,
+    batchMkvExtractPath,
+    updateCheckInterval,
+  ]);
 
   const getThemeDisplayLabel = (themeOption: Protocol.Theme): string => t(`config.theme${themeOption}`);
 
@@ -606,7 +605,6 @@ export default function Config() {
               onChange={(_e, value) => {
                 if (value !== null) {
                   setDisplayMode(value as Protocol.DisplayMode);
-                  handleChange();
                 }
               }}
               size="small"
@@ -631,7 +629,6 @@ export default function Config() {
                 value={theme}
                 onChange={(e) => {
                   setTheme(e.target.value as Protocol.Theme);
-                  handleChange();
                 }}
               >
                 {Protocol.getThemes().map((themeOption) => (
@@ -648,7 +645,6 @@ export default function Config() {
                 value={language}
                 onChange={(e) => {
                   setLanguage(e.target.value as Protocol.Language);
-                  handleChange();
                 }}
               >
                 {Protocol.getLanguages().map((lang) => (
@@ -669,7 +665,6 @@ export default function Config() {
               checked={appendOnFileDrop}
               onChange={(e) => {
                 setAppendOnFileDrop(e.target.checked);
-                handleChange();
               }}
               size="small"
             />
@@ -680,7 +675,6 @@ export default function Config() {
                 value={directoryMode}
                 onChange={(e) => {
                   setDirectoryMode(e.target.value as Protocol.ConfigDirectoryMode);
-                  handleChange();
                 }}
               >
                 {Protocol.getConfigDirectoryModes().map((mode) => (
@@ -727,7 +721,7 @@ export default function Config() {
             <Stack spacing={1.5}>
               <TextField
                 value={fileExtensionsVideo}
-                onChange={(e) => handleFileExtensionChange(setFileExtensionsVideo, e.target.value)}
+                onChange={(e) => setFileExtensionsVideo(e.target.value)}
                 size="small"
                 fullWidth
                 placeholder="mp4, mkv, avi, mov..."
@@ -766,7 +760,7 @@ export default function Config() {
             <Stack spacing={1.5}>
               <TextField
                 value={fileExtensionsAudio}
-                onChange={(e) => handleFileExtensionChange(setFileExtensionsAudio, e.target.value)}
+                onChange={(e) => setFileExtensionsAudio(e.target.value)}
                 size="small"
                 fullWidth
                 placeholder="mp3, flac, wav, aac..."
@@ -805,7 +799,7 @@ export default function Config() {
             <Stack spacing={1.5}>
               <TextField
                 value={fileExtensionsImage}
-                onChange={(e) => handleFileExtensionChange(setFileExtensionsImage, e.target.value)}
+                onChange={(e) => setFileExtensionsImage(e.target.value)}
                 size="small"
                 fullWidth
                 placeholder="jpg, png, gif, webp..."
@@ -945,7 +939,6 @@ export default function Config() {
                 value={mkvToolNixPath}
                 onChange={(e) => {
                   setMkvToolNixPath(e.target.value);
-                  handleChange();
                 }}
                 size="small"
                 fullWidth
@@ -1002,7 +995,6 @@ export default function Config() {
                 value={batchMkvExtractPath}
                 onChange={(e) => {
                   setBatchMkvExtractPath(e.target.value);
-                  handleChange();
                 }}
                 size="small"
                 fullWidth
@@ -1049,7 +1041,6 @@ export default function Config() {
                 value={updateCheckInterval}
                 onChange={(e) => {
                   setUpdateCheckInterval(e.target.value as Protocol.UpdateCheckInterval);
-                  handleChange();
                 }}
               >
                 <MenuItem value={Protocol.UpdateCheckInterval.Daily}>{t('config.daily')}</MenuItem>
@@ -1060,19 +1051,6 @@ export default function Config() {
           </Box>
         </Paper>
 
-        {/* Save Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={!isDirty}
-            onClick={handleSave}
-            startIcon={<SaveIcon />}
-            sx={{ minWidth: 180, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-          >
-            {t('config.save')}
-          </Button>
-        </Box>
       </Stack>
     </Box>
   );
