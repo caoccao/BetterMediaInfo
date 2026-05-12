@@ -33,6 +33,7 @@ i18n.use(initReactI18next).init({
     'en-US': { translation: enUS },
     'es': { translation: es },
     'fr': { translation: fr },
+    'it': { translation: it },
     'ja': { translation: ja },
     'zh-CN': { translation: zhCN },
     'zh-HK': { translation: zhHK },
