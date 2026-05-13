@@ -715,6 +715,7 @@ export default function Config() {
                 }
               }}
               size="small"
+              sx={{ '& .MuiToggleButton-root': { textTransform: 'none' } }}
             >
               <ToggleButton value={Protocol.DisplayMode.Auto} sx={{ px: 1.5, gap: 0.5 }}>
                 <AutoIcon sx={{ fontSize: 16 }} />
