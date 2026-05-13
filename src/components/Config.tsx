@@ -50,6 +50,7 @@ import * as Protocol from '../lib/protocol';
 import {
   areExtensionsContextMenuRegistered,
   isBatchMkvExtractFound,
+  isBDMasterFound,
   isFolderContextMenuRegistered,
   isMkvtoolnixFound,
   registerExtensionsContextMenu,
@@ -223,6 +224,8 @@ export default function Config() {
   const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
   const [batchMkvExtractPath, setBatchMkvExtractPath] = useState('');
   const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
+  const [bdMasterPath, setBdMasterPath] = useState('');
+  const [bdMasterFound, setBdMasterFound] = useState(false);
   const [videoContextMenuRegistered, setVideoContextMenuRegistered] = useState(false);
   const [audioContextMenuRegistered, setAudioContextMenuRegistered] = useState(false);
   const [imageContextMenuRegistered, setImageContextMenuRegistered] = useState(false);
@@ -234,6 +237,7 @@ export default function Config() {
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const bdMasterCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
 
   const config = useAppStore((state) => state.config);
@@ -257,6 +261,7 @@ export default function Config() {
       setSubtitleFormat(initStreamFormat(config.subtitle));
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
+      setBdMasterPath(config.bdMaster?.path ?? '');
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
     }
   }, [config]);
@@ -290,6 +295,7 @@ export default function Config() {
     subtitle: toConfigStreamFormat(subtitleFormat),
     mkv: { mkvToolNixPath },
     batchMkvExtract: { path: batchMkvExtractPath },
+    bdMaster: { path: bdMasterPath },
     update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
     window: config?.window ?? { position: { x: -1, y: -1 }, size: { width: 1200, height: 900 } },
   });
@@ -410,6 +416,28 @@ export default function Config() {
     }
   };
 
+  const handleBrowseBdMasterPath = async () => {
+    const directory = await open({
+      directory: true,
+      defaultPath: bdMasterPath.trim() || undefined,
+    });
+    if (typeof directory === 'string' && directory.length > 0) {
+      setBdMasterPath(directory);
+    }
+  };
+
+  const handleDetectBdMaster = async () => {
+    try {
+      const status = await isBDMasterFound(bdMasterPath.trim(), true);
+      setBdMasterFound(status.found);
+      if (status.found && status.path && status.path !== bdMasterPath) {
+        setBdMasterPath(status.path);
+      }
+    } catch {
+      setBdMasterFound(false);
+    }
+  };
+
   const handleDetectMkvToolNix = async () => {
     try {
       const status = await isMkvtoolnixFound(mkvToolNixPath.trim(), true);
@@ -516,6 +544,33 @@ export default function Config() {
     };
   }, [batchMkvExtractPath]);
 
+  // Validate BDMaster path from backend.
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    if (bdMasterCheckDebounceRef.current) {
+      clearTimeout(bdMasterCheckDebounceRef.current);
+    }
+    let isCancelled = false;
+    bdMasterCheckDebounceRef.current = setTimeout(async () => {
+      try {
+        const status = await isBDMasterFound(bdMasterPath.trim());
+        if (!isCancelled) {
+          setBdMasterFound(status.found);
+        }
+      } catch {
+        if (!isCancelled) {
+          setBdMasterFound(false);
+        }
+      }
+    }, 250);
+    return () => {
+      isCancelled = true;
+      if (bdMasterCheckDebounceRef.current) {
+        clearTimeout(bdMasterCheckDebounceRef.current);
+      }
+    };
+  }, [bdMasterPath]);
+
   // Update store immediately when stream format changes
   useEffect(() => {
     if (!config || !isInitializedRef.current) return;
@@ -587,6 +642,7 @@ export default function Config() {
     subtitleFormat,
     mkvToolNixPath,
     batchMkvExtractPath,
+    bdMasterPath,
     updateCheckInterval,
   ]);
 
@@ -1025,6 +1081,62 @@ export default function Config() {
               }}
             >
               {batchMkvExtractFound ? t('config.batchMkvExtractFound') : t('config.batchMkvExtractNotFound')}
+            </Typography>
+          </Box>
+        </Paper>
+
+        {/* BDMaster Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader
+            icon={
+              <Box
+                component="img"
+                src="images/bdmaster.png"
+                alt="BDMaster"
+                sx={{ width: 20, height: 20, objectFit: 'contain' }}
+              />
+            }
+            title={t('config.bdMaster')}
+          />
+          <Box sx={{ py: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {t('config.bdMasterPath')}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TextField
+                value={bdMasterPath}
+                onChange={(e) => {
+                  setBdMasterPath(e.target.value);
+                }}
+                size="small"
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleBrowseBdMasterPath}
+                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+              >
+                {t('config.browse')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleDetectBdMaster}
+                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+              >
+                {t('config.detect')}
+              </Button>
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0.75,
+                display: 'block',
+                color: bdMasterFound ? 'success.main' : 'error.main',
+              }}
+            >
+              {bdMasterFound ? t('config.bdMasterFound') : t('config.bdMasterNotFound')}
             </Typography>
           </Box>
         </Paper>

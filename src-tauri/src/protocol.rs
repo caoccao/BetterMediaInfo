@@ -91,6 +91,12 @@ pub struct BatchMkvExtractStatus {
   pub path: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BDMasterStatus {
+  pub found: bool,
+  pub path: String,
+}
+
 pub struct MkvextractState {
   pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
 }

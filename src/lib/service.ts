@@ -74,6 +74,10 @@ export async function isBatchMkvExtractFound(path: string, checkRunning: boolean
   return await invoke<Protocol.BatchMkvExtractStatus>("is_batchmkvextract_found", { path, checkRunning });
 }
 
+export async function isBDMasterFound(path: string, checkRunning: boolean = false): Promise<Protocol.BDMasterStatus> {
+  return await invoke<Protocol.BDMasterStatus>("is_bdmaster_found", { path, checkRunning });
+}
+
 export async function openBatchMkvExtract(file: string): Promise<void> {
   return await invoke<void>("open_batchmkvextract", { file });
 }

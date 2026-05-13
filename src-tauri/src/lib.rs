@@ -23,6 +23,7 @@ use tauri::{Emitter, EventTarget, Manager};
 static WINDOW_READY: AtomicBool = AtomicBool::new(false);
 
 mod batchmkvextract;
+mod bdmaster;
 mod config;
 mod constants;
 mod context_menu;
@@ -156,6 +157,12 @@ async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<protoc
 async fn is_batchmkvextract_found(path: String, check_running: bool) -> Result<protocol::BatchMkvExtractStatus, String> {
   log::debug!("is_batchmkvextract_found({}, {})", path, check_running);
   batchmkvextract::is_batchmkvextract_found(path, check_running).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn is_bdmaster_found(path: String, check_running: bool) -> Result<protocol::BDMasterStatus, String> {
+  log::debug!("is_bdmaster_found({}, {})", path, check_running);
+  bdmaster::is_bdmaster_found(path, check_running).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -323,6 +330,7 @@ pub fn run() {
       get_mkv_tracks,
       is_mkvtoolnix_found,
       is_batchmkvextract_found,
+      is_bdmaster_found,
       open_batchmkvextract,
       open_mkvtoolnix_gui,
       run_mkvextract,

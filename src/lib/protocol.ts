@@ -71,6 +71,10 @@ export interface ConfigBatchMkvExtract {
   path: string;
 }
 
+export interface ConfigBDMaster {
+  path: string;
+}
+
 export enum UpdateCheckInterval {
   Daily = "Daily",
   Weekly = "Weekly",
@@ -111,6 +115,7 @@ export interface Config {
   subtitle: ConfigStreamFormat;
   mkv: ConfigMkv;
   batchMkvExtract: ConfigBatchMkvExtract;
+  bdMaster: ConfigBDMaster;
   update: ConfigUpdate;
   window: ConfigWindow;
 }
@@ -246,6 +251,11 @@ export interface MkvToolNixStatus {
 }
 
 export interface BatchMkvExtractStatus {
+  found: boolean;
+  path: string;
+}
+
+export interface BDMasterStatus {
   found: boolean;
   path: string;
 }

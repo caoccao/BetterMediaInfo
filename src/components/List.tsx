@@ -215,6 +215,7 @@ const AUTHOR_NAME = 'Sam Cao';
 const AUTHOR_URL = 'https://github.com/caoccao';
 const BETTER_MEDIA_INFO_URL = 'https://github.com/caoccao/BetterMediaInfo';
 const BATCH_MKV_EXTRACT_URL = 'https://github.com/caoccao/BatchMkvExtract';
+const BD_MASTER_URL = 'https://github.com/caoccao/BDMaster';
 
 interface AppCardProps {
   logo: string;
@@ -363,6 +364,12 @@ function EmptyWelcome() {
             title="BatchMkvExtract"
             intro={t('list.introBatchMkvExtract')}
             githubUrl={BATCH_MKV_EXTRACT_URL}
+          />
+          <AppCard
+            logo="images/bdmaster.png"
+            title="BDMaster"
+            intro={t('list.introBDMaster')}
+            githubUrl={BD_MASTER_URL}
           />
         </Box>
 
