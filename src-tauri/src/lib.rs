@@ -166,6 +166,12 @@ async fn is_bdmaster_found(path: String, check_running: bool) -> Result<protocol
 }
 
 #[tauri::command]
+async fn open_bdmaster(file: String) -> Result<(), String> {
+  log::debug!("open_bdmaster({})", file);
+  bdmaster::spawn_bdmaster(&file).map_err(convert_error)
+}
+
+#[tauri::command]
 async fn open_batchmkvextract(file: String) -> Result<(), String> {
   log::debug!("open_batchmkvextract({})", file);
   batchmkvextract::spawn_batchmkvextract(&file).map_err(convert_error)
@@ -332,6 +338,7 @@ pub fn run() {
       is_batchmkvextract_found,
       is_bdmaster_found,
       open_batchmkvextract,
+      open_bdmaster,
       open_mkvtoolnix_gui,
       run_mkvextract,
       cancel_mkvextract,

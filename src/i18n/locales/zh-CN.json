@@ -31,6 +31,7 @@
     "json": "Json",
     "extract": "提取",
     "openInBatchMkvExtract": "在 BatchMkvExtract 中打开",
+    "openInBDMaster": "在 BDMaster 中打开",
     "openInMkvToolNixGui": "在 MkvToolNix GUI 中打开",
     "details": "详情",
     "delete": "删除",

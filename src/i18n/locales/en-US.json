@@ -31,6 +31,7 @@
     "json": "Json",
     "extract": "Extract",
     "openInBatchMkvExtract": "Open in BatchMkvExtract",
+    "openInBDMaster": "Open in BDMaster",
     "openInMkvToolNixGui": "Open in MkvToolNix GUI",
     "details": "Details",
     "delete": "Delete",

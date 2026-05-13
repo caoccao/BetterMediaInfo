@@ -82,6 +82,10 @@ export async function openBatchMkvExtract(file: string): Promise<void> {
   return await invoke<void>("open_batchmkvextract", { file });
 }
 
+export async function openBDMaster(file: string): Promise<void> {
+  return await invoke<void>("open_bdmaster", { file });
+}
+
 export async function openMkvtoolnixGui(file: string): Promise<void> {
   return await invoke<void>("open_mkvtoolnix_gui", { file });
 }

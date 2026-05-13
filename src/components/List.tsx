@@ -53,7 +53,7 @@ import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isMkvtoolnixFound, openBatchMkvExtract, openMkvtoolnixGui } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isMkvtoolnixFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import {
@@ -471,6 +471,7 @@ export default function List() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [batchMkvExtractAvailable, setBatchMkvExtractAvailable] = useState(false);
+  const [bdMasterAvailable, setBdMasterAvailable] = useState(false);
   const [mkvtoolnixGuiAvailable, setMkvtoolnixGuiAvailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -530,6 +531,26 @@ export default function List() {
       cancelled = true;
     };
   }, [config?.batchMkvExtract?.path]);
+
+  // Track whether BDMaster is reachable so the per-card icon can show.
+  useEffect(() => {
+    const path = config?.bdMaster?.path?.trim() ?? '';
+    if (!path) {
+      setBdMasterAvailable(false);
+      return;
+    }
+    let cancelled = false;
+    isBDMasterFound(path)
+      .then((status) => {
+        if (!cancelled) setBdMasterAvailable(status.found);
+      })
+      .catch(() => {
+        if (!cancelled) setBdMasterAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.bdMaster?.path]);
 
   // Track whether MkvToolNix GUI is reachable so the per-card icon can show.
   useEffect(() => {
@@ -785,6 +806,20 @@ export default function List() {
     [setDialogNotification]
   );
 
+  const handleOpenBDMaster = useCallback(
+    async (file: string) => {
+      try {
+        await openBDMaster(file);
+      } catch (error) {
+        setDialogNotification({
+          title: error as string,
+          type: Protocol.DialogNotificationType.Error,
+        });
+      }
+    },
+    [setDialogNotification]
+  );
+
   const handleOpenMkvtoolnixGui = useCallback(
     async (file: string) => {
       try {
@@ -832,12 +867,26 @@ export default function List() {
                 }
                 action={(() => {
                   const isMkv = file.toLowerCase().endsWith('.mkv');
+                  const isIso = file.toLowerCase().endsWith('.iso');
                   const showExtract = isMkv;
                   const showBatchMkvExtract = isMkv && batchMkvExtractAvailable;
+                  const showBDMaster = isIso && bdMasterAvailable;
                   const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
-                  const hasFirstGroup = showExtract || showBatchMkvExtract || showMkvToolNixGui;
+                  const hasFirstGroup = showExtract || showBatchMkvExtract || showBDMaster || showMkvToolNixGui;
                   return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {showBDMaster && (
+                      <Tooltip title={t('list.openInBDMaster')}>
+                        <IconButton size="small" onClick={() => handleOpenBDMaster(file)}>
+                          <Box
+                            component="img"
+                            src="images/bdmaster.png"
+                            alt="BDMaster"
+                            sx={{ width: 18, height: 18, objectFit: 'contain' }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {showExtract && (
                       <Tooltip title={t('list.extract')}>
                         <IconButton size="small" onClick={() => openExtractWindow(file)}>
