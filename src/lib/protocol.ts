@@ -51,6 +51,7 @@ export enum Language {
   EnUS = "en-US",
   Es = "es",
   Fr = "fr",
+  It = "it",
   Ja = "ja",
   ZhCN = "zh-CN",
   ZhHK = "zh-HK",
@@ -280,6 +281,7 @@ export function getLanguages(): Language[] {
     Language.EnUS,
     Language.Es,
     Language.Fr,
+    Language.It,
     Language.Ja,
     Language.ZhCN,
     Language.ZhHK,
@@ -293,6 +295,7 @@ export function getLanguageLabel(language: Language): string {
     case Language.EnUS: return "English (US)";
     case Language.Es: return "Español";
     case Language.Fr: return "Français";
+    case Language.It: return "Italiano";
     case Language.Ja: return "日本語";
     case Language.ZhCN: return "简体中文";
     case Language.ZhHK: return "繁體中文 (香港)";

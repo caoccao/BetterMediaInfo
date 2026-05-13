@@ -21,6 +21,7 @@ import de from './locales/de.json';
 import enUS from './locales/en-US.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
+import it from './locales/it.json';
 import ja from './locales/ja.json';
 import zhCN from './locales/zh-CN.json';
 import zhHK from './locales/zh-HK.json';
@@ -32,6 +33,7 @@ i18n.use(initReactI18next).init({
     'en-US': { translation: enUS },
     'es': { translation: es },
     'fr': { translation: fr },
+    'it': { translation: it },
     'ja': { translation: ja },
     'zh-CN': { translation: zhCN },
     'zh-HK': { translation: zhHK },
