@@ -6,6 +6,7 @@
 * Added multi-language support to the Windows installers.
 * Added Italian as a new supported language.
 * Added BDMaster integration with Blu-ray folder detection and "Open in BDMaster" action for ISO files.
+* Added View settings to toggle General/Video/Audio/Subtitle tables in card view and detail view.
 
 ## 0.9.0
 

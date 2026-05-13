@@ -19,7 +19,9 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Button,
+  Checkbox,
   FormControl,
+  FormControlLabel,
   MenuItem,
   Paper,
   Select,
@@ -39,10 +41,13 @@ import {
   FolderOpen as FolderIcon,
   LightMode as LightIcon,
   MusicNote as AudioIcon,
+  Notes as DetailViewIcon,
   Palette as AppearanceIcon,
   Tune as FormatIcon,
   Update as UpdateIcon,
   VideoFile as VideoIcon,
+  ViewAgenda as CardViewIcon,
+  ViewModule as ViewIcon,
 } from '@mui/icons-material';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
@@ -226,6 +231,14 @@ export default function Config() {
   const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
   const [bdMasterPath, setBdMasterPath] = useState('');
   const [bdMasterFound, setBdMasterFound] = useState(false);
+  const [cardViewShowGeneral, setCardViewShowGeneral] = useState(true);
+  const [cardViewShowVideo, setCardViewShowVideo] = useState(true);
+  const [cardViewShowAudio, setCardViewShowAudio] = useState(true);
+  const [cardViewShowSubtitle, setCardViewShowSubtitle] = useState(true);
+  const [detailViewShowGeneral, setDetailViewShowGeneral] = useState(true);
+  const [detailViewShowVideo, setDetailViewShowVideo] = useState(true);
+  const [detailViewShowAudio, setDetailViewShowAudio] = useState(true);
+  const [detailViewShowSubtitle, setDetailViewShowSubtitle] = useState(true);
   const [videoContextMenuRegistered, setVideoContextMenuRegistered] = useState(false);
   const [audioContextMenuRegistered, setAudioContextMenuRegistered] = useState(false);
   const [imageContextMenuRegistered, setImageContextMenuRegistered] = useState(false);
@@ -262,6 +275,14 @@ export default function Config() {
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setBdMasterPath(config.bdMaster?.path ?? '');
+      setCardViewShowGeneral(config.view?.card?.showGeneral ?? true);
+      setCardViewShowVideo(config.view?.card?.showVideo ?? true);
+      setCardViewShowAudio(config.view?.card?.showAudio ?? true);
+      setCardViewShowSubtitle(config.view?.card?.showSubtitle ?? true);
+      setDetailViewShowGeneral(config.view?.detail?.showGeneral ?? true);
+      setDetailViewShowVideo(config.view?.detail?.showVideo ?? true);
+      setDetailViewShowAudio(config.view?.detail?.showAudio ?? true);
+      setDetailViewShowSubtitle(config.view?.detail?.showSubtitle ?? true);
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
     }
   }, [config]);
@@ -296,6 +317,20 @@ export default function Config() {
     mkv: { mkvToolNixPath },
     batchMkvExtract: { path: batchMkvExtractPath },
     bdMaster: { path: bdMasterPath },
+    view: {
+      card: {
+        showGeneral: cardViewShowGeneral,
+        showVideo: cardViewShowVideo,
+        showAudio: cardViewShowAudio,
+        showSubtitle: cardViewShowSubtitle,
+      },
+      detail: {
+        showGeneral: detailViewShowGeneral,
+        showVideo: detailViewShowVideo,
+        showAudio: detailViewShowAudio,
+        showSubtitle: detailViewShowSubtitle,
+      },
+    },
     update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
     window: config?.window ?? { position: { x: -1, y: -1 }, size: { width: 1200, height: 900 } },
   });
@@ -643,6 +678,14 @@ export default function Config() {
     mkvToolNixPath,
     batchMkvExtractPath,
     bdMasterPath,
+    cardViewShowGeneral,
+    cardViewShowVideo,
+    cardViewShowAudio,
+    cardViewShowSubtitle,
+    detailViewShowGeneral,
+    detailViewShowVideo,
+    detailViewShowAudio,
+    detailViewShowSubtitle,
     updateCheckInterval,
   ]);
 
@@ -711,6 +754,113 @@ export default function Config() {
               </Select>
             </FormControl>
           </SettingRow>
+        </Paper>
+
+        {/* View Section */}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <SectionHeader icon={<ViewIcon fontSize="small" />} title={t('config.view')} />
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <CardViewIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {t('config.cardView')}
+                </Typography>
+              </Box>
+              <Stack>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={cardViewShowGeneral}
+                      onChange={(e) => setCardViewShowGeneral(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.general') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={cardViewShowVideo}
+                      onChange={(e) => setCardViewShowVideo(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.video') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={cardViewShowAudio}
+                      onChange={(e) => setCardViewShowAudio(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.audio') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={cardViewShowSubtitle}
+                      onChange={(e) => setCardViewShowSubtitle(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.subtitle') })}
+                />
+              </Stack>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <DetailViewIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {t('config.detailView')}
+                </Typography>
+              </Box>
+              <Stack>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={detailViewShowGeneral}
+                      onChange={(e) => setDetailViewShowGeneral(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.general') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={detailViewShowVideo}
+                      onChange={(e) => setDetailViewShowVideo(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.video') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={detailViewShowAudio}
+                      onChange={(e) => setDetailViewShowAudio(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.audio') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={detailViewShowSubtitle}
+                      onChange={(e) => setDetailViewShowSubtitle(e.target.checked)}
+                    />
+                  }
+                  label={t('config.showTable', { name: t('config.subtitle') })}
+                />
+              </Stack>
+            </Box>
+          </Box>
         </Paper>
 
         {/* File Handling Section */}

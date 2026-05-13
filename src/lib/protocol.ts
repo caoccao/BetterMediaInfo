@@ -75,6 +75,25 @@ export interface ConfigBDMaster {
   path: string;
 }
 
+export interface ConfigCardView {
+  showGeneral: boolean;
+  showVideo: boolean;
+  showAudio: boolean;
+  showSubtitle: boolean;
+}
+
+export interface ConfigDetailView {
+  showGeneral: boolean;
+  showVideo: boolean;
+  showAudio: boolean;
+  showSubtitle: boolean;
+}
+
+export interface ConfigView {
+  card: ConfigCardView;
+  detail: ConfigDetailView;
+}
+
 export enum UpdateCheckInterval {
   Daily = "Daily",
   Weekly = "Weekly",
@@ -116,6 +135,7 @@ export interface Config {
   mkv: ConfigMkv;
   batchMkvExtract: ConfigBatchMkvExtract;
   bdMaster: ConfigBDMaster;
+  view: ConfigView;
   update: ConfigUpdate;
   window: ConfigWindow;
 }

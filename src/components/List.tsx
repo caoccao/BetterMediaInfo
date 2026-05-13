@@ -946,6 +946,11 @@ export default function List() {
                 {[...commonPropertiesMap.entries()].map(([stream, commonProperties]) => {
                   const streamMaps = fileToPropertyMaps.get(file)?.filter((map) => map.stream === stream);
                   if (!streamMaps || streamMaps.length === 0) return null;
+                  const cardCfg = config?.view?.card;
+                  if (stream === Protocol.StreamKind.General && cardCfg?.showGeneral === false) return null;
+                  if (stream === Protocol.StreamKind.Video && cardCfg?.showVideo === false) return null;
+                  if (stream === Protocol.StreamKind.Audio && cardCfg?.showAudio === false) return null;
+                  if (stream === Protocol.StreamKind.Text && cardCfg?.showSubtitle === false) return null;
 
                   return (
                     <TableContainer key={stream} sx={{ mt: 1 }}>

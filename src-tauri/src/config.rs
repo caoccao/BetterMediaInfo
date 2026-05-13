@@ -70,6 +70,8 @@ pub struct Config {
   #[serde(rename = "bdMaster", default)]
   pub bd_master: ConfigBDMaster,
   #[serde(default)]
+  pub view: ConfigView,
+  #[serde(default)]
   pub update: ConfigUpdate,
   #[serde(default)]
   pub window: ConfigWindow,
@@ -90,6 +92,7 @@ impl Default for Config {
       mkv: Default::default(),
       batch_mkv_extract: Default::default(),
       bd_master: Default::default(),
+      view: Default::default(),
       update: Default::default(),
       window: Default::default(),
     }
@@ -247,6 +250,73 @@ impl Default for ConfigBDMaster {
   fn default() -> Self {
     Self {
       path: Self::default_path(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigView {
+  #[serde(default)]
+  pub card: ConfigCardView,
+  #[serde(default)]
+  pub detail: ConfigDetailView,
+}
+
+impl Default for ConfigView {
+  fn default() -> Self {
+    Self {
+      card: Default::default(),
+      detail: Default::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigCardView {
+  #[serde(rename = "showGeneral", default = "default_true")]
+  pub show_general: bool,
+  #[serde(rename = "showVideo", default = "default_true")]
+  pub show_video: bool,
+  #[serde(rename = "showAudio", default = "default_true")]
+  pub show_audio: bool,
+  #[serde(rename = "showSubtitle", default = "default_true")]
+  pub show_subtitle: bool,
+}
+
+fn default_true() -> bool {
+  true
+}
+
+impl Default for ConfigCardView {
+  fn default() -> Self {
+    Self {
+      show_general: true,
+      show_video: true,
+      show_audio: true,
+      show_subtitle: true,
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigDetailView {
+  #[serde(rename = "showGeneral", default = "default_true")]
+  pub show_general: bool,
+  #[serde(rename = "showVideo", default = "default_true")]
+  pub show_video: bool,
+  #[serde(rename = "showAudio", default = "default_true")]
+  pub show_audio: bool,
+  #[serde(rename = "showSubtitle", default = "default_true")]
+  pub show_subtitle: bool,
+}
+
+impl Default for ConfigDetailView {
+  fn default() -> Self {
+    Self {
+      show_general: true,
+      show_video: true,
+      show_audio: true,
+      show_subtitle: true,
     }
   }
 }

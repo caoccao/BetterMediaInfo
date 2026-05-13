@@ -65,6 +65,7 @@ export default function Details({ file }: DetailsProps) {
   const [streamGroup, setStreamGroup] = useState<Protocol.StreamKind[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  const config = useAppStore((state) => state.config);
   const mediaFileToAllPropertiesMap = useAppStore((state) => state.mediaFileToAllPropertiesMap);
   const mediaFileToStreamCountMap = useAppStore((state) => state.mediaFileToStreamCountMap);
   const setDialogJsonCode = useAppStore((state) => state.setDialogJsonCode);
@@ -93,9 +94,31 @@ export default function Details({ file }: DetailsProps) {
     };
   }, [query]);
 
-  // Initialize stream group when streamCountMap changes
+  // Initialize stream group when streamCountMap changes. Settings only seed
+  // the four standard stream kinds; once the user edits the checkboxes here
+  // their choice is local to this tab and ignores subsequent settings edits.
   useEffect(() => {
-    setStreamGroup([...streamCountMap.keys()]);
+    const detail = config?.view?.detail;
+    setStreamGroup(
+      [...streamCountMap.keys()].filter((kind) => {
+        if (!detail) return true;
+        switch (kind) {
+          case Protocol.StreamKind.General:
+            return detail.showGeneral;
+          case Protocol.StreamKind.Video:
+            return detail.showVideo;
+          case Protocol.StreamKind.Audio:
+            return detail.showAudio;
+          case Protocol.StreamKind.Text:
+            return detail.showSubtitle;
+          default:
+            return true;
+        }
+      })
+    );
+    // Intentionally exclude `config` so changing settings doesn't override
+    // an open Details tab's local checkbox state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamCountMap]);
 
   const filteredAllProperties = useMemo(() => {
