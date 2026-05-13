@@ -80,6 +80,7 @@ export interface ConfigCardView {
   showVideo: boolean;
   showAudio: boolean;
   showSubtitle: boolean;
+  showMenu: boolean;
 }
 
 export interface ConfigDetailView {
@@ -87,6 +88,7 @@ export interface ConfigDetailView {
   showVideo: boolean;
   showAudio: boolean;
   showSubtitle: boolean;
+  showMenu: boolean;
 }
 
 export interface ConfigView {

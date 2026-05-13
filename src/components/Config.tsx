@@ -235,10 +235,12 @@ export default function Config() {
   const [cardViewShowVideo, setCardViewShowVideo] = useState(true);
   const [cardViewShowAudio, setCardViewShowAudio] = useState(true);
   const [cardViewShowSubtitle, setCardViewShowSubtitle] = useState(true);
+  const [cardViewShowMenu, setCardViewShowMenu] = useState(false);
   const [detailViewShowGeneral, setDetailViewShowGeneral] = useState(true);
   const [detailViewShowVideo, setDetailViewShowVideo] = useState(true);
   const [detailViewShowAudio, setDetailViewShowAudio] = useState(true);
   const [detailViewShowSubtitle, setDetailViewShowSubtitle] = useState(true);
+  const [detailViewShowMenu, setDetailViewShowMenu] = useState(true);
   const [videoContextMenuRegistered, setVideoContextMenuRegistered] = useState(false);
   const [audioContextMenuRegistered, setAudioContextMenuRegistered] = useState(false);
   const [imageContextMenuRegistered, setImageContextMenuRegistered] = useState(false);
@@ -279,10 +281,12 @@ export default function Config() {
       setCardViewShowVideo(config.view?.card?.showVideo ?? true);
       setCardViewShowAudio(config.view?.card?.showAudio ?? true);
       setCardViewShowSubtitle(config.view?.card?.showSubtitle ?? true);
+      setCardViewShowMenu(config.view?.card?.showMenu ?? false);
       setDetailViewShowGeneral(config.view?.detail?.showGeneral ?? true);
       setDetailViewShowVideo(config.view?.detail?.showVideo ?? true);
       setDetailViewShowAudio(config.view?.detail?.showAudio ?? true);
       setDetailViewShowSubtitle(config.view?.detail?.showSubtitle ?? true);
+      setDetailViewShowMenu(config.view?.detail?.showMenu ?? true);
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
     }
   }, [config]);
@@ -323,12 +327,14 @@ export default function Config() {
         showVideo: cardViewShowVideo,
         showAudio: cardViewShowAudio,
         showSubtitle: cardViewShowSubtitle,
+        showMenu: cardViewShowMenu,
       },
       detail: {
         showGeneral: detailViewShowGeneral,
         showVideo: detailViewShowVideo,
         showAudio: detailViewShowAudio,
         showSubtitle: detailViewShowSubtitle,
+        showMenu: detailViewShowMenu,
       },
     },
     update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
@@ -682,10 +688,12 @@ export default function Config() {
     cardViewShowVideo,
     cardViewShowAudio,
     cardViewShowSubtitle,
+    cardViewShowMenu,
     detailViewShowGeneral,
     detailViewShowVideo,
     detailViewShowAudio,
     detailViewShowSubtitle,
+    detailViewShowMenu,
     updateCheckInterval,
   ]);
 
@@ -776,7 +784,7 @@ export default function Config() {
                       onChange={(e) => setCardViewShowGeneral(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.general') })}
+                  label={t('config.show', { name: t('config.general') })}
                 />
                 <FormControlLabel
                   control={
@@ -786,7 +794,7 @@ export default function Config() {
                       onChange={(e) => setCardViewShowVideo(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.video') })}
+                  label={t('config.show', { name: t('config.video') })}
                 />
                 <FormControlLabel
                   control={
@@ -796,7 +804,7 @@ export default function Config() {
                       onChange={(e) => setCardViewShowAudio(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.audio') })}
+                  label={t('config.show', { name: t('config.audio') })}
                 />
                 <FormControlLabel
                   control={
@@ -806,7 +814,17 @@ export default function Config() {
                       onChange={(e) => setCardViewShowSubtitle(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.subtitle') })}
+                  label={t('config.show', { name: t('config.subtitle') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={cardViewShowMenu}
+                      onChange={(e) => setCardViewShowMenu(e.target.checked)}
+                    />
+                  }
+                  label={t('config.show', { name: t('config.menu') })}
                 />
               </Stack>
             </Box>
@@ -826,7 +844,7 @@ export default function Config() {
                       onChange={(e) => setDetailViewShowGeneral(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.general') })}
+                  label={t('config.show', { name: t('config.general') })}
                 />
                 <FormControlLabel
                   control={
@@ -836,7 +854,7 @@ export default function Config() {
                       onChange={(e) => setDetailViewShowVideo(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.video') })}
+                  label={t('config.show', { name: t('config.video') })}
                 />
                 <FormControlLabel
                   control={
@@ -846,7 +864,7 @@ export default function Config() {
                       onChange={(e) => setDetailViewShowAudio(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.audio') })}
+                  label={t('config.show', { name: t('config.audio') })}
                 />
                 <FormControlLabel
                   control={
@@ -856,7 +874,17 @@ export default function Config() {
                       onChange={(e) => setDetailViewShowSubtitle(e.target.checked)}
                     />
                   }
-                  label={t('config.showTable', { name: t('config.subtitle') })}
+                  label={t('config.show', { name: t('config.subtitle') })}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={detailViewShowMenu}
+                      onChange={(e) => setDetailViewShowMenu(e.target.checked)}
+                    />
+                  }
+                  label={t('config.show', { name: t('config.menu') })}
                 />
               </Stack>
             </Box>

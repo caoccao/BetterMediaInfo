@@ -281,10 +281,16 @@ pub struct ConfigCardView {
   pub show_audio: bool,
   #[serde(rename = "showSubtitle", default = "default_true")]
   pub show_subtitle: bool,
+  #[serde(rename = "showMenu", default = "default_false")]
+  pub show_menu: bool,
 }
 
 fn default_true() -> bool {
   true
+}
+
+fn default_false() -> bool {
+  false
 }
 
 impl Default for ConfigCardView {
@@ -294,6 +300,7 @@ impl Default for ConfigCardView {
       show_video: true,
       show_audio: true,
       show_subtitle: true,
+      show_menu: false,
     }
   }
 }
@@ -308,6 +315,8 @@ pub struct ConfigDetailView {
   pub show_audio: bool,
   #[serde(rename = "showSubtitle", default = "default_true")]
   pub show_subtitle: bool,
+  #[serde(rename = "showMenu", default = "default_true")]
+  pub show_menu: bool,
 }
 
 impl Default for ConfigDetailView {
@@ -317,6 +326,7 @@ impl Default for ConfigDetailView {
       show_video: true,
       show_audio: true,
       show_subtitle: true,
+      show_menu: true,
     }
   }
 }

@@ -192,11 +192,17 @@ function buildCommonPropertiesMap(
     { ...createPropertyDef('StreamSize', subtitleSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
   ];
 
+  const menu: PropertyDefinition[] = [
+    { ...createPropertyDef('StreamKindID'), header: t('list.header.id'), inCardView: true },
+    { ...createPropertyDef('Inform'), header: t('list.header.menu'), inCardView: true },
+  ];
+
   return new Map<Protocol.StreamKind, PropertyDefinition[]>([
     [Protocol.StreamKind.General, general],
     [Protocol.StreamKind.Video, video],
     [Protocol.StreamKind.Audio, audio],
     [Protocol.StreamKind.Text, text],
+    [Protocol.StreamKind.Menu, menu],
   ]);
 }
 
@@ -951,6 +957,7 @@ export default function List() {
                   if (stream === Protocol.StreamKind.Video && cardCfg?.showVideo === false) return null;
                   if (stream === Protocol.StreamKind.Audio && cardCfg?.showAudio === false) return null;
                   if (stream === Protocol.StreamKind.Text && cardCfg?.showSubtitle === false) return null;
+                  if (stream === Protocol.StreamKind.Menu && cardCfg?.showMenu === false) return null;
 
                   return (
                     <TableContainer key={stream} sx={{ mt: 1 }}>
@@ -983,14 +990,15 @@ export default function List() {
                               {commonProperties
                                 .filter((prop) => prop.inCardView)
                                 .map((prop) => (
-                                  <TableCell 
-                                    key={prop.name} 
+                                  <TableCell
+                                    key={prop.name}
                                     align={prop.align}
                                     sx={{
                                       borderTop: `1px solid ${STREAM_KIND_COLORS[stream]}`,
                                       borderBottom: `1px solid ${STREAM_KIND_COLORS[stream]}`,
                                       borderLeft: `1px solid ${STREAM_KIND_COLORS[stream]}`,
                                       borderRight: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                      whiteSpace: 'pre-line',
                                     }}
                                   >
                                     {prop.format(map.propertyMap[prop.name], map.propertyMap)}

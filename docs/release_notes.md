@@ -7,6 +7,7 @@
 * Added Italian as a new supported language.
 * Added BDMaster integration with Blu-ray folder detection and "Open in BDMaster" action for ISO files.
 * Added View settings to toggle General/Video/Audio/Subtitle tables in card view and detail view.
+* Added Menu stream table with chapter Inform output, toggleable per view (off by default in card view).
 
 ## 0.9.0
 
