@@ -31,6 +31,7 @@ mod context_menu;
 mod controller;
 mod media_info;
 mod mkvtoolnix;
+mod mpchc;
 mod protocol;
 mod streams;
 #[cfg(target_os = "windows")]
@@ -164,6 +165,18 @@ async fn is_batchmkvextract_found(path: String, check_running: bool) -> Result<p
 async fn is_bdmaster_found(path: String, check_running: bool) -> Result<protocol::BDMasterStatus, String> {
   log::debug!("is_bdmaster_found({}, {})", path, check_running);
   bdmaster::is_bdmaster_found(path, check_running).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn is_mpchc_found(path: String, check_running: bool) -> Result<protocol::MpcHcStatus, String> {
+  log::debug!("is_mpchc_found({}, {})", path, check_running);
+  mpchc::is_mpchc_found(path, check_running).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn open_mpchc(file: String) -> Result<(), String> {
+  log::debug!("open_mpchc({})", file);
+  mpchc::spawn_mpchc(&file).map_err(convert_error)
 }
 
 #[tauri::command]
@@ -344,10 +357,12 @@ pub fn run() {
       is_mkvtoolnix_found,
       is_batchmkvextract_found,
       is_bdmaster_found,
+      is_mpchc_found,
       is_bd,
       open_batchmkvextract,
       open_bdmaster,
       open_mkvtoolnix_gui,
+      open_mpchc,
       run_mkvextract,
       cancel_mkvextract,
       get_parameters,

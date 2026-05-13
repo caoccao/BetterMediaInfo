@@ -78,6 +78,14 @@ export async function isBDMasterFound(path: string, checkRunning: boolean = fals
   return await invoke<Protocol.BDMasterStatus>("is_bdmaster_found", { path, checkRunning });
 }
 
+export async function isMpcHcFound(path: string, checkRunning: boolean = false): Promise<Protocol.MpcHcStatus> {
+  return await invoke<Protocol.MpcHcStatus>("is_mpchc_found", { path, checkRunning });
+}
+
+export async function openMpcHc(file: string): Promise<void> {
+  return await invoke<void>("open_mpchc", { file });
+}
+
 export async function isBD(path: string): Promise<Protocol.BDStatus> {
   return await invoke<Protocol.BDStatus>("is_bd", { path });
 }

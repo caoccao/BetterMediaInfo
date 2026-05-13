@@ -98,6 +98,12 @@ pub struct BDMasterStatus {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MpcHcStatus {
+  pub found: bool,
+  pub path: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BDStatus {
   #[serde(rename = "isBluRay")]
   pub is_blu_ray: bool,

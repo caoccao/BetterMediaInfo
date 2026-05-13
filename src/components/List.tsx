@@ -53,7 +53,7 @@ import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isMkvtoolnixFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isMkvtoolnixFound, isMpcHcFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui, openMpcHc } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import {
@@ -479,6 +479,7 @@ export default function List() {
   const [batchMkvExtractAvailable, setBatchMkvExtractAvailable] = useState(false);
   const [bdMasterAvailable, setBdMasterAvailable] = useState(false);
   const [mkvtoolnixGuiAvailable, setMkvtoolnixGuiAvailable] = useState(false);
+  const [mpcHcAvailable, setMpcHcAvailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const apiRef = useGridApiRef();
@@ -577,6 +578,26 @@ export default function List() {
       cancelled = true;
     };
   }, [config?.mkv?.mkvToolNixPath]);
+
+  // Track whether MPC HC is reachable so the per-card icon can show.
+  useEffect(() => {
+    const path = config?.mpcHc?.path?.trim() ?? '';
+    if (!path) {
+      setMpcHcAvailable(false);
+      return;
+    }
+    let cancelled = false;
+    isMpcHcFound(path)
+      .then((status) => {
+        if (!cancelled) setMpcHcAvailable(status.found);
+      })
+      .catch(() => {
+        if (!cancelled) setMpcHcAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.mpcHc?.path]);
 
   const videoExtensionSet = useMemo(() => {
     const exts = config?.fileExtensions?.video ?? [];
@@ -840,6 +861,20 @@ export default function List() {
     [setDialogNotification]
   );
 
+  const handleOpenMpcHc = useCallback(
+    async (file: string) => {
+      try {
+        await openMpcHc(file);
+      } catch (error) {
+        setDialogNotification({
+          title: error as string,
+          type: Protocol.DialogNotificationType.Error,
+        });
+      }
+    },
+    [setDialogNotification]
+  );
+
   if (files.length === 0) {
     return <EmptyWelcome />;
   }
@@ -878,7 +913,8 @@ export default function List() {
                   const showBatchMkvExtract = isMkv && batchMkvExtractAvailable;
                   const showBDMaster = isIso && bdMasterAvailable;
                   const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
-                  const hasFirstGroup = showExtract || showBatchMkvExtract || showBDMaster || showMkvToolNixGui;
+                  const showMpcHc = isVideoFile(file) && mpcHcAvailable;
+                  const hasFirstGroup = showExtract || showBatchMkvExtract || showBDMaster || showMkvToolNixGui || showMpcHc;
                   return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {showBDMaster && (
@@ -919,6 +955,18 @@ export default function List() {
                             component="img"
                             src="images/mkvmerge.png"
                             alt="MkvToolNix GUI"
+                            sx={{ width: 18, height: 18, objectFit: 'contain' }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {showMpcHc && (
+                      <Tooltip title={t('list.openInMpcHc')}>
+                        <IconButton size="small" onClick={() => handleOpenMpcHc(file)}>
+                          <Box
+                            component="img"
+                            src="images/mpchc64.png"
+                            alt="MPC HC"
                             sx={{ width: 18, height: 18, objectFit: 'contain' }}
                           />
                         </IconButton>

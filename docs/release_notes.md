@@ -8,6 +8,7 @@
 * Added BDMaster integration with Blu-ray folder detection and "Open in BDMaster" action for ISO files.
 * Added View settings to toggle General/Video/Audio/Subtitle tables in card view and detail view.
 * Added Menu stream table with chapter Inform output, toggleable per view (off by default in card view).
+* Added MPC HC integration on Windows with auto-detection and an "Open in MPC HC" action for video files.
 
 ## 0.9.0
 

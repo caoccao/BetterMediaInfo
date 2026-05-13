@@ -75,6 +75,10 @@ export interface ConfigBDMaster {
   path: string;
 }
 
+export interface ConfigMpcHc {
+  path: string;
+}
+
 export interface ConfigCardView {
   showGeneral: boolean;
   showVideo: boolean;
@@ -137,6 +141,7 @@ export interface Config {
   mkv: ConfigMkv;
   batchMkvExtract: ConfigBatchMkvExtract;
   bdMaster: ConfigBDMaster;
+  mpcHc: ConfigMpcHc;
   view: ConfigView;
   update: ConfigUpdate;
   window: ConfigWindow;
@@ -278,6 +283,11 @@ export interface BatchMkvExtractStatus {
 }
 
 export interface BDMasterStatus {
+  found: boolean;
+  path: string;
+}
+
+export interface MpcHcStatus {
   found: boolean;
   path: string;
 }

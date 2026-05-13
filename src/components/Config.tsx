@@ -56,6 +56,7 @@ import {
   areExtensionsContextMenuRegistered,
   isBatchMkvExtractFound,
   isBDMasterFound,
+  isMpcHcFound,
   isFolderContextMenuRegistered,
   isMkvtoolnixFound,
   registerExtensionsContextMenu,
@@ -231,6 +232,8 @@ export default function Config() {
   const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
   const [bdMasterPath, setBdMasterPath] = useState('');
   const [bdMasterFound, setBdMasterFound] = useState(false);
+  const [mpcHcPath, setMpcHcPath] = useState('');
+  const [mpcHcFound, setMpcHcFound] = useState(false);
   const [cardViewShowGeneral, setCardViewShowGeneral] = useState(true);
   const [cardViewShowVideo, setCardViewShowVideo] = useState(true);
   const [cardViewShowAudio, setCardViewShowAudio] = useState(true);
@@ -253,6 +256,7 @@ export default function Config() {
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bdMasterCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const mpcHcCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
 
   const config = useAppStore((state) => state.config);
@@ -277,6 +281,7 @@ export default function Config() {
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setBdMasterPath(config.bdMaster?.path ?? '');
+      setMpcHcPath(config.mpcHc?.path ?? '');
       setCardViewShowGeneral(config.view?.card?.showGeneral ?? true);
       setCardViewShowVideo(config.view?.card?.showVideo ?? true);
       setCardViewShowAudio(config.view?.card?.showAudio ?? true);
@@ -321,6 +326,7 @@ export default function Config() {
     mkv: { mkvToolNixPath },
     batchMkvExtract: { path: batchMkvExtractPath },
     bdMaster: { path: bdMasterPath },
+    mpcHc: { path: mpcHcPath },
     view: {
       card: {
         showGeneral: cardViewShowGeneral,
@@ -479,6 +485,28 @@ export default function Config() {
     }
   };
 
+  const handleBrowseMpcHcPath = async () => {
+    const directory = await open({
+      directory: true,
+      defaultPath: mpcHcPath.trim() || undefined,
+    });
+    if (typeof directory === 'string' && directory.length > 0) {
+      setMpcHcPath(directory);
+    }
+  };
+
+  const handleDetectMpcHc = async () => {
+    try {
+      const status = await isMpcHcFound(mpcHcPath.trim(), true);
+      setMpcHcFound(status.found);
+      if (status.found && status.path && status.path !== mpcHcPath) {
+        setMpcHcPath(status.path);
+      }
+    } catch {
+      setMpcHcFound(false);
+    }
+  };
+
   const handleDetectMkvToolNix = async () => {
     try {
       const status = await isMkvtoolnixFound(mkvToolNixPath.trim(), true);
@@ -612,6 +640,34 @@ export default function Config() {
     };
   }, [bdMasterPath]);
 
+  // Validate MPC-HC path from backend.
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    if (!isWindows) return;
+    if (mpcHcCheckDebounceRef.current) {
+      clearTimeout(mpcHcCheckDebounceRef.current);
+    }
+    let isCancelled = false;
+    mpcHcCheckDebounceRef.current = setTimeout(async () => {
+      try {
+        const status = await isMpcHcFound(mpcHcPath.trim());
+        if (!isCancelled) {
+          setMpcHcFound(status.found);
+        }
+      } catch {
+        if (!isCancelled) {
+          setMpcHcFound(false);
+        }
+      }
+    }, 250);
+    return () => {
+      isCancelled = true;
+      if (mpcHcCheckDebounceRef.current) {
+        clearTimeout(mpcHcCheckDebounceRef.current);
+      }
+    };
+  }, [mpcHcPath, isWindows]);
+
   // Update store immediately when stream format changes
   useEffect(() => {
     if (!config || !isInitializedRef.current) return;
@@ -684,6 +740,7 @@ export default function Config() {
     mkvToolNixPath,
     batchMkvExtractPath,
     bdMasterPath,
+    mpcHcPath,
     cardViewShowGeneral,
     cardViewShowVideo,
     cardViewShowAudio,
@@ -1151,6 +1208,64 @@ export default function Config() {
             />
           )}
         </Paper>
+
+        {/* MPC HC Section */}
+        {isWindows && (
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            <SectionHeader
+              icon={
+                <Box
+                  component="img"
+                  src="images/mpchc64.png"
+                  alt="MPC HC"
+                  sx={{ width: 20, height: 20, objectFit: 'contain' }}
+                />
+              }
+              title={t('config.mpcHc')}
+            />
+            <Box sx={{ py: 1 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {t('config.mpcHcPath')}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TextField
+                  value={mpcHcPath}
+                  onChange={(e) => {
+                    setMpcHcPath(e.target.value);
+                  }}
+                  size="small"
+                  fullWidth
+                />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleBrowseMpcHcPath}
+                  sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+                >
+                  {t('config.browse')}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleDetectMpcHc}
+                  sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+                >
+                  {t('config.detect')}
+                </Button>
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  mt: 0.75,
+                  display: 'block',
+                  color: mpcHcFound ? 'success.main' : 'error.main',
+                }}
+              >
+                {mpcHcFound ? t('config.mpcHcFound') : t('config.mpcHcNotFound')}
+              </Typography>
+            </Box>
+          </Paper>
+        )}
 
         {/* MKV Section */}
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>

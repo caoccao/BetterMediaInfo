@@ -69,6 +69,8 @@ pub struct Config {
   pub batch_mkv_extract: ConfigBatchMkvExtract,
   #[serde(rename = "bdMaster", default)]
   pub bd_master: ConfigBDMaster,
+  #[serde(rename = "mpcHc", default)]
+  pub mpc_hc: ConfigMpcHc,
   #[serde(default)]
   pub view: ConfigView,
   #[serde(default)]
@@ -92,6 +94,7 @@ impl Default for Config {
       mkv: Default::default(),
       batch_mkv_extract: Default::default(),
       bd_master: Default::default(),
+      mpc_hc: Default::default(),
       view: Default::default(),
       update: Default::default(),
       window: Default::default(),
@@ -247,6 +250,30 @@ impl ConfigBDMaster {
 }
 
 impl Default for ConfigBDMaster {
+  fn default() -> Self {
+    Self {
+      path: Self::default_path(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigMpcHc {
+  #[serde(default = "ConfigMpcHc::default_path")]
+  pub path: String,
+}
+
+impl ConfigMpcHc {
+  fn default_path() -> String {
+    if cfg!(target_os = "windows") {
+      r"C:\Program Files (x86)\K-Lite Codec Pack\MPC-HC64".to_owned()
+    } else {
+      String::new()
+    }
+  }
+}
+
+impl Default for ConfigMpcHc {
   fn default() -> Self {
     Self {
       path: Self::default_path(),
