@@ -260,6 +260,11 @@ export interface BDMasterStatus {
   path: string;
 }
 
+export interface BDStatus {
+  isBluRay: boolean;
+  isFolder: boolean;
+}
+
 export interface UpdateCheckResult {
   hasUpdate: boolean;
   latestVersion: string | null;

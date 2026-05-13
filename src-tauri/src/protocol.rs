@@ -97,6 +97,14 @@ pub struct BDMasterStatus {
   pub path: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BDStatus {
+  #[serde(rename = "isBluRay")]
+  pub is_blu_ray: bool,
+  #[serde(rename = "isFolder")]
+  pub is_folder: bool,
+}
+
 pub struct MkvextractState {
   pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
 }

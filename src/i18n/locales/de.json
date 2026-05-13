@@ -203,7 +203,11 @@
     "jsonCopied": "Json-Code wurde in die Zwischenablage kopiert.",
     "jsonCopyFailed": "Kopieren in die Zwischenablage fehlgeschlagen. Fehler: {{error}}.",
     "jsonSaved": "Json-Code wurde in {{filePath}} gespeichert.",
-    "jsonSaveFailed": "Speichern in {{filePath}} fehlgeschlagen. Fehler: {{error}}."
+    "jsonSaveFailed": "Speichern in {{filePath}} fehlgeschlagen. Fehler: {{error}}.",
+    "bdFolderTitle": "Blu-ray-Ordner erkannt",
+    "bdFolderPrompt": "{{path}}\n\nDiese Blu-ray-Disc in BDMaster öffnen?",
+    "openInBDMaster": "In BDMaster öffnen",
+    "cancel": "Abbrechen"
   },
   "fileFilter": {
     "video": "Video",

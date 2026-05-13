@@ -17,6 +17,7 @@ BetterMediaInfo is built on top of [MediaInfoLib](https://github.com/MediaArea/M
 * First class duration, stream size, bit rate, scan type
 * Precise duration
 * Integrate with [BatchMkvExtract](https://github.com/caoccao/BatchMkvExtract)
+* Integrate with [BDMaster](https://github.com/caoccao/BDMaster)
 
 ![Screenshot](https://github.com/caoccao/BetterMediaInfo/raw/main/docs/screenshots/card_view.png)
 

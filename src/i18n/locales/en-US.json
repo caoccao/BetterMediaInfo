@@ -203,7 +203,11 @@
     "jsonCopied": "Json code is copied to clipboard.",
     "jsonCopyFailed": "Failed to copy to clipboard with error: {{error}}.",
     "jsonSaved": "Json code is saved to {{filePath}}.",
-    "jsonSaveFailed": "Failed to save to {{filePath}} with error: {{error}}."
+    "jsonSaveFailed": "Failed to save to {{filePath}} with error: {{error}}.",
+    "bdFolderTitle": "Blu-ray Folder Detected",
+    "bdFolderPrompt": "{{path}}\n\nOpen this Blu-ray disc in BDMaster?",
+    "openInBDMaster": "Open in BDMaster",
+    "cancel": "Cancel"
   },
   "fileFilter": {
     "video": "Video",

@@ -5,6 +5,7 @@
 * Added "Open in MkvToolNix GUI" action to the card view for video files when MKVToolNix is configured.
 * Added multi-language support to the Windows installers.
 * Added Italian as a new supported language.
+* Added BDMaster integration with Blu-ray folder detection and "Open in BDMaster" action for ISO files.
 
 ## 0.9.0
 

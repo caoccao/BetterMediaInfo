@@ -203,7 +203,11 @@
     "jsonCopied": "Jsonコードをクリップボードにコピーしました。",
     "jsonCopyFailed": "クリップボードへのコピーに失敗しました。エラー：{{error}}。",
     "jsonSaved": "Jsonコードを {{filePath}} に保存しました。",
-    "jsonSaveFailed": "{{filePath}} への保存に失敗しました。エラー：{{error}}。"
+    "jsonSaveFailed": "{{filePath}} への保存に失敗しました。エラー：{{error}}。",
+    "bdFolderTitle": "Blu-ray フォルダを検出",
+    "bdFolderPrompt": "{{path}}\n\nこの Blu-ray ディスクを BDMaster で開きますか？",
+    "openInBDMaster": "BDMaster で開く",
+    "cancel": "キャンセル"
   },
   "fileFilter": {
     "video": "動画",

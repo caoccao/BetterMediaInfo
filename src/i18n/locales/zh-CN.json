@@ -203,7 +203,11 @@
     "jsonCopied": "Json 代码已复制到剪贴板。",
     "jsonCopyFailed": "复制到剪贴板失败，错误：{{error}}。",
     "jsonSaved": "Json 代码已保存到 {{filePath}}。",
-    "jsonSaveFailed": "保存到 {{filePath}} 失败，错误：{{error}}。"
+    "jsonSaveFailed": "保存到 {{filePath}} 失败，错误：{{error}}。",
+    "bdFolderTitle": "检测到蓝光文件夹",
+    "bdFolderPrompt": "{{path}}\n\n是否在 BDMaster 中打开此蓝光光盘？",
+    "openInBDMaster": "在 BDMaster 中打开",
+    "cancel": "取消"
   },
   "fileFilter": {
     "video": "视频",

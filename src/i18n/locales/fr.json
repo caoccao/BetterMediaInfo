@@ -203,7 +203,11 @@
     "jsonCopied": "Le code Json a été copié dans le presse-papiers.",
     "jsonCopyFailed": "Échec de la copie dans le presse-papiers. Erreur : {{error}}.",
     "jsonSaved": "Le code Json a été enregistré dans {{filePath}}.",
-    "jsonSaveFailed": "Échec de l'enregistrement dans {{filePath}}. Erreur : {{error}}."
+    "jsonSaveFailed": "Échec de l'enregistrement dans {{filePath}}. Erreur : {{error}}.",
+    "bdFolderTitle": "Dossier Blu-ray détecté",
+    "bdFolderPrompt": "{{path}}\n\nOuvrir ce disque Blu-ray dans BDMaster ?",
+    "openInBDMaster": "Ouvrir dans BDMaster",
+    "cancel": "Annuler"
   },
   "fileFilter": {
     "video": "Vidéo",

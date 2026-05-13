@@ -203,7 +203,11 @@
     "jsonCopied": "El código Json se copió al portapapeles.",
     "jsonCopyFailed": "Error al copiar al portapapeles: {{error}}.",
     "jsonSaved": "El código Json se guardó en {{filePath}}.",
-    "jsonSaveFailed": "Error al guardar en {{filePath}}: {{error}}."
+    "jsonSaveFailed": "Error al guardar en {{filePath}}: {{error}}.",
+    "bdFolderTitle": "Carpeta Blu-ray detectada",
+    "bdFolderPrompt": "{{path}}\n\n¿Abrir este disco Blu-ray en BDMaster?",
+    "openInBDMaster": "Abrir en BDMaster",
+    "cancel": "Cancelar"
   },
   "fileFilter": {
     "video": "Video",

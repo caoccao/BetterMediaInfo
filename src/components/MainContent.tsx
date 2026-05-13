@@ -42,7 +42,7 @@ import Editor from '@monaco-editor/react';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { scanFiles } from '../lib/fs';
-import { getUpdateResult, skipVersion, writeTextFile } from '../lib/service';
+import { getUpdateResult, isBD, isBDMasterFound, openBDMaster, skipVersion, writeTextFile } from '../lib/service';
 import { openSaveJsonCodeFileDialog } from '../lib/dialog';
 import { shrinkFileName } from '../lib/format';
 import List from './List';
@@ -65,6 +65,7 @@ export default function MainContent() {
 
   const [newVersion, setNewVersion] = useState<string | null>(null);
   const [skipChecked, setSkipChecked] = useState(false);
+  const [bdFolderPrompt, setBdFolderPrompt] = useState<string | null>(null);
   const updatePollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const config = useAppStore((state) => state.config);
@@ -253,10 +254,55 @@ export default function MainContent() {
   useEffect(() => {
     let cancelFileDrop: UnlistenFn | null = null;
 
+    const handleDrop = async (paths: string[]) => {
+      // Split out Blu-ray folders so we can prompt to open them in BDMaster
+      // instead of trying to parse their contents as flat media files.
+      const bdStatuses = await Promise.all(
+        paths.map(async (p) => {
+          try {
+            return await isBD(p);
+          } catch {
+            return { isBluRay: false, isFolder: false };
+          }
+        }),
+      );
+      const bdFolders: string[] = [];
+      const remaining: string[] = [];
+      paths.forEach((p, i) => {
+        const status = bdStatuses[i];
+        if (status.isBluRay && status.isFolder) {
+          bdFolders.push(p);
+        } else {
+          remaining.push(p);
+        }
+      });
+
+      if (remaining.length > 0) {
+        scanFiles(remaining, appendOnFileDrop);
+      }
+
+      if (bdFolders.length === 0) return;
+
+      // Only prompt when BDMaster is actually reachable; otherwise just
+      // ignore (the user has no way to open it anyway).
+      const bdMasterPath = useAppStore.getState().config?.bdMaster?.path?.trim() ?? '';
+      if (!bdMasterPath) return;
+      try {
+        const status = await isBDMasterFound(bdMasterPath);
+        if (!status.found) return;
+      } catch {
+        return;
+      }
+
+      // For multiple Blu-ray folders we only surface the first; chaining
+      // modals would be noisy. The user can drop the rest individually.
+      setBdFolderPrompt(bdFolders[0]);
+    };
+
     getCurrentWindow()
       .onDragDropEvent((event: Event<DragDropEvent>) => {
         if (event.payload.type === 'drop') {
-          scanFiles(event.payload.paths, appendOnFileDrop);
+          handleDrop(event.payload.paths);
         }
       })
       .then((value) => {
@@ -269,6 +315,20 @@ export default function MainContent() {
       }
     };
   }, [appendOnFileDrop]);
+
+  const handleBdFolderConfirm = useCallback(async () => {
+    const path = bdFolderPrompt;
+    setBdFolderPrompt(null);
+    if (!path) return;
+    try {
+      await openBDMaster(path);
+    } catch (error) {
+      setDialogNotification({
+        title: error as string,
+        type: Protocol.DialogNotificationType.Error,
+      });
+    }
+  }, [bdFolderPrompt, setDialogNotification]);
 
   const closeTab = useCallback(
     (index: number) => {
@@ -493,6 +553,33 @@ export default function MainContent() {
           </Button>
           <Button variant="outlined" onClick={() => setDialogJsonCode(null)}>
             {t('dialog.close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Blu-ray Folder Confirmation Dialog */}
+      <Dialog
+        open={bdFolderPrompt !== null}
+        onClose={(_event, reason) => {
+          if (reason !== 'backdropClick') {
+            setBdFolderPrompt(null);
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t('dialog.bdFolderTitle')}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+            {t('dialog.bdFolderPrompt', { path: bdFolderPrompt ?? '' })}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', gap: 1 }}>
+          <Button variant="contained" color="primary" onClick={handleBdFolderConfirm} sx={{ textTransform: 'none' }}>
+            {t('dialog.openInBDMaster')}
+          </Button>
+          <Button variant="outlined" onClick={() => setBdFolderPrompt(null)} sx={{ textTransform: 'none' }}>
+            {t('dialog.cancel')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -203,7 +203,11 @@
     "jsonCopied": "Il codice JSON è stato copiato negli appunti.",
     "jsonCopyFailed": "Impossibile copiare negli appunti con errore: {{error}}.",
     "jsonSaved": "Il codice JSON è stato salvato in {{filePath}}.",
-    "jsonSaveFailed": "Impossibile salvare in {{filePath}} con errore: {{error}}."
+    "jsonSaveFailed": "Impossibile salvare in {{filePath}} con errore: {{error}}.",
+    "bdFolderTitle": "Cartella Blu-ray rilevata",
+    "bdFolderPrompt": "{{path}}\n\nAprire questo disco Blu-ray in BDMaster?",
+    "openInBDMaster": "Apri in BDMaster",
+    "cancel": "Annulla"
   },
   "fileFilter": {
     "video": "Video",
