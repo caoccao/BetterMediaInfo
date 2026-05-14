@@ -28,12 +28,10 @@ import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { useTranslation } from 'react-i18next';
 
 import * as Protocol from '../lib/protocol';
-import {
-  type ExportFormat,
-  getExportFormatExtension,
-  openSaveExportFileDialog,
-} from '../lib/dialog';
-import { type ExportStream, renderText } from '../lib/exportText';
+import { APP_NAME } from '../lib/constants';
+import { getExportFormatExtension, openSaveExportFileDialog } from '../lib/dialog';
+import type { ExportFormat, ExportStream } from '../lib/export';
+import { renderText } from '../lib/exportText';
 import { writeTextFile } from '../lib/service';
 import { useAppStore } from '../lib/store';
 
@@ -53,15 +51,17 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
   const { t } = useTranslation();
   const [format, setFormat] = useState<ExportFormat>('text');
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
+  const mediaInfoAbout = useAppStore((state) => state.mediaInfoAbout);
+  const appVersion = mediaInfoAbout?.appVersion ?? '';
 
   const previewContent = useMemo(() => {
     switch (format) {
       case 'text':
-        return renderText({ file, streams });
+        return renderText({ file, appName: APP_NAME, appVersion, streams });
       default:
         return '';
     }
-  }, [format, file, streams]);
+  }, [format, file, appVersion, streams]);
 
   const handleFormatChange = (_e: React.MouseEvent<HTMLElement>, value: ExportFormat | null) => {
     if (value !== null) {

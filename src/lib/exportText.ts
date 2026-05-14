@@ -15,23 +15,14 @@
  *   limitations under the License.
  */
 
-import type * as Protocol from "./protocol";
+import type { ExportData } from "./export";
 
-export interface ExportStream {
-  stream: Protocol.StreamKind;
-  num: number;
-  entries: Array<[string, string]>;
-}
-
-export interface ExportData {
-  file: string;
-  streams: ExportStream[];
-}
-
-export function renderText({ file, streams }: ExportData): string {
+export function renderText({ file, appName, appVersion, streams }: ExportData): string {
   const lines: string[] = [];
   lines.push(file);
   lines.push("=".repeat(file.length));
+  lines.push("");
+  lines.push(`Application: ${appName} v${appVersion}`);
   lines.push("");
 
   for (const stream of streams) {

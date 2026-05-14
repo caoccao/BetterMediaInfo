@@ -42,7 +42,7 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import RemoveDoneIcon from '@mui/icons-material/RemoveDone';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
-import type { ExportStream } from '../lib/exportText';
+import type { ExportStream } from '../lib/export';
 import { useAppStore } from '../lib/store';
 import ExportDialog from './ExportDialog';
 

@@ -183,6 +183,7 @@ function App() {
   const storeTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
   const storeLanguage = useAppStore((state) => state.config?.language ?? Protocol.Language.EnUS);
   const initConfig = useAppStore((state) => state.initConfig);
+  const initAbout = useAppStore((state) => state.initAbout);
 
   const [extractDisplayMode, setExtractDisplayMode] = useState<Protocol.DisplayMode>(
     extractParams?.displayMode ?? Protocol.DisplayMode.Auto
@@ -197,8 +198,9 @@ function App() {
   useEffect(() => {
     if (!extractParams) {
       initConfig();
+      initAbout();
     }
-  }, [initConfig, extractParams]);
+  }, [initConfig, initAbout, extractParams]);
 
   // Extract window: apply initial language from URL params
   useEffect(() => {

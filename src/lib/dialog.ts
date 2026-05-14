@@ -18,6 +18,7 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { DialogFilter } from "@tauri-apps/plugin-dialog";
 import i18n from "../i18n";
+import { EXPORT_FORMAT_EXTENSIONS, type ExportFormat } from "./export";
 import { useAppStore } from "./store";
 import { scanFiles } from "./fs";
 
@@ -74,15 +75,6 @@ export async function openSaveJsonCodeFileDialog() {
     filters: [{ name: i18n.t("fileFilter.json"), extensions: ["json"] }],
   });
 }
-
-export type ExportFormat = "text" | "markdown" | "html" | "png";
-
-const EXPORT_FORMAT_EXTENSIONS: Record<ExportFormat, string> = {
-  text: "txt",
-  markdown: "md",
-  html: "html",
-  png: "png",
-};
 
 export function getExportFormatExtension(format: ExportFormat): string {
   return EXPORT_FORMAT_EXTENSIONS[format];

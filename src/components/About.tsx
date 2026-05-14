@@ -43,12 +43,9 @@ import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useTranslation } from 'react-i18next';
 
 import appIconUrl from '../../src-tauri/icons/icon.png';
+import { APP_NAME, AUTHOR_NAME, AUTHOR_URL, GITHUB_URL } from '../lib/constants';
 import { useAppStore } from '../lib/store';
 
-const APP_NAME = 'BetterMediaInfo';
-const AUTHOR_NAME = 'Sam Cao';
-const AUTHOR_URL = 'https://github.com/caoccao';
-const GITHUB_URL = 'https://github.com/caoccao/BetterMediaInfo';
 const GRADIENT = 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)';
 
 export default function About() {

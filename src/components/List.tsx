@@ -50,6 +50,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PersonIcon from '@mui/icons-material/Person';
 import * as Protocol from '../lib/protocol';
+import { AUTHOR_NAME, AUTHOR_URL, GITHUB_URL } from '../lib/constants';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
@@ -217,9 +218,6 @@ const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
   [Protocol.StreamKind.Max]: '#84cc16',
 };
 
-const AUTHOR_NAME = 'Sam Cao';
-const AUTHOR_URL = 'https://github.com/caoccao';
-const BETTER_MEDIA_INFO_URL = 'https://github.com/caoccao/BetterMediaInfo';
 const BATCH_MKV_EXTRACT_URL = 'https://github.com/caoccao/BatchMkvExtract';
 const BD_MASTER_URL = 'https://github.com/caoccao/BDMaster';
 
@@ -362,7 +360,7 @@ function EmptyWelcome() {
             logo="images/bettermediainfo.png"
             title="BetterMediaInfo"
             intro={t('list.introBetterMediaInfo')}
-            githubUrl={BETTER_MEDIA_INFO_URL}
+            githubUrl={GITHUB_URL}
             isPrimary
           />
           <AppCard
@@ -455,7 +453,7 @@ function EmptyWelcome() {
             <GitHubIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             <Link
               component="button"
-              onClick={() => shellOpen(BETTER_MEDIA_INFO_URL)}
+              onClick={() => shellOpen(GITHUB_URL)}
               underline="hover"
               sx={(theme) => ({
                 fontSize: '0.75rem',
@@ -463,7 +461,7 @@ function EmptyWelcome() {
                 color: theme.palette.mode === 'dark' ? '#93c5fd' : '#1d4ed8',
               })}
             >
-              {BETTER_MEDIA_INFO_URL.replace('https://', '')}
+              {GITHUB_URL.replace('https://', '')}
             </Link>
           </Box>
         </Box>
