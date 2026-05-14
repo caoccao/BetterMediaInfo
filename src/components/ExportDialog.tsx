@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -33,8 +33,9 @@ import { getExportFormatExtension, openSaveExportFileDialog } from '../lib/dialo
 import { ExportFormat, type ExportStream } from '../lib/export';
 import { renderHtml } from '../lib/exportHtml';
 import { renderMarkdown } from '../lib/exportMarkdown';
+import { canvasToBlob, renderPng } from '../lib/exportPng';
 import { renderText } from '../lib/exportText';
-import { writeTextFile } from '../lib/service';
+import { writeBinaryFile, writeTextFile } from '../lib/service';
 import { useAppStore } from '../lib/store';
 
 interface ExportDialogProps {
@@ -55,6 +56,8 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
   const mediaInfoAbout = useAppStore((state) => state.mediaInfoAbout);
   const appVersion = mediaInfoAbout?.appVersion ?? '';
+  const pngContainerRef = useRef<HTMLDivElement | null>(null);
+  const pngCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const previewContent = useMemo(() => {
     switch (format) {
@@ -69,6 +72,18 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
     }
   }, [format, file, appVersion, streams]);
 
+  useEffect(() => {
+    if (!open || format !== ExportFormat.Png) {
+      pngCanvasRef.current = null;
+      return;
+    }
+    const container = pngContainerRef.current;
+    if (!container) return;
+    const canvas = renderPng({ file, appName: APP_NAME, appVersion, streams });
+    pngCanvasRef.current = canvas;
+    container.replaceChildren(canvas);
+  }, [open, format, file, appVersion, streams]);
+
   const handleFormatChange = (_e: React.MouseEvent<HTMLElement>, value: ExportFormat | null) => {
     if (value !== null) {
       setFormat(value);
@@ -77,7 +92,14 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
 
   const handleCopy = async () => {
     try {
-      await writeText(previewContent);
+      if (format === ExportFormat.Png) {
+        const canvas = pngCanvasRef.current;
+        if (!canvas) throw new Error('Canvas is not ready.');
+        const blob = await canvasToBlob(canvas);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      } else {
+        await writeText(previewContent);
+      }
       setDialogNotification({
         title: t('dialog.exportCopied'),
         type: Protocol.DialogNotificationType.Info,
@@ -95,7 +117,15 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
     const filePath = (await openSaveExportFileDialog(format, defaultPath)) as string | null;
     if (!filePath) return;
     try {
-      await writeTextFile(filePath, previewContent);
+      if (format === ExportFormat.Png) {
+        const canvas = pngCanvasRef.current;
+        if (!canvas) throw new Error('Canvas is not ready.');
+        const blob = await canvasToBlob(canvas);
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        await writeBinaryFile(filePath, bytes);
+      } else {
+        await writeTextFile(filePath, previewContent);
+      }
       setDialogNotification({
         title: t('dialog.exportSaved', { filePath }),
         type: Protocol.DialogNotificationType.Info,
@@ -195,6 +225,21 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
             minHeight: 0,
             border: 0,
             bgcolor: 'background.default',
+          }}
+        />
+      ) : format === ExportFormat.Png ? (
+        <Box
+          ref={pngContainerRef}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            p: 2,
+            bgcolor: 'background.default',
+            '& > canvas': {
+              display: 'block',
+              boxShadow: 1,
+            },
           }}
         />
       ) : (

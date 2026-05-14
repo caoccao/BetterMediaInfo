@@ -10,6 +10,7 @@
 * Added Menu stream table with chapter Inform output, toggleable per view (off by default in card view).
 * Added MPC HC integration on Windows with auto-detection and an "Open in MPC HC" action for video files.
 * Added templates for customization of the details view.
+* Added export to details view.
 
 ## 0.9.0
 

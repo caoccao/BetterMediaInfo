@@ -254,3 +254,10 @@ pub async fn write_text_file(file: String, text: String) -> Result<()> {
   file.write_all(text.as_bytes())?;
   Ok(())
 }
+
+pub async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<()> {
+  let path = Path::new(file.as_str());
+  let mut file = File::create(path)?;
+  file.write_all(&bytes)?;
+  Ok(())
+}

@@ -369,6 +369,7 @@ pub fn run() {
       get_properties,
       get_stream_count,
       set_config,
+      write_binary_file,
       write_text_file
     ])
     .run(tauri::generate_context!())
@@ -458,4 +459,10 @@ fn skip_version(version: String) -> Result<(), String> {
 async fn write_text_file(file: String, text: String) -> Result<(), String> {
   log::debug!("write_text_file({})", file);
   controller::write_text_file(file, text).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<(), String> {
+  log::debug!("write_binary_file({})", file);
+  controller::write_binary_file(file, bytes).await.map_err(convert_error)
 }
