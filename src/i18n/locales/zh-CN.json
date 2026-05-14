@@ -68,6 +68,7 @@
     }
   },
   "details": {
+    "export": "导出",
     "filter": "筛选",
     "json": "Json",
     "selectAll": "全选",
@@ -213,6 +214,12 @@
     "donate": "捐赠以支持开发",
     "copyright": "© 版权所有 2024-2026"
   },
+  "export": {
+    "formatText": "文本",
+    "formatMarkdown": "Markdown",
+    "formatHtml": "HTML",
+    "formatPng": "PNG"
+  },
   "dialog": {
     "copy": "复制",
     "save": "保存",
@@ -221,6 +228,10 @@
     "jsonCopyFailed": "复制到剪贴板失败，错误：{{error}}。",
     "jsonSaved": "Json 代码已保存到 {{filePath}}。",
     "jsonSaveFailed": "保存到 {{filePath}} 失败，错误：{{error}}。",
+    "exportCopied": "导出内容已复制到剪贴板。",
+    "exportCopyFailed": "复制到剪贴板失败，错误：{{error}}。",
+    "exportSaved": "导出内容已保存到 {{filePath}}。",
+    "exportSaveFailed": "保存到 {{filePath}} 失败，错误：{{error}}。",
     "bdFolderTitle": "检测到蓝光文件夹",
     "bdFolderPrompt": "{{path}}\n\n是否在 BDMaster 中打开此蓝光光盘？",
     "openInBDMaster": "在 BDMaster 中打开",
@@ -230,6 +241,10 @@
     "video": "视频",
     "image": "图片",
     "audio": "音频",
-    "json": "JSON"
+    "json": "JSON",
+    "text": "文本",
+    "markdown": "Markdown",
+    "html": "HTML",
+    "png": "PNG"
   }
 }

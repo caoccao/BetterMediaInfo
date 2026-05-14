@@ -68,6 +68,7 @@
     }
   },
   "details": {
+    "export": "Exportar",
     "filter": "Filtrar",
     "json": "Json",
     "selectAll": "Seleccionar todo",
@@ -213,6 +214,12 @@
     "donate": "Donar para apoyar el desarrollo",
     "copyright": "© Copyright 2024-2026"
   },
+  "export": {
+    "formatText": "Texto",
+    "formatMarkdown": "Markdown",
+    "formatHtml": "HTML",
+    "formatPng": "PNG"
+  },
   "dialog": {
     "copy": "Copiar",
     "save": "Guardar",
@@ -221,6 +228,10 @@
     "jsonCopyFailed": "Error al copiar al portapapeles: {{error}}.",
     "jsonSaved": "El código Json se guardó en {{filePath}}.",
     "jsonSaveFailed": "Error al guardar en {{filePath}}: {{error}}.",
+    "exportCopied": "Contenido exportado copiado al portapapeles.",
+    "exportCopyFailed": "Error al copiar al portapapeles: {{error}}.",
+    "exportSaved": "Contenido exportado guardado en {{filePath}}.",
+    "exportSaveFailed": "Error al guardar en {{filePath}}: {{error}}.",
     "bdFolderTitle": "Carpeta Blu-ray detectada",
     "bdFolderPrompt": "{{path}}\n\n¿Abrir este disco Blu-ray en BDMaster?",
     "openInBDMaster": "Abrir en BDMaster",
@@ -230,6 +241,10 @@
     "video": "Video",
     "image": "Imagen",
     "audio": "Audio",
-    "json": "JSON"
+    "json": "JSON",
+    "text": "Texto",
+    "markdown": "Markdown",
+    "html": "HTML",
+    "png": "PNG"
   }
 }

@@ -68,6 +68,7 @@
     }
   },
   "details": {
+    "export": "Exporter",
     "filter": "Filtrer",
     "json": "Json",
     "selectAll": "Tout sélectionner",
@@ -213,6 +214,12 @@
     "donate": "Faire un don pour soutenir le développement",
     "copyright": "© Copyright 2024-2026"
   },
+  "export": {
+    "formatText": "Texte",
+    "formatMarkdown": "Markdown",
+    "formatHtml": "HTML",
+    "formatPng": "PNG"
+  },
   "dialog": {
     "copy": "Copier",
     "save": "Enregistrer",
@@ -221,6 +228,10 @@
     "jsonCopyFailed": "Échec de la copie dans le presse-papiers. Erreur : {{error}}.",
     "jsonSaved": "Le code Json a été enregistré dans {{filePath}}.",
     "jsonSaveFailed": "Échec de l'enregistrement dans {{filePath}}. Erreur : {{error}}.",
+    "exportCopied": "Contenu exporté copié dans le presse-papiers.",
+    "exportCopyFailed": "Échec de la copie dans le presse-papiers. Erreur : {{error}}.",
+    "exportSaved": "Contenu exporté enregistré dans {{filePath}}.",
+    "exportSaveFailed": "Échec de l'enregistrement dans {{filePath}}. Erreur : {{error}}.",
     "bdFolderTitle": "Dossier Blu-ray détecté",
     "bdFolderPrompt": "{{path}}\n\nOuvrir ce disque Blu-ray dans BDMaster ?",
     "openInBDMaster": "Ouvrir dans BDMaster",
@@ -230,6 +241,10 @@
     "video": "Vidéo",
     "image": "Image",
     "audio": "Audio",
-    "json": "JSON"
+    "json": "JSON",
+    "text": "Texte",
+    "markdown": "Markdown",
+    "html": "HTML",
+    "png": "PNG"
   }
 }

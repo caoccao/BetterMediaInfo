@@ -37,11 +37,13 @@ import {
   CircularProgress,
 } from '@mui/material';
 import JavascriptIcon from '@mui/icons-material/Javascript';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import RemoveDoneIcon from '@mui/icons-material/RemoveDone';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
+import ExportDialog from './ExportDialog';
 
 interface DetailsProps {
   file: string;
@@ -74,6 +76,7 @@ export default function Details({ file }: DetailsProps) {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [streamGroup, setStreamGroup] = useState<Protocol.StreamKind[]>([]);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const config = useAppStore((state) => state.config);
@@ -207,13 +210,26 @@ export default function Details({ file }: DetailsProps) {
         <CardHeader
           title={<Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{file}</Typography>}
           action={
-            <Tooltip title={t('details.json')}>
-              <span>
-                <IconButton size="small" onClick={openDialogJsonCode} disabled={allProperties.length === 0}>
-                  <JavascriptIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tooltip title={t('details.export')}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => setExportDialogOpen(true)}
+                    disabled={allProperties.length === 0}
+                  >
+                    <FileDownloadIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title={t('details.json')}>
+                <span>
+                  <IconButton size="small" onClick={openDialogJsonCode} disabled={allProperties.length === 0}>
+                    <JavascriptIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
           }
           sx={{ pb: 0 }}
         />
@@ -343,6 +359,12 @@ export default function Details({ file }: DetailsProps) {
           )
         )}
       </Box>
+
+      <ExportDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        file={file}
+      />
     </Box>
   );
 }

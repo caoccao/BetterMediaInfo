@@ -74,3 +74,27 @@ export async function openSaveJsonCodeFileDialog() {
     filters: [{ name: i18n.t("fileFilter.json"), extensions: ["json"] }],
   });
 }
+
+export type ExportFormat = "text" | "markdown" | "html" | "png";
+
+const EXPORT_FORMAT_EXTENSIONS: Record<ExportFormat, string> = {
+  text: "txt",
+  markdown: "md",
+  html: "html",
+  png: "png",
+};
+
+export function getExportFormatExtension(format: ExportFormat): string {
+  return EXPORT_FORMAT_EXTENSIONS[format];
+}
+
+export async function openSaveExportFileDialog(
+  format: ExportFormat,
+  defaultPath: string,
+) {
+  const ext = EXPORT_FORMAT_EXTENSIONS[format];
+  return await save({
+    defaultPath,
+    filters: [{ name: i18n.t(`fileFilter.${format}`), extensions: [ext] }],
+  });
+}
