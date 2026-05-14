@@ -38,6 +38,7 @@ import {
   BrightnessAuto as AutoIcon,
   ClosedCaption as SubtitleIcon,
   DarkMode as DarkIcon,
+  Extension as IntegrationIcon,
   FolderOpen as FolderIcon,
   LightMode as LightIcon,
   MusicNote as AudioIcon,
@@ -47,7 +48,6 @@ import {
   Update as UpdateIcon,
   VideoFile as VideoIcon,
   ViewAgenda as CardViewIcon,
-  ViewModule as ViewIcon,
 } from '@mui/icons-material';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +67,14 @@ import {
 } from '../lib/service';
 import { useAppStore } from '../lib/store';
 import { changeLanguage } from '../i18n';
+
+enum ConfigTab {
+  Appearance = 'Appearance',
+  FileExtensions = 'FileExtensions',
+  Formatting = 'Formatting',
+  Integration = 'Integration',
+  Update = 'Update',
+}
 
 interface StreamFormatState {
   bitRatePrecision: Protocol.FormatPrecision;
@@ -250,6 +258,7 @@ export default function Config() {
   const [folderContextMenuRegistered, setFolderContextMenuRegistered] = useState(false);
   const isWindows = useMemo(() => typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent), []);
   const [updateCheckInterval, setUpdateCheckInterval] = useState<Protocol.UpdateCheckInterval>(Protocol.UpdateCheckInterval.Weekly);
+  const [mainTab, setMainTab] = useState<ConfigTab>(ConfigTab.Appearance);
   const [formatTab, setFormatTab] = useState(0);
   const [fileExtensionsTab, setFileExtensionsTab] = useState(0);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -756,539 +765,470 @@ export default function Config() {
 
   const getThemeDisplayLabel = (themeOption: Protocol.Theme): string => t(`config.theme${themeOption}`);
 
-  return (
-    <Box sx={{ width: '100%', maxWidth: 640, mx: 'auto', py: 2, px: 1 }}>
-      <Stack spacing={2}>
-        {/* Appearance Section */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<AppearanceIcon fontSize="small" />} title={t('config.appearance')} />
-          <SettingRow label={t('config.appearance')}>
-            <ToggleButtonGroup
-              value={displayMode}
-              exclusive
-              onChange={(_e, value) => {
-                if (value !== null) {
-                  setDisplayMode(value as Protocol.DisplayMode);
-                }
-              }}
-              size="small"
-              sx={{ '& .MuiToggleButton-root': { textTransform: 'none' } }}
-            >
-              <ToggleButton value={Protocol.DisplayMode.Auto} sx={{ px: 1.5, gap: 0.5 }}>
-                <AutoIcon sx={{ fontSize: 16 }} />
-                <Typography variant="caption">{t('config.autoMode')}</Typography>
-              </ToggleButton>
-              <ToggleButton value={Protocol.DisplayMode.Light} sx={{ px: 1.5, gap: 0.5 }}>
-                <LightIcon sx={{ fontSize: 16 }} />
-                <Typography variant="caption">{t('config.lightMode')}</Typography>
-              </ToggleButton>
-              <ToggleButton value={Protocol.DisplayMode.Dark} sx={{ px: 1.5, gap: 0.5 }}>
-                <DarkIcon sx={{ fontSize: 16 }} />
-                <Typography variant="caption">{t('config.darkMode')}</Typography>
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </SettingRow>
-          <SettingRow label={t('config.theme')}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <Select
-                value={theme}
-                onChange={(e) => {
-                  setTheme(e.target.value as Protocol.Theme);
-                }}
-              >
-                {Protocol.getThemes().map((themeOption) => (
-                  <MenuItem key={themeOption} value={themeOption}>
-                    {getThemeDisplayLabel(themeOption)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </SettingRow>
-          <SettingRow label={t('config.language')}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <Select
-                value={language}
-                onChange={(e) => {
-                  setLanguage(e.target.value as Protocol.Language);
-                }}
-              >
-                {Protocol.getLanguages().map((lang) => (
-                  <MenuItem key={lang} value={lang}>
-                    {Protocol.getLanguageLabel(lang)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </SettingRow>
-        </Paper>
-
-        {/* View Section */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<ViewIcon fontSize="small" />} title={t('config.view')} />
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                <CardViewIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {t('config.cardView')}
-                </Typography>
-              </Box>
-              <Stack>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={cardViewShowGeneral}
-                      onChange={(e) => setCardViewShowGeneral(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.general') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={cardViewShowVideo}
-                      onChange={(e) => setCardViewShowVideo(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.video') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={cardViewShowAudio}
-                      onChange={(e) => setCardViewShowAudio(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.audio') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={cardViewShowSubtitle}
-                      onChange={(e) => setCardViewShowSubtitle(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.subtitle') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={cardViewShowMenu}
-                      onChange={(e) => setCardViewShowMenu(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.menu') })}
-                />
-              </Stack>
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                <DetailViewIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {t('config.detailView')}
-                </Typography>
-              </Box>
-              <Stack>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={detailViewShowGeneral}
-                      onChange={(e) => setDetailViewShowGeneral(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.general') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={detailViewShowVideo}
-                      onChange={(e) => setDetailViewShowVideo(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.video') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={detailViewShowAudio}
-                      onChange={(e) => setDetailViewShowAudio(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.audio') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={detailViewShowSubtitle}
-                      onChange={(e) => setDetailViewShowSubtitle(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.subtitle') })}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={detailViewShowMenu}
-                      onChange={(e) => setDetailViewShowMenu(e.target.checked)}
-                    />
-                  }
-                  label={t('config.show', { name: t('config.menu') })}
-                />
-              </Stack>
-            </Box>
-          </Box>
-        </Paper>
-
-        {/* File Handling Section */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<FolderIcon fontSize="small" />} title={t('config.fileExtensions')} />
-          <SettingRow label={t('config.appendOnFileDrop')}>
-            <Switch
-              checked={appendOnFileDrop}
-              onChange={(e) => {
-                setAppendOnFileDrop(e.target.checked);
-              }}
-              size="small"
-            />
-          </SettingRow>
-          <SettingRow label={t('config.directoryMode')}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={directoryMode}
-                onChange={(e) => {
-                  setDirectoryMode(e.target.value as Protocol.ConfigDirectoryMode);
-                }}
-              >
-                {Protocol.getConfigDirectoryModes().map((mode) => (
-                  <MenuItem key={mode} value={mode}>
-                    {mode}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </SettingRow>
-          <Tabs
-            value={fileExtensionsTab}
-            onChange={(_e, v) => setFileExtensionsTab(v)}
-            sx={{ mt: 2, mb: 2, borderBottom: 1, borderColor: 'divider' }}
+  const appearancePanel = (
+    <Box>
+      <SectionHeader icon={<AppearanceIcon fontSize="small" />} title={t('config.appearance')} />
+      <SettingRow label={t('config.mode')}>
+        <ToggleButtonGroup
+          value={displayMode}
+          exclusive
+          onChange={(_e, value) => {
+            if (value !== null) {
+              setDisplayMode(value as Protocol.DisplayMode);
+            }
+          }}
+          size="small"
+          sx={{ '& .MuiToggleButton-root': { textTransform: 'none' } }}
+        >
+          <ToggleButton value={Protocol.DisplayMode.Auto} sx={{ px: 1.5, gap: 0.5 }}>
+            <AutoIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">{t('config.autoMode')}</Typography>
+          </ToggleButton>
+          <ToggleButton value={Protocol.DisplayMode.Light} sx={{ px: 1.5, gap: 0.5 }}>
+            <LightIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">{t('config.lightMode')}</Typography>
+          </ToggleButton>
+          <ToggleButton value={Protocol.DisplayMode.Dark} sx={{ px: 1.5, gap: 0.5 }}>
+            <DarkIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">{t('config.darkMode')}</Typography>
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </SettingRow>
+      <SettingRow label={t('config.theme')}>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <Select
+            value={theme}
+            onChange={(e) => {
+              setTheme(e.target.value as Protocol.Theme);
+            }}
           >
-            <Tab
-              icon={<VideoIcon sx={{ fontSize: 16 }} />}
-              iconPosition="start"
-              label={t('config.video')}
-              sx={{ minHeight: 36, textTransform: 'none' }}
+            {Protocol.getThemes().map((themeOption) => (
+              <MenuItem key={themeOption} value={themeOption}>
+                {getThemeDisplayLabel(themeOption)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </SettingRow>
+      <SettingRow label={t('config.language')}>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <Select
+            value={language}
+            onChange={(e) => {
+              setLanguage(e.target.value as Protocol.Language);
+            }}
+          >
+            {Protocol.getLanguages().map((lang) => (
+              <MenuItem key={lang} value={lang}>
+                {Protocol.getLanguageLabel(lang)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </SettingRow>
+      <Stack spacing={2} sx={{ mt: 2 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, width: '100%' }}>
+          <SectionHeader icon={<CardViewIcon fontSize="small" />} title={t('config.cardView')} />
+          <Stack>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={cardViewShowGeneral}
+                  onChange={(e) => setCardViewShowGeneral(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.general') })}
             />
-            <Tab
-              icon={<AudioIcon sx={{ fontSize: 16 }} />}
-              iconPosition="start"
-              label={t('config.audio')}
-              sx={{ minHeight: 36, textTransform: 'none' }}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={cardViewShowVideo}
+                  onChange={(e) => setCardViewShowVideo(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.video') })}
             />
-            <Tab
-              icon={<AppearanceIcon sx={{ fontSize: 16 }} />}
-              iconPosition="start"
-              label={t('config.image')}
-              sx={{ minHeight: 36, textTransform: 'none' }}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={cardViewShowAudio}
+                  onChange={(e) => setCardViewShowAudio(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.audio') })}
             />
-            {isWindows && (
-              <Tab
-                icon={<FolderIcon sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label={t('config.folder')}
-                sx={{ minHeight: 36, textTransform: 'none' }}
-              />
-            )}
-          </Tabs>
-          {fileExtensionsTab === 0 && (
-            <Stack spacing={1.5}>
-              <TextField
-                value={fileExtensionsVideo}
-                onChange={(e) => setFileExtensionsVideo(e.target.value)}
-                size="small"
-                fullWidth
-                placeholder="mp4, mkv, avi, mov..."
-              />
-              {isWindows && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={convertFileExtensions(fileExtensionsVideo).length === 0 || videoContextMenuRegistered}
-                    onClick={() => handleRegisterExtensionsContextMenu(
-                      convertFileExtensions(fileExtensionsVideo),
-                      setVideoContextMenuRegistered,
-                    )}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {t('config.registerContextMenu')}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={!videoContextMenuRegistered}
-                    onClick={() => handleUnregisterExtensionsContextMenu(
-                      convertFileExtensions(fileExtensionsVideo),
-                      setVideoContextMenuRegistered,
-                    )}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {t('config.unregisterContextMenu')}
-                  </Button>
-                </Box>
-              )}
-            </Stack>
-          )}
-          {fileExtensionsTab === 1 && (
-            <Stack spacing={1.5}>
-              <TextField
-                value={fileExtensionsAudio}
-                onChange={(e) => setFileExtensionsAudio(e.target.value)}
-                size="small"
-                fullWidth
-                placeholder="mp3, flac, wav, aac..."
-              />
-              {isWindows && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={convertFileExtensions(fileExtensionsAudio).length === 0 || audioContextMenuRegistered}
-                    onClick={() => handleRegisterExtensionsContextMenu(
-                      convertFileExtensions(fileExtensionsAudio),
-                      setAudioContextMenuRegistered,
-                    )}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {t('config.registerContextMenu')}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={!audioContextMenuRegistered}
-                    onClick={() => handleUnregisterExtensionsContextMenu(
-                      convertFileExtensions(fileExtensionsAudio),
-                      setAudioContextMenuRegistered,
-                    )}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {t('config.unregisterContextMenu')}
-                  </Button>
-                </Box>
-              )}
-            </Stack>
-          )}
-          {fileExtensionsTab === 2 && (
-            <Stack spacing={1.5}>
-              <TextField
-                value={fileExtensionsImage}
-                onChange={(e) => setFileExtensionsImage(e.target.value)}
-                size="small"
-                fullWidth
-                placeholder="jpg, png, gif, webp..."
-              />
-              {isWindows && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={convertFileExtensions(fileExtensionsImage).length === 0 || imageContextMenuRegistered}
-                    onClick={() => handleRegisterExtensionsContextMenu(
-                      convertFileExtensions(fileExtensionsImage),
-                      setImageContextMenuRegistered,
-                    )}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {t('config.registerContextMenu')}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={!imageContextMenuRegistered}
-                    onClick={() => handleUnregisterExtensionsContextMenu(
-                      convertFileExtensions(fileExtensionsImage),
-                      setImageContextMenuRegistered,
-                    )}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {t('config.unregisterContextMenu')}
-                  </Button>
-                </Box>
-              )}
-            </Stack>
-          )}
-          {fileExtensionsTab === 3 && isWindows && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={cardViewShowSubtitle}
+                  onChange={(e) => setCardViewShowSubtitle(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.subtitle') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={cardViewShowMenu}
+                  onChange={(e) => setCardViewShowMenu(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.menu') })}
+            />
+          </Stack>
+        </Paper>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, width: '100%' }}>
+          <SectionHeader icon={<DetailViewIcon fontSize="small" />} title={t('config.detailView')} />
+          <Stack>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={detailViewShowGeneral}
+                  onChange={(e) => setDetailViewShowGeneral(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.general') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={detailViewShowVideo}
+                  onChange={(e) => setDetailViewShowVideo(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.video') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={detailViewShowAudio}
+                  onChange={(e) => setDetailViewShowAudio(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.audio') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={detailViewShowSubtitle}
+                  onChange={(e) => setDetailViewShowSubtitle(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.subtitle') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={detailViewShowMenu}
+                  onChange={(e) => setDetailViewShowMenu(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.menu') })}
+            />
+          </Stack>
+        </Paper>
+      </Stack>
+    </Box>
+  );
+
+  const fileExtensionsPanel = (
+    <Box>
+      <SectionHeader icon={<FolderIcon fontSize="small" />} title={t('config.fileExtensions')} />
+      <SettingRow label={t('config.appendOnFileDrop')}>
+        <Switch
+          checked={appendOnFileDrop}
+          onChange={(e) => {
+            setAppendOnFileDrop(e.target.checked);
+          }}
+          size="small"
+        />
+      </SettingRow>
+      <SettingRow label={t('config.directoryMode')}>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <Select
+            value={directoryMode}
+            onChange={(e) => {
+              setDirectoryMode(e.target.value as Protocol.ConfigDirectoryMode);
+            }}
+          >
+            {Protocol.getConfigDirectoryModes().map((mode) => (
+              <MenuItem key={mode} value={mode}>
+                {mode}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </SettingRow>
+      <Tabs
+        value={fileExtensionsTab}
+        onChange={(_e, v) => setFileExtensionsTab(v)}
+        sx={{ mt: 2, mb: 2, borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab
+          icon={<VideoIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.video')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<AudioIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.audio')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<AppearanceIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.image')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        {isWindows && (
+          <Tab
+            icon={<FolderIcon sx={{ fontSize: 16 }} />}
+            iconPosition="start"
+            label={t('config.folder')}
+            sx={{ minHeight: 36, textTransform: 'none' }}
+          />
+        )}
+      </Tabs>
+      {fileExtensionsTab === 0 && (
+        <Stack spacing={1.5}>
+          <TextField
+            value={fileExtensionsVideo}
+            onChange={(e) => setFileExtensionsVideo(e.target.value)}
+            size="small"
+            fullWidth
+            placeholder="mp4, mkv, avi, mov..."
+          />
+          {isWindows && (
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
                 size="small"
-                disabled={folderContextMenuRegistered}
-                onClick={handleRegisterFolderContextMenu}
+                disabled={convertFileExtensions(fileExtensionsVideo).length === 0 || videoContextMenuRegistered}
+                onClick={() => handleRegisterExtensionsContextMenu(
+                  convertFileExtensions(fileExtensionsVideo),
+                  setVideoContextMenuRegistered,
+                )}
                 sx={{ textTransform: 'none' }}
               >
-                {t('config.registerFolderContextMenu')}
+                {t('config.registerContextMenu')}
               </Button>
               <Button
                 variant="outlined"
                 size="small"
-                disabled={!folderContextMenuRegistered}
-                onClick={handleUnregisterFolderContextMenu}
+                disabled={!videoContextMenuRegistered}
+                onClick={() => handleUnregisterExtensionsContextMenu(
+                  convertFileExtensions(fileExtensionsVideo),
+                  setVideoContextMenuRegistered,
+                )}
                 sx={{ textTransform: 'none' }}
               >
-                {t('config.unregisterFolderContextMenu')}
+                {t('config.unregisterContextMenu')}
               </Button>
             </Box>
           )}
-        </Paper>
-
-        {/* Formatting Section - Tabbed by stream type */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<FormatIcon fontSize="small" />} title={t('config.formatting')} />
-          <Tabs
-            value={formatTab}
-            onChange={(_e, v) => setFormatTab(v)}
-            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+        </Stack>
+      )}
+      {fileExtensionsTab === 1 && (
+        <Stack spacing={1.5}>
+          <TextField
+            value={fileExtensionsAudio}
+            onChange={(e) => setFileExtensionsAudio(e.target.value)}
+            size="small"
+            fullWidth
+            placeholder="mp3, flac, wav, aac..."
+          />
+          {isWindows && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={convertFileExtensions(fileExtensionsAudio).length === 0 || audioContextMenuRegistered}
+                onClick={() => handleRegisterExtensionsContextMenu(
+                  convertFileExtensions(fileExtensionsAudio),
+                  setAudioContextMenuRegistered,
+                )}
+                sx={{ textTransform: 'none' }}
+              >
+                {t('config.registerContextMenu')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={!audioContextMenuRegistered}
+                onClick={() => handleUnregisterExtensionsContextMenu(
+                  convertFileExtensions(fileExtensionsAudio),
+                  setAudioContextMenuRegistered,
+                )}
+                sx={{ textTransform: 'none' }}
+              >
+                {t('config.unregisterContextMenu')}
+              </Button>
+            </Box>
+          )}
+        </Stack>
+      )}
+      {fileExtensionsTab === 2 && (
+        <Stack spacing={1.5}>
+          <TextField
+            value={fileExtensionsImage}
+            onChange={(e) => setFileExtensionsImage(e.target.value)}
+            size="small"
+            fullWidth
+            placeholder="jpg, png, gif, webp..."
+          />
+          {isWindows && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={convertFileExtensions(fileExtensionsImage).length === 0 || imageContextMenuRegistered}
+                onClick={() => handleRegisterExtensionsContextMenu(
+                  convertFileExtensions(fileExtensionsImage),
+                  setImageContextMenuRegistered,
+                )}
+                sx={{ textTransform: 'none' }}
+              >
+                {t('config.registerContextMenu')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={!imageContextMenuRegistered}
+                onClick={() => handleUnregisterExtensionsContextMenu(
+                  convertFileExtensions(fileExtensionsImage),
+                  setImageContextMenuRegistered,
+                )}
+                sx={{ textTransform: 'none' }}
+              >
+                {t('config.unregisterContextMenu')}
+              </Button>
+            </Box>
+          )}
+        </Stack>
+      )}
+      {fileExtensionsTab === 3 && isWindows && (
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={folderContextMenuRegistered}
+            onClick={handleRegisterFolderContextMenu}
+            sx={{ textTransform: 'none' }}
           >
-            <Tab
-              icon={<VideoIcon sx={{ fontSize: 16 }} />}
-              iconPosition="start"
-              label={t('config.video')}
-              sx={{ minHeight: 36, textTransform: 'none' }}
-            />
-            <Tab
-              icon={<AudioIcon sx={{ fontSize: 16 }} />}
-              iconPosition="start"
-              label={t('config.audio')}
-              sx={{ minHeight: 36, textTransform: 'none' }}
-            />
-            <Tab
-              icon={<SubtitleIcon sx={{ fontSize: 16 }} />}
-              iconPosition="start"
-              label={t('config.subtitle')}
-              sx={{ minHeight: 36, textTransform: 'none' }}
-            />
-          </Tabs>
-          {formatTab === 0 && (
-            <StreamFormatPanel
-              state={videoFormat}
-              onChange={handleStreamFormatChange(setVideoFormat)}
-              bitRateLabel={t('config.bitRate')}
-              sizeLabel={t('config.size')}
-              precisionLabel={t('config.precision')}
-              unitLabel={t('config.unit')}
-            />
-          )}
-          {formatTab === 1 && (
-            <StreamFormatPanel
-              state={audioFormat}
-              onChange={handleStreamFormatChange(setAudioFormat)}
-              bitRateLabel={t('config.bitRate')}
-              sizeLabel={t('config.size')}
-              precisionLabel={t('config.precision')}
-              unitLabel={t('config.unit')}
-            />
-          )}
-          {formatTab === 2 && (
-            <StreamFormatPanel
-              state={subtitleFormat}
-              onChange={handleStreamFormatChange(setSubtitleFormat)}
-              bitRateLabel={t('config.bitRate')}
-              sizeLabel={t('config.size')}
-              precisionLabel={t('config.precision')}
-              unitLabel={t('config.unit')}
-            />
-          )}
-        </Paper>
+            {t('config.registerFolderContextMenu')}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={!folderContextMenuRegistered}
+            onClick={handleUnregisterFolderContextMenu}
+            sx={{ textTransform: 'none' }}
+          >
+            {t('config.unregisterFolderContextMenu')}
+          </Button>
+        </Box>
+      )}
+    </Box>
+  );
 
-        {/* MPC HC Section */}
-        {isWindows && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-            <SectionHeader
-              icon={
-                <Box
-                  component="img"
-                  src="images/mpchc64.png"
-                  alt="MPC HC"
-                  sx={{ width: 20, height: 20, objectFit: 'contain' }}
-                />
-              }
-              title={t('config.mpcHc')}
-            />
-            <Box sx={{ py: 1 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {t('config.mpcHcPath')}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TextField
-                  value={mpcHcPath}
-                  onChange={(e) => {
-                    setMpcHcPath(e.target.value);
-                  }}
-                  size="small"
-                  fullWidth
-                />
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleBrowseMpcHcPath}
-                  sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
-                >
-                  {t('config.browse')}
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleDetectMpcHc}
-                  sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
-                >
-                  {t('config.detect')}
-                </Button>
-              </Box>
-              <Typography
-                variant="caption"
-                sx={{
-                  mt: 0.75,
-                  display: 'block',
-                  color: mpcHcFound ? 'success.main' : 'error.main',
-                }}
-              >
-                {mpcHcFound ? t('config.mpcHcFound') : t('config.mpcHcNotFound')}
-              </Typography>
-            </Box>
-          </Paper>
-        )}
+  const formattingPanel = (
+    <Box>
+      <SectionHeader icon={<FormatIcon fontSize="small" />} title={t('config.formatting')} />
+      <Tabs
+        value={formatTab}
+        onChange={(_e, v) => setFormatTab(v)}
+        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab
+          icon={<VideoIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.video')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<AudioIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.audio')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<SubtitleIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.subtitle')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+      </Tabs>
+      {formatTab === 0 && (
+        <StreamFormatPanel
+          state={videoFormat}
+          onChange={handleStreamFormatChange(setVideoFormat)}
+          bitRateLabel={t('config.bitRate')}
+          sizeLabel={t('config.size')}
+          precisionLabel={t('config.precision')}
+          unitLabel={t('config.unit')}
+        />
+      )}
+      {formatTab === 1 && (
+        <StreamFormatPanel
+          state={audioFormat}
+          onChange={handleStreamFormatChange(setAudioFormat)}
+          bitRateLabel={t('config.bitRate')}
+          sizeLabel={t('config.size')}
+          precisionLabel={t('config.precision')}
+          unitLabel={t('config.unit')}
+        />
+      )}
+      {formatTab === 2 && (
+        <StreamFormatPanel
+          state={subtitleFormat}
+          onChange={handleStreamFormatChange(setSubtitleFormat)}
+          bitRateLabel={t('config.bitRate')}
+          sizeLabel={t('config.size')}
+          precisionLabel={t('config.precision')}
+          unitLabel={t('config.unit')}
+        />
+      )}
+    </Box>
+  );
 
-        {/* MKV Section */}
+  const integrationPanel = (
+    <Box>
+      <SectionHeader icon={<IntegrationIcon fontSize="small" />} title={t('config.integration')} />
+      <Stack spacing={2}>
+      {isWindows && (
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
           <SectionHeader
             icon={
               <Box
                 component="img"
-                src="images/mkvmerge.png"
-                alt="MKVToolNix"
+                src="images/mpchc64.png"
+                alt="MPC HC"
                 sx={{ width: 20, height: 20, objectFit: 'contain' }}
               />
             }
-            title={t('config.mkv')}
+            title={t('config.mpcHc')}
           />
           <Box sx={{ py: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('config.mkvToolNixPath')}
+              {t('config.mpcHcPath')}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField
-                value={mkvToolNixPath}
+                value={mpcHcPath}
                 onChange={(e) => {
-                  setMkvToolNixPath(e.target.value);
+                  setMpcHcPath(e.target.value);
                 }}
                 size="small"
                 fullWidth
@@ -1296,7 +1236,7 @@ export default function Config() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={handleBrowseMkvToolNixPath}
+                onClick={handleBrowseMpcHcPath}
                 sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
               >
                 {t('config.browse')}
@@ -1304,7 +1244,7 @@ export default function Config() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={handleDetectMkvToolNix}
+                onClick={handleDetectMpcHc}
                 sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
               >
                 {t('config.detect')}
@@ -1315,149 +1255,263 @@ export default function Config() {
               sx={{
                 mt: 0.75,
                 display: 'block',
-                color: mkvtoolnixFound ? 'success.main' : 'error.main',
+                color: mpcHcFound ? 'success.main' : 'error.main',
               }}
             >
-              {mkvtoolnixFound ? t('config.mkvtoolnixFound') : t('config.mkvtoolnixNotFound')}
+              {mpcHcFound ? t('config.mpcHcFound') : t('config.mpcHcNotFound')}
             </Typography>
           </Box>
         </Paper>
+      )}
 
-        {/* BatchMkvExtract Section */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader
-            icon={
-              <Box
-                component="img"
-                src="images/batchmkvextract.png"
-                alt="BatchMkvExtract"
-                sx={{ width: 20, height: 20, objectFit: 'contain' }}
-              />
-            }
-            title={t('config.batchMkvExtract')}
-          />
-          <Box sx={{ py: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('config.batchMkvExtractPath')}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TextField
-                value={batchMkvExtractPath}
-                onChange={(e) => {
-                  setBatchMkvExtractPath(e.target.value);
-                }}
-                size="small"
-                fullWidth
-              />
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleBrowseBatchMkvExtractPath}
-                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
-              >
-                {t('config.browse')}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleDetectBatchMkvExtract}
-                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
-              >
-                {t('config.detect')}
-              </Button>
-            </Box>
-            <Typography
-              variant="caption"
-              sx={{
-                mt: 0.75,
-                display: 'block',
-                color: batchMkvExtractFound ? 'success.main' : 'error.main',
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+        <SectionHeader
+          icon={
+            <Box
+              component="img"
+              src="images/mkvmerge.png"
+              alt="MKVToolNix"
+              sx={{ width: 20, height: 20, objectFit: 'contain' }}
+            />
+          }
+          title={t('config.mkv')}
+        />
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('config.mkvToolNixPath')}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              value={mkvToolNixPath}
+              onChange={(e) => {
+                setMkvToolNixPath(e.target.value);
               }}
+              size="small"
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleBrowseMkvToolNixPath}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
             >
-              {batchMkvExtractFound ? t('config.batchMkvExtractFound') : t('config.batchMkvExtractNotFound')}
-            </Typography>
+              {t('config.browse')}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleDetectMkvToolNix}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+            >
+              {t('config.detect')}
+            </Button>
           </Box>
-        </Paper>
+          <Typography
+            variant="caption"
+            sx={{
+              mt: 0.75,
+              display: 'block',
+              color: mkvtoolnixFound ? 'success.main' : 'error.main',
+            }}
+          >
+            {mkvtoolnixFound ? t('config.mkvtoolnixFound') : t('config.mkvtoolnixNotFound')}
+          </Typography>
+        </Box>
+      </Paper>
 
-        {/* BDMaster Section */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader
-            icon={
-              <Box
-                component="img"
-                src="images/bdmaster.png"
-                alt="BDMaster"
-                sx={{ width: 20, height: 20, objectFit: 'contain' }}
-              />
-            }
-            title={t('config.bdMaster')}
-          />
-          <Box sx={{ py: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('config.bdMasterPath')}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TextField
-                value={bdMasterPath}
-                onChange={(e) => {
-                  setBdMasterPath(e.target.value);
-                }}
-                size="small"
-                fullWidth
-              />
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleBrowseBdMasterPath}
-                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
-              >
-                {t('config.browse')}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleDetectBdMaster}
-                sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
-              >
-                {t('config.detect')}
-              </Button>
-            </Box>
-            <Typography
-              variant="caption"
-              sx={{
-                mt: 0.75,
-                display: 'block',
-                color: bdMasterFound ? 'success.main' : 'error.main',
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+        <SectionHeader
+          icon={
+            <Box
+              component="img"
+              src="images/batchmkvextract.png"
+              alt="BatchMkvExtract"
+              sx={{ width: 20, height: 20, objectFit: 'contain' }}
+            />
+          }
+          title={t('config.batchMkvExtract')}
+        />
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('config.batchMkvExtractPath')}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              value={batchMkvExtractPath}
+              onChange={(e) => {
+                setBatchMkvExtractPath(e.target.value);
               }}
+              size="small"
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleBrowseBatchMkvExtractPath}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
             >
-              {bdMasterFound ? t('config.bdMasterFound') : t('config.bdMasterNotFound')}
-            </Typography>
+              {t('config.browse')}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleDetectBatchMkvExtract}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+            >
+              {t('config.detect')}
+            </Button>
           </Box>
-        </Paper>
+          <Typography
+            variant="caption"
+            sx={{
+              mt: 0.75,
+              display: 'block',
+              color: batchMkvExtractFound ? 'success.main' : 'error.main',
+            }}
+          >
+            {batchMkvExtractFound ? t('config.batchMkvExtractFound') : t('config.batchMkvExtractNotFound')}
+          </Typography>
+        </Box>
+      </Paper>
 
-        {/* Update Section */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-          <SectionHeader icon={<UpdateIcon fontSize="small" />} title={t('config.update')} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {t('config.checkNewVersion')}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={updateCheckInterval}
-                onChange={(e) => {
-                  setUpdateCheckInterval(e.target.value as Protocol.UpdateCheckInterval);
-                }}
-              >
-                <MenuItem value={Protocol.UpdateCheckInterval.Daily}>{t('config.daily')}</MenuItem>
-                <MenuItem value={Protocol.UpdateCheckInterval.Weekly}>{t('config.weekly')}</MenuItem>
-                <MenuItem value={Protocol.UpdateCheckInterval.Monthly}>{t('config.monthly')}</MenuItem>
-              </Select>
-            </FormControl>
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+        <SectionHeader
+          icon={
+            <Box
+              component="img"
+              src="images/bdmaster.png"
+              alt="BDMaster"
+              sx={{ width: 20, height: 20, objectFit: 'contain' }}
+            />
+          }
+          title={t('config.bdMaster')}
+        />
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('config.bdMasterPath')}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              value={bdMasterPath}
+              onChange={(e) => {
+                setBdMasterPath(e.target.value);
+              }}
+              size="small"
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleBrowseBdMasterPath}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+            >
+              {t('config.browse')}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleDetectBdMaster}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+            >
+              {t('config.detect')}
+            </Button>
           </Box>
-        </Paper>
-
+          <Typography
+            variant="caption"
+            sx={{
+              mt: 0.75,
+              display: 'block',
+              color: bdMasterFound ? 'success.main' : 'error.main',
+            }}
+          >
+            {bdMasterFound ? t('config.bdMasterFound') : t('config.bdMasterNotFound')}
+          </Typography>
+        </Box>
+      </Paper>
       </Stack>
+    </Box>
+  );
+
+  const updatePanel = (
+    <Box>
+      <SectionHeader icon={<UpdateIcon fontSize="small" />} title={t('config.update')} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
+        <Typography variant="body2" color="text.secondary">
+          {t('config.checkNewVersion')}
+        </Typography>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <Select
+            value={updateCheckInterval}
+            onChange={(e) => {
+              setUpdateCheckInterval(e.target.value as Protocol.UpdateCheckInterval);
+            }}
+          >
+            <MenuItem value={Protocol.UpdateCheckInterval.Daily}>{t('config.daily')}</MenuItem>
+            <MenuItem value={Protocol.UpdateCheckInterval.Weekly}>{t('config.weekly')}</MenuItem>
+            <MenuItem value={Protocol.UpdateCheckInterval.Monthly}>{t('config.monthly')}</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto', py: 2, px: 1, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+      <Tabs
+        orientation="vertical"
+        value={mainTab}
+        onChange={(_e, v: ConfigTab) => setMainTab(v)}
+        sx={{
+          borderRight: 1,
+          borderColor: 'divider',
+          minWidth: 180,
+          '& .MuiTab-root': {
+            minHeight: 40,
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            textAlign: 'left',
+            textTransform: 'none',
+          },
+        }}
+      >
+        <Tab
+          value={ConfigTab.Appearance}
+          icon={<AppearanceIcon sx={{ fontSize: 18 }} />}
+          iconPosition="start"
+          label={t('config.appearance')}
+        />
+        <Tab
+          value={ConfigTab.FileExtensions}
+          icon={<FolderIcon sx={{ fontSize: 18 }} />}
+          iconPosition="start"
+          label={t('config.fileExtensions')}
+        />
+        <Tab
+          value={ConfigTab.Formatting}
+          icon={<FormatIcon sx={{ fontSize: 18 }} />}
+          iconPosition="start"
+          label={t('config.formatting')}
+        />
+        <Tab
+          value={ConfigTab.Integration}
+          icon={<IntegrationIcon sx={{ fontSize: 18 }} />}
+          iconPosition="start"
+          label={t('config.integration')}
+        />
+        <Tab
+          value={ConfigTab.Update}
+          icon={<UpdateIcon sx={{ fontSize: 18 }} />}
+          iconPosition="start"
+          label={t('config.update')}
+        />
+      </Tabs>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        {mainTab === ConfigTab.Appearance && appearancePanel}
+        {mainTab === ConfigTab.FileExtensions && fileExtensionsPanel}
+        {mainTab === ConfigTab.Formatting && formattingPanel}
+        {mainTab === ConfigTab.Integration && integrationPanel}
+        {mainTab === ConfigTab.Update && updatePanel}
+      </Box>
     </Box>
   );
 }

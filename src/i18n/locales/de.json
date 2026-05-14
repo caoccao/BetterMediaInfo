@@ -79,6 +79,7 @@
   "config": {
     "title": "Einstellungen",
     "appearance": "Erscheinungsbild",
+    "mode": "Modus",
     "autoMode": "Automatisch",
     "lightMode": "Heller Modus",
     "darkMode": "Dunkler Modus",
@@ -156,6 +157,7 @@
     "mpcHcPath": "MPC-HC-Pfad",
     "mpcHcFound": "MPC-HC-Anwendung gefunden.",
     "mpcHcNotFound": "MPC-HC-Anwendung nicht gefunden.",
+    "integration": "Integration",
     "update": "Aktualisierung",
     "checkNewVersion": "Neue Version prüfen",
     "daily": "Täglich",

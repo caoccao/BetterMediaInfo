@@ -79,6 +79,7 @@
   "config": {
     "title": "Configuración",
     "appearance": "Apariencia",
+    "mode": "Modo",
     "autoMode": "Modo automático",
     "lightMode": "Modo claro",
     "darkMode": "Modo oscuro",
@@ -156,6 +157,7 @@
     "mpcHcPath": "Ruta de MPC HC",
     "mpcHcFound": "Ejecutable de MPC HC encontrado.",
     "mpcHcNotFound": "Ejecutable de MPC HC no encontrado.",
+    "integration": "Integración",
     "update": "Actualización",
     "checkNewVersion": "Comprobar nueva versión",
     "daily": "Diario",

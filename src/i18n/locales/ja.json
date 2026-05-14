@@ -79,6 +79,7 @@
   "config": {
     "title": "設定",
     "appearance": "外観",
+    "mode": "モード",
     "autoMode": "自動モード",
     "lightMode": "ライトモード",
     "darkMode": "ダークモード",
@@ -156,6 +157,7 @@
     "mpcHcPath": "MPC HC のパス",
     "mpcHcFound": "MPC HC の実行ファイルが見つかりました。",
     "mpcHcNotFound": "MPC HC の実行ファイルが見つかりません。",
+    "integration": "統合",
     "update": "更新",
     "checkNewVersion": "新バージョンを確認",
     "daily": "毎日",

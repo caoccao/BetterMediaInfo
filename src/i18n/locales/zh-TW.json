@@ -79,6 +79,7 @@
   "config": {
     "title": "設定",
     "appearance": "外觀",
+    "mode": "模式",
     "autoMode": "自動模式",
     "lightMode": "淺色模式",
     "darkMode": "深色模式",
@@ -156,6 +157,7 @@
     "mpcHcPath": "MPC HC 路徑",
     "mpcHcFound": "已找到 MPC HC 執行檔。",
     "mpcHcNotFound": "未找到 MPC HC 執行檔。",
+    "integration": "整合",
     "update": "更新",
     "checkNewVersion": "檢查新版本",
     "daily": "每天",
