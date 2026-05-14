@@ -38,9 +38,14 @@ import {
   BrightnessAuto as AutoIcon,
   ClosedCaption as SubtitleIcon,
   DarkMode as DarkIcon,
+  Description as TemplatesIcon,
   Extension as IntegrationIcon,
   FolderOpen as FolderIcon,
+  Image as ImageIcon,
+  Info as GeneralIcon,
   LightMode as LightIcon,
+  MenuBook as MenuStreamIcon,
+  MoreHoriz as OtherIcon,
   MusicNote as AudioIcon,
   Notes as DetailViewIcon,
   Palette as AppearanceIcon,
@@ -73,6 +78,7 @@ enum ConfigTab {
   FileExtensions = 'FileExtensions',
   Formatting = 'Formatting',
   Integration = 'Integration',
+  Templates = 'Templates',
   Update = 'Update',
 }
 
@@ -261,6 +267,7 @@ export default function Config() {
   const [mainTab, setMainTab] = useState<ConfigTab>(ConfigTab.Appearance);
   const [formatTab, setFormatTab] = useState(0);
   const [fileExtensionsTab, setFileExtensionsTab] = useState(0);
+  const [templatesTab, setTemplatesTab] = useState(0);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -1432,6 +1439,62 @@ export default function Config() {
     </Box>
   );
 
+  const templatesPanel = (
+    <Box>
+      <SectionHeader icon={<TemplatesIcon fontSize="small" />} title={t('config.templates')} />
+      <Tabs
+        value={templatesTab}
+        onChange={(_e, v) => setTemplatesTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab
+          icon={<GeneralIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.general')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<VideoIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.video')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<AudioIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.audio')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<SubtitleIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.text')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<OtherIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.other')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<ImageIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.image')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+        <Tab
+          icon={<MenuStreamIcon sx={{ fontSize: 16 }} />}
+          iconPosition="start"
+          label={t('config.menu')}
+          sx={{ minHeight: 36, textTransform: 'none' }}
+        />
+      </Tabs>
+    </Box>
+  );
+
   const updatePanel = (
     <Box>
       <SectionHeader icon={<UpdateIcon fontSize="small" />} title={t('config.update')} />
@@ -1499,6 +1562,12 @@ export default function Config() {
           label={t('config.integration')}
         />
         <Tab
+          value={ConfigTab.Templates}
+          icon={<TemplatesIcon sx={{ fontSize: 18 }} />}
+          iconPosition="start"
+          label={t('config.templates')}
+        />
+        <Tab
           value={ConfigTab.Update}
           icon={<UpdateIcon sx={{ fontSize: 18 }} />}
           iconPosition="start"
@@ -1510,6 +1579,7 @@ export default function Config() {
         {mainTab === ConfigTab.FileExtensions && fileExtensionsPanel}
         {mainTab === ConfigTab.Formatting && formattingPanel}
         {mainTab === ConfigTab.Integration && integrationPanel}
+        {mainTab === ConfigTab.Templates && templatesPanel}
         {mainTab === ConfigTab.Update && updatePanel}
       </Box>
     </Box>

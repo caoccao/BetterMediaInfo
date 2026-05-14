@@ -109,6 +109,8 @@
     "folder": "Folder",
     "text": "Text",
     "menu": "Menu",
+    "other": "Other",
+    "templates": "Templates",
     "bitRate": "Bit Rate",
     "size": "Size",
     "precision": "Precision",
