@@ -31,6 +31,7 @@ import * as Protocol from '../lib/protocol';
 import { APP_NAME } from '../lib/constants';
 import { getExportFormatExtension, openSaveExportFileDialog } from '../lib/dialog';
 import { ExportFormat, type ExportStream } from '../lib/export';
+import { renderHtml } from '../lib/exportHtml';
 import { renderMarkdown } from '../lib/exportMarkdown';
 import { renderText } from '../lib/exportText';
 import { writeTextFile } from '../lib/service';
@@ -61,6 +62,8 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
         return renderText({ file, appName: APP_NAME, appVersion, streams });
       case ExportFormat.Markdown:
         return renderMarkdown({ file, appName: APP_NAME, appVersion, streams });
+      case ExportFormat.Html:
+        return renderHtml({ file, appName: APP_NAME, appVersion, streams });
       default:
         return '';
     }
@@ -181,24 +184,39 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
           {t('dialog.close')}
         </Button>
       </Box>
-      <Box
-        component="pre"
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          overflow: 'auto',
-          m: 0,
-          px: 2,
-          py: 1,
-          bgcolor: 'background.default',
-          fontFamily:
-            'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
-          fontSize: '0.8125rem',
-          whiteSpace: 'pre',
-        }}
-      >
-        {previewContent}
-      </Box>
+      {format === ExportFormat.Html ? (
+        <Box
+          component="iframe"
+          title={file}
+          srcDoc={previewContent}
+          sandbox=""
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            border: 0,
+            bgcolor: 'background.default',
+          }}
+        />
+      ) : (
+        <Box
+          component="pre"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            m: 0,
+            px: 2,
+            py: 1,
+            bgcolor: 'background.default',
+            fontFamily:
+              'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+            fontSize: '0.8125rem',
+            whiteSpace: 'pre',
+          }}
+        >
+          {previewContent}
+        </Box>
+      )}
     </Dialog>
   );
 }
