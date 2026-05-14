@@ -30,7 +30,8 @@ import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import { APP_NAME } from '../lib/constants';
 import { getExportFormatExtension, openSaveExportFileDialog } from '../lib/dialog';
-import type { ExportFormat, ExportStream } from '../lib/export';
+import { ExportFormat, type ExportStream } from '../lib/export';
+import { renderMarkdown } from '../lib/exportMarkdown';
 import { renderText } from '../lib/exportText';
 import { writeTextFile } from '../lib/service';
 import { useAppStore } from '../lib/store';
@@ -49,15 +50,17 @@ function basename(path: string): string {
 
 export default function ExportDialog({ open, onClose, file, streams }: ExportDialogProps) {
   const { t } = useTranslation();
-  const [format, setFormat] = useState<ExportFormat>('text');
+  const [format, setFormat] = useState<ExportFormat>(ExportFormat.Text);
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
   const mediaInfoAbout = useAppStore((state) => state.mediaInfoAbout);
   const appVersion = mediaInfoAbout?.appVersion ?? '';
 
   const previewContent = useMemo(() => {
     switch (format) {
-      case 'text':
+      case ExportFormat.Text:
         return renderText({ file, appName: APP_NAME, appVersion, streams });
+      case ExportFormat.Markdown:
+        return renderMarkdown({ file, appName: APP_NAME, appVersion, streams });
       default:
         return '';
     }
@@ -155,16 +158,16 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
           onChange={handleFormatChange}
           size="small"
         >
-          <ToggleButton value="text" sx={{ textTransform: 'none' }}>
+          <ToggleButton value={ExportFormat.Text} sx={{ textTransform: 'none' }}>
             {t('export.formatText')}
           </ToggleButton>
-          <ToggleButton value="markdown" sx={{ textTransform: 'none' }}>
+          <ToggleButton value={ExportFormat.Markdown} sx={{ textTransform: 'none' }}>
             {t('export.formatMarkdown')}
           </ToggleButton>
-          <ToggleButton value="html" sx={{ textTransform: 'none' }}>
+          <ToggleButton value={ExportFormat.Html} sx={{ textTransform: 'none' }}>
             {t('export.formatHtml')}
           </ToggleButton>
-          <ToggleButton value="png" sx={{ textTransform: 'none' }}>
+          <ToggleButton value={ExportFormat.Png} sx={{ textTransform: 'none' }}>
             {t('export.formatPng')}
           </ToggleButton>
         </ToggleButtonGroup>

@@ -30,11 +30,16 @@ export interface ExportData {
   streams: ExportStream[];
 }
 
-export type ExportFormat = "text" | "markdown" | "html" | "png";
+export enum ExportFormat {
+  Text = "text",
+  Markdown = "markdown",
+  Html = "html",
+  Png = "png",
+}
 
 export const EXPORT_FORMAT_EXTENSIONS: Record<ExportFormat, string> = {
-  text: "txt",
-  markdown: "md",
-  html: "html",
-  png: "png",
+  [ExportFormat.Text]: "txt",
+  [ExportFormat.Markdown]: "md",
+  [ExportFormat.Html]: "html",
+  [ExportFormat.Png]: "png",
 };
