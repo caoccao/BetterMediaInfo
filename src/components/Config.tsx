@@ -868,7 +868,7 @@ export default function Config() {
                   onChange={(e) => setCardViewShowSubtitle(e.target.checked)}
                 />
               }
-              label={t('config.show', { name: t('config.subtitle') })}
+              label={t('config.show', { name: t('config.text') })}
             />
             <FormControlLabel
               control={
@@ -923,7 +923,7 @@ export default function Config() {
                   onChange={(e) => setDetailViewShowSubtitle(e.target.checked)}
                 />
               }
-              label={t('config.show', { name: t('config.subtitle') })}
+              label={t('config.show', { name: t('config.text') })}
             />
             <FormControlLabel
               control={
@@ -1166,7 +1166,7 @@ export default function Config() {
         <Tab
           icon={<SubtitleIcon sx={{ fontSize: 16 }} />}
           iconPosition="start"
-          label={t('config.subtitle')}
+          label={t('config.text')}
           sx={{ minHeight: 36, textTransform: 'none' }}
         />
       </Tabs>
