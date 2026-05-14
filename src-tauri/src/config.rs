@@ -77,6 +77,8 @@ pub struct Config {
   pub update: ConfigUpdate,
   #[serde(default)]
   pub window: ConfigWindow,
+  #[serde(default)]
+  pub templates: ConfigTemplates,
 }
 
 impl Default for Config {
@@ -98,8 +100,41 @@ impl Default for Config {
       view: Default::default(),
       update: Default::default(),
       window: Default::default(),
+      templates: Default::default(),
     }
   }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigTemplateProperty {
+  pub property: String,
+  pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct ConfigTemplateGroup {
+  #[serde(default)]
+  pub enabled: bool,
+  #[serde(default)]
+  pub properties: Vec<ConfigTemplateProperty>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct ConfigTemplates {
+  #[serde(default)]
+  pub general: ConfigTemplateGroup,
+  #[serde(default)]
+  pub video: ConfigTemplateGroup,
+  #[serde(default)]
+  pub audio: ConfigTemplateGroup,
+  #[serde(default)]
+  pub text: ConfigTemplateGroup,
+  #[serde(default)]
+  pub other: ConfigTemplateGroup,
+  #[serde(default)]
+  pub image: ConfigTemplateGroup,
+  #[serde(default)]
+  pub menu: ConfigTemplateGroup,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -58,6 +58,17 @@ const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
   [Protocol.StreamKind.Max]: '#84cc16',
 };
 
+const STREAM_KIND_TO_TEMPLATE_KEY: Record<Protocol.StreamKind, keyof Protocol.ConfigTemplates | null> = {
+  [Protocol.StreamKind.General]: 'general',
+  [Protocol.StreamKind.Video]: 'video',
+  [Protocol.StreamKind.Audio]: 'audio',
+  [Protocol.StreamKind.Text]: 'text',
+  [Protocol.StreamKind.Other]: 'other',
+  [Protocol.StreamKind.Image]: 'image',
+  [Protocol.StreamKind.Menu]: 'menu',
+  [Protocol.StreamKind.Max]: null,
+};
+
 export default function Details({ file }: DetailsProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
@@ -122,6 +133,23 @@ export default function Details({ file }: DetailsProps) {
     // an open Details tab's local checkbox state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamCountMap]);
+
+  const orderedPropertyEntries = (
+    properties: { stream: Protocol.StreamKind; propertyMap: Record<string, string> },
+  ): Array<[string, string]> => {
+    const templateKey = STREAM_KIND_TO_TEMPLATE_KEY[properties.stream];
+    const group = templateKey ? config?.templates?.[templateKey] : undefined;
+    if (group?.enabled && group.properties.length > 0) {
+      const ordered: Array<[string, string]> = [];
+      for (const prop of group.properties) {
+        if (!prop.enabled) continue;
+        if (!(prop.property in properties.propertyMap)) continue;
+        ordered.push([prop.property, properties.propertyMap[prop.property]]);
+      }
+      return ordered;
+    }
+    return Object.entries(properties.propertyMap).sort(([a], [b]) => a.localeCompare(b));
+  };
 
   const filteredAllProperties = useMemo(() => {
     return allProperties
@@ -296,9 +324,7 @@ export default function Details({ file }: DetailsProps) {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {Object.entries(properties.propertyMap)
-                          .sort(([a], [b]) => a.localeCompare(b))
-                          .map(([property, value]) => (
+                        {orderedPropertyEntries(properties).map(([property, value]) => (
                             <TableRow key={property}>
                               <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                                 {property}

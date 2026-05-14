@@ -111,6 +111,7 @@
     "menu": "メニュー",
     "other": "その他",
     "templates": "テンプレート",
+    "enableTemplates": "テンプレートを有効にする",
     "bitRate": "ビットレート",
     "size": "サイズ",
     "precision": "精度",

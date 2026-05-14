@@ -128,6 +128,26 @@ export interface ConfigWindow {
   size: ConfigWindowSize;
 }
 
+export interface ConfigTemplateProperty {
+  property: string;
+  enabled: boolean;
+}
+
+export interface ConfigTemplateGroup {
+  enabled: boolean;
+  properties: ConfigTemplateProperty[];
+}
+
+export interface ConfigTemplates {
+  general: ConfigTemplateGroup;
+  video: ConfigTemplateGroup;
+  audio: ConfigTemplateGroup;
+  text: ConfigTemplateGroup;
+  other: ConfigTemplateGroup;
+  image: ConfigTemplateGroup;
+  menu: ConfigTemplateGroup;
+}
+
 export interface Config {
   appendOnFileDrop: boolean;
   displayMode: DisplayMode;
@@ -145,6 +165,7 @@ export interface Config {
   view: ConfigView;
   update: ConfigUpdate;
   window: ConfigWindow;
+  templates: ConfigTemplates;
 }
 
 export enum DisplayMode {

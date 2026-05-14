@@ -264,6 +264,29 @@ const TEMPLATE_STREAM_KINDS: Protocol.StreamKind[] = [
   Protocol.StreamKind.Menu,
 ];
 
+const STREAM_KIND_TO_TEMPLATE_KEY: Record<Protocol.StreamKind, keyof Protocol.ConfigTemplates | null> = {
+  [Protocol.StreamKind.General]: 'general',
+  [Protocol.StreamKind.Video]: 'video',
+  [Protocol.StreamKind.Audio]: 'audio',
+  [Protocol.StreamKind.Text]: 'text',
+  [Protocol.StreamKind.Other]: 'other',
+  [Protocol.StreamKind.Image]: 'image',
+  [Protocol.StreamKind.Menu]: 'menu',
+  [Protocol.StreamKind.Max]: null,
+};
+
+function emptyTemplates(): Protocol.ConfigTemplates {
+  return {
+    general: { enabled: false, properties: [] },
+    video: { enabled: false, properties: [] },
+    audio: { enabled: false, properties: [] },
+    text: { enabled: false, properties: [] },
+    other: { enabled: false, properties: [] },
+    image: { enabled: false, properties: [] },
+    menu: { enabled: false, properties: [] },
+  };
+}
+
 const templateCellSx = (size: number | undefined): React.CSSProperties => ({
   width: size ? `${size}px` : undefined,
   flex: size ? '0 0 auto' : '1 1 0',
@@ -273,19 +296,22 @@ const templateCellSx = (size: number | undefined): React.CSSProperties => ({
 function SortableTemplateRow({
   row,
   virtualRow,
+  disabled,
 }: {
   row: Row<Protocol.Parameter>;
   virtualRow: VirtualItem;
+  disabled: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: row.id,
+    disabled,
   });
 
   return (
     <Box
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
+      {...(disabled ? {} : attributes)}
+      {...(disabled ? {} : listeners)}
       style={{
         position: 'absolute',
         top: virtualRow.start,
@@ -301,12 +327,12 @@ function SortableTemplateRow({
         borderBottom: 1,
         borderColor: 'divider',
         bgcolor: isDragging ? 'action.selected' : 'transparent',
-        cursor: isDragging ? 'grabbing' : 'grab',
+        cursor: disabled ? 'default' : isDragging ? 'grabbing' : 'grab',
         userSelect: 'none',
         opacity: isDragging ? 0.85 : 1,
         boxShadow: isDragging ? 2 : 0,
         '&:hover': {
-          bgcolor: isDragging ? 'action.selected' : 'action.hover',
+          bgcolor: disabled ? 'transparent' : isDragging ? 'action.selected' : 'action.hover',
         },
       }}
     >
@@ -335,7 +361,17 @@ function SortableTemplateRow({
   );
 }
 
-function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
+function TemplatesTable({
+  streamKind,
+  group,
+  onChange,
+  disabled,
+}: {
+  streamKind: Protocol.StreamKind;
+  group: Protocol.ConfigTemplateGroup;
+  onChange: (group: Protocol.ConfigTemplateGroup) => void;
+  disabled: boolean;
+}) {
   const { t } = useTranslation();
   const mediaInfoParameters = useAppStore((state) => state.mediaInfoParameters);
   const initParameters = useAppStore((state) => state.initParameters);
@@ -347,39 +383,61 @@ function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
   }, [mediaInfoParameters.length, initParameters]);
 
   const data = useMemo(
-    () =>
-      mediaInfoParameters
-        .filter((p) => p.stream === streamKind)
-        .sort((a, b) => a.id - b.id),
+    () => mediaInfoParameters.filter((p) => p.stream === streamKind),
     [mediaInfoParameters, streamKind],
   );
 
-  const defaultOrder = useMemo(() => data.map((row) => String(row.id)), [data]);
-  const [order, setOrder] = useState<string[]>(defaultOrder);
-  useEffect(() => {
-    setOrder(defaultOrder);
-  }, [defaultOrder]);
-
-  const orderedData = useMemo(() => {
-    const byId = new Map(data.map((row) => [String(row.id), row]));
-    const result: Protocol.Parameter[] = [];
-    for (const id of order) {
-      const row = byId.get(id);
-      if (row) result.push(row);
+  // Derive ordered data, order list, and selection state from the persisted group
+  // and the current set of parameters. Saved property names from `group.properties`
+  // keep their order and `enabled` flag; any parameter not yet in `group` is
+  // appended at the end (in ID order), enabled by default.
+  const { orderedData, order, rowSelection } = useMemo(() => {
+    const byName = new Map(data.map((row) => [row.property, row]));
+    const seen = new Set<string>();
+    const orderedRows: Protocol.Parameter[] = [];
+    const selection: RowSelectionState = {};
+    for (const prop of group.properties) {
+      const row = byName.get(prop.property);
+      if (row && !seen.has(prop.property)) {
+        orderedRows.push(row);
+        selection[prop.property] = prop.enabled;
+        seen.add(prop.property);
+      }
     }
-    return result;
-  }, [data, order]);
+    const sortedRemaining = data
+      .filter((row) => !seen.has(row.property))
+      .sort((a, b) => a.id - b.id);
+    for (const row of sortedRemaining) {
+      orderedRows.push(row);
+      selection[row.property] = true;
+    }
+    return {
+      orderedData: orderedRows,
+      order: orderedRows.map((row) => row.property),
+      rowSelection: selection,
+    };
+  }, [data, group]);
 
-  const initialSelection = useMemo<RowSelectionState>(
-    () => Object.fromEntries(data.map((row) => [String(row.id), true])),
-    [data],
+  const emitChange = useCallback(
+    (nextOrder: string[], nextSelection: RowSelectionState) => {
+      const properties: Protocol.ConfigTemplateProperty[] = nextOrder.map((name) => ({
+        property: name,
+        enabled: !!nextSelection[name],
+      }));
+      onChange({ enabled: group.enabled, properties });
+    },
+    [onChange, group.enabled],
   );
 
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>(initialSelection);
-
-  useEffect(() => {
-    setRowSelection(initialSelection);
-  }, [initialSelection]);
+  const handleRowSelectionChange = useCallback(
+    (updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
+      if (disabled) return;
+      const next =
+        typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection) : updaterOrValue;
+      emitChange(order, next);
+    },
+    [disabled, emitChange, order, rowSelection],
+  );
 
   const columns = useMemo<ColumnDef<Protocol.Parameter>[]>(
     () => [
@@ -389,6 +447,7 @@ function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
         header: ({ table }) => (
           <Checkbox
             size="small"
+            disabled={disabled}
             checked={table.getIsAllRowsSelected()}
             indeterminate={!table.getIsAllRowsSelected() && table.getIsSomeRowsSelected()}
             onChange={table.getToggleAllRowsSelectedHandler()}
@@ -397,6 +456,7 @@ function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
         cell: ({ row }) => (
           <Checkbox
             size="small"
+            disabled={disabled}
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
           />
@@ -416,15 +476,15 @@ function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
         cell: ({ getValue }) => getValue<string>(),
       },
     ],
-    [t],
+    [t, disabled],
   );
 
   const table = useReactTable({
     data: orderedData,
     columns,
     state: { rowSelection },
-    onRowSelectionChange: setRowSelection,
-    getRowId: (row) => String(row.id),
+    onRowSelectionChange: handleRowSelectionChange,
+    getRowId: (row) => row.property,
     enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -462,14 +522,14 @@ function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (disabled) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setOrder((current) => {
-      const oldIndex = current.indexOf(String(active.id));
-      const newIndex = current.indexOf(String(over.id));
-      if (oldIndex < 0 || newIndex < 0) return current;
-      return arrayMove(current, oldIndex, newIndex);
-    });
+    const oldIndex = order.indexOf(String(active.id));
+    const newIndex = order.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    const nextOrder = arrayMove(order, oldIndex, newIndex);
+    emitChange(nextOrder, rowSelection);
   };
 
   return (
@@ -529,7 +589,12 @@ function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
               const row = rows[virtualRow.index];
               return (
-                <SortableTemplateRow key={row.id} row={row} virtualRow={virtualRow} />
+                <SortableTemplateRow
+                  key={row.id}
+                  row={row}
+                  virtualRow={virtualRow}
+                  disabled={disabled}
+                />
               );
             })}
           </Box>
@@ -582,6 +647,7 @@ export default function Config() {
   const [formatTab, setFormatTab] = useState(0);
   const [fileExtensionsTab, setFileExtensionsTab] = useState(0);
   const [templatesTab, setTemplatesTab] = useState(0);
+  const [templates, setTemplates] = useState<Protocol.ConfigTemplates>(() => emptyTemplates());
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -623,6 +689,36 @@ export default function Config() {
       setDetailViewShowSubtitle(config.view?.detail?.showSubtitle ?? true);
       setDetailViewShowMenu(config.view?.detail?.showMenu ?? true);
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
+      setTemplates({
+        general: {
+          enabled: config.templates?.general?.enabled ?? false,
+          properties: config.templates?.general?.properties ?? [],
+        },
+        video: {
+          enabled: config.templates?.video?.enabled ?? false,
+          properties: config.templates?.video?.properties ?? [],
+        },
+        audio: {
+          enabled: config.templates?.audio?.enabled ?? false,
+          properties: config.templates?.audio?.properties ?? [],
+        },
+        text: {
+          enabled: config.templates?.text?.enabled ?? false,
+          properties: config.templates?.text?.properties ?? [],
+        },
+        other: {
+          enabled: config.templates?.other?.enabled ?? false,
+          properties: config.templates?.other?.properties ?? [],
+        },
+        image: {
+          enabled: config.templates?.image?.enabled ?? false,
+          properties: config.templates?.image?.properties ?? [],
+        },
+        menu: {
+          enabled: config.templates?.menu?.enabled ?? false,
+          properties: config.templates?.menu?.properties ?? [],
+        },
+      });
     }
   }, [config]);
 
@@ -675,6 +771,7 @@ export default function Config() {
     },
     update: { checkInterval: updateCheckInterval, lastChecked: config?.update?.lastChecked ?? 0, lastVersion: config?.update?.lastVersion ?? '', ignoreVersion: config?.update?.ignoreVersion ?? '' },
     window: config?.window ?? { position: { x: -1, y: -1 }, size: { width: 1200, height: 900 } },
+    templates,
   });
 
   const handleBrowseMkvToolNixPath = async () => {
@@ -1048,7 +1145,7 @@ export default function Config() {
           type: Protocol.DialogNotificationType.Error,
         });
       }
-    }, 300);
+    }, 500);
     return () => {
       if (autoSaveDebounceRef.current) {
         clearTimeout(autoSaveDebounceRef.current);
@@ -1082,6 +1179,7 @@ export default function Config() {
     detailViewShowSubtitle,
     detailViewShowMenu,
     updateCheckInterval,
+    templates,
   ]);
 
   const getThemeDisplayLabel = (themeOption: Protocol.Theme): string => t(`config.theme${themeOption}`);
@@ -1806,10 +1904,44 @@ export default function Config() {
           sx={{ minHeight: 36, textTransform: 'none' }}
         />
       </Tabs>
-      <TemplatesTable
-        key={TEMPLATE_STREAM_KINDS[templatesTab]}
-        streamKind={TEMPLATE_STREAM_KINDS[templatesTab]}
-      />
+      {(() => {
+        const activeStreamKind = TEMPLATE_STREAM_KINDS[templatesTab];
+        const templatesKey = STREAM_KIND_TO_TEMPLATE_KEY[activeStreamKind];
+        if (!templatesKey) return null;
+        const activeGroup = templates[templatesKey];
+        return (
+          <>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={activeGroup.enabled}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setTemplates((prev) => ({
+                      ...prev,
+                      [templatesKey]: enabled
+                        ? { enabled: true, properties: prev[templatesKey].properties }
+                        : { enabled: false, properties: [] },
+                    }));
+                  }}
+                />
+              }
+              label={t('config.enableTemplates')}
+              sx={{ mb: 1 }}
+            />
+            <TemplatesTable
+              key={activeStreamKind}
+              streamKind={activeStreamKind}
+              group={activeGroup}
+              disabled={!activeGroup.enabled}
+              onChange={(nextGroup) =>
+                setTemplates((prev) => ({ ...prev, [templatesKey]: nextGroup }))
+              }
+            />
+          </>
+        );
+      })()}
     </Box>
   );
 
