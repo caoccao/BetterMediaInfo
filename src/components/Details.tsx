@@ -42,6 +42,7 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import RemoveDoneIcon from '@mui/icons-material/RemoveDone';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
+import type { ExportStream } from '../lib/exportText';
 import { useAppStore } from '../lib/store';
 import ExportDialog from './ExportDialog';
 
@@ -153,6 +154,19 @@ export default function Details({ file }: DetailsProps) {
     }
     return Object.entries(properties.propertyMap).sort(([a], [b]) => a.localeCompare(b));
   };
+
+  const exportStreams = useMemo<ExportStream[]>(() => {
+    return allProperties
+      .filter((p) => streamGroup.includes(p.stream))
+      .map((p) => ({
+        stream: p.stream,
+        num: p.num,
+        entries: orderedPropertyEntries(p),
+      }))
+      .filter((s) => s.entries.length > 0);
+    // orderedPropertyEntries closes over config.templates; depend on it directly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allProperties, streamGroup, config?.templates]);
 
   const filteredAllProperties = useMemo(() => {
     return allProperties
@@ -364,6 +378,7 @@ export default function Details({ file }: DetailsProps) {
         open={exportDialogOpen}
         onClose={() => setExportDialogOpen(false)}
         file={file}
+        streams={exportStreams}
       />
     </Box>
   );

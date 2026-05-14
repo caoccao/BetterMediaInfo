@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -33,6 +33,7 @@ import {
   getExportFormatExtension,
   openSaveExportFileDialog,
 } from '../lib/dialog';
+import { type ExportStream, renderText } from '../lib/exportText';
 import { writeTextFile } from '../lib/service';
 import { useAppStore } from '../lib/store';
 
@@ -40,6 +41,7 @@ interface ExportDialogProps {
   open: boolean;
   onClose: () => void;
   file: string;
+  streams: ExportStream[];
 }
 
 function basename(path: string): string {
@@ -47,13 +49,19 @@ function basename(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
-export default function ExportDialog({ open, onClose, file }: ExportDialogProps) {
+export default function ExportDialog({ open, onClose, file, streams }: ExportDialogProps) {
   const { t } = useTranslation();
   const [format, setFormat] = useState<ExportFormat>('text');
   const setDialogNotification = useAppStore((state) => state.setDialogNotification);
 
-  // Preview content will be populated later based on the selected format.
-  const previewContent = '';
+  const previewContent = useMemo(() => {
+    switch (format) {
+      case 'text':
+        return renderText({ file, streams });
+      default:
+        return '';
+    }
+  }, [format, file, streams]);
 
   const handleFormatChange = (_e: React.MouseEvent<HTMLElement>, value: ExportFormat | null) => {
     if (value !== null) {
@@ -170,7 +178,24 @@ export default function ExportDialog({ open, onClose, file }: ExportDialogProps)
           {t('dialog.close')}
         </Button>
       </Box>
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', bgcolor: 'background.default' }} />
+      <Box
+        component="pre"
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          m: 0,
+          px: 2,
+          py: 1,
+          bgcolor: 'background.default',
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+          fontSize: '0.8125rem',
+          whiteSpace: 'pre',
+        }}
+      >
+        {previewContent}
+      </Box>
     </Dialog>
   );
 }
