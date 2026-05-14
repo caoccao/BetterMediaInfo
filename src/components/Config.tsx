@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -55,6 +55,33 @@ import {
   ViewAgenda as CardViewIcon,
 } from '@mui/icons-material';
 import { open } from '@tauri-apps/plugin-dialog';
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  type ColumnDef,
+  type Row,
+  type RowSelectionState,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { type VirtualItem, useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import {
@@ -222,6 +249,293 @@ function StreamFormatPanel({
         </Box>
       </Box>
     </Stack>
+  );
+}
+
+const templatesScrollPositions = new Map<Protocol.StreamKind, number>();
+
+const TEMPLATE_STREAM_KINDS: Protocol.StreamKind[] = [
+  Protocol.StreamKind.General,
+  Protocol.StreamKind.Video,
+  Protocol.StreamKind.Audio,
+  Protocol.StreamKind.Text,
+  Protocol.StreamKind.Other,
+  Protocol.StreamKind.Image,
+  Protocol.StreamKind.Menu,
+];
+
+const templateCellSx = (size: number | undefined): React.CSSProperties => ({
+  width: size ? `${size}px` : undefined,
+  flex: size ? '0 0 auto' : '1 1 0',
+  minWidth: 0,
+});
+
+function SortableTemplateRow({
+  row,
+  virtualRow,
+}: {
+  row: Row<Protocol.Parameter>;
+  virtualRow: VirtualItem;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: row.id,
+  });
+
+  return (
+    <Box
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{
+        position: 'absolute',
+        top: virtualRow.start,
+        left: 0,
+        width: '100%',
+        height: virtualRow.size,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 2 : 1,
+      }}
+      sx={{
+        display: 'flex',
+        borderBottom: 1,
+        borderColor: 'divider',
+        bgcolor: isDragging ? 'action.selected' : 'transparent',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        userSelect: 'none',
+        opacity: isDragging ? 0.85 : 1,
+        boxShadow: isDragging ? 2 : 0,
+        '&:hover': {
+          bgcolor: isDragging ? 'action.selected' : 'action.hover',
+        },
+      }}
+    >
+      {row.getVisibleCells().map((cell) => {
+        const stopDrag = cell.column.id === 'select';
+        return (
+          <Box
+            key={cell.id}
+            onPointerDown={stopDrag ? (e) => e.stopPropagation() : undefined}
+            sx={{
+              px: 1,
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: '0.8125rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              ...templateCellSx(cell.column.columnDef.size),
+            }}
+          >
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+function TemplatesTable({ streamKind }: { streamKind: Protocol.StreamKind }) {
+  const { t } = useTranslation();
+  const mediaInfoParameters = useAppStore((state) => state.mediaInfoParameters);
+  const initParameters = useAppStore((state) => state.initParameters);
+
+  useEffect(() => {
+    if (mediaInfoParameters.length === 0) {
+      initParameters();
+    }
+  }, [mediaInfoParameters.length, initParameters]);
+
+  const data = useMemo(
+    () =>
+      mediaInfoParameters
+        .filter((p) => p.stream === streamKind)
+        .sort((a, b) => a.id - b.id),
+    [mediaInfoParameters, streamKind],
+  );
+
+  const defaultOrder = useMemo(() => data.map((row) => String(row.id)), [data]);
+  const [order, setOrder] = useState<string[]>(defaultOrder);
+  useEffect(() => {
+    setOrder(defaultOrder);
+  }, [defaultOrder]);
+
+  const orderedData = useMemo(() => {
+    const byId = new Map(data.map((row) => [String(row.id), row]));
+    const result: Protocol.Parameter[] = [];
+    for (const id of order) {
+      const row = byId.get(id);
+      if (row) result.push(row);
+    }
+    return result;
+  }, [data, order]);
+
+  const initialSelection = useMemo<RowSelectionState>(
+    () => Object.fromEntries(data.map((row) => [String(row.id), true])),
+    [data],
+  );
+
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>(initialSelection);
+
+  useEffect(() => {
+    setRowSelection(initialSelection);
+  }, [initialSelection]);
+
+  const columns = useMemo<ColumnDef<Protocol.Parameter>[]>(
+    () => [
+      {
+        id: 'select',
+        size: 48,
+        header: ({ table }) => (
+          <Checkbox
+            size="small"
+            checked={table.getIsAllRowsSelected()}
+            indeterminate={!table.getIsAllRowsSelected() && table.getIsSomeRowsSelected()}
+            onChange={table.getToggleAllRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            size="small"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        ),
+      },
+      {
+        id: 'id',
+        accessorKey: 'id',
+        size: 80,
+        header: t('about.id'),
+        cell: ({ getValue }) => getValue<number>(),
+      },
+      {
+        id: 'property',
+        accessorKey: 'property',
+        header: t('about.property'),
+        cell: ({ getValue }) => getValue<string>(),
+      },
+    ],
+    [t],
+  );
+
+  const table = useReactTable({
+    data: orderedData,
+    columns,
+    state: { rowSelection },
+    onRowSelectionChange: setRowSelection,
+    getRowId: (row) => String(row.id),
+    enableRowSelection: true,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const { rows } = table.getRowModel();
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 36,
+    overscan: 10,
+  });
+
+  const scrollRestoredRef = useRef(false);
+  useLayoutEffect(() => {
+    if (scrollRestoredRef.current) return;
+    if (rows.length === 0) return;
+    const saved = templatesScrollPositions.get(streamKind);
+    if (saved !== undefined && parentRef.current) {
+      parentRef.current.scrollTop = saved;
+    }
+    scrollRestoredRef.current = true;
+  }, [rows.length, streamKind]);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRestoredRef.current) return;
+    if (parentRef.current) {
+      templatesScrollPositions.set(streamKind, parentRef.current.scrollTop);
+    }
+  }, [streamKind]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setOrder((current) => {
+      const oldIndex = current.indexOf(String(active.id));
+      const newIndex = current.indexOf(String(over.id));
+      if (oldIndex < 0 || newIndex < 0) return current;
+      return arrayMove(current, oldIndex, newIndex);
+    });
+  };
+
+  return (
+    <Box
+      ref={parentRef}
+      onScroll={handleScroll}
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        overflow: 'auto',
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 1,
+      }}
+    >
+      <Box
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 3,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
+        {table.getHeaderGroups().map((headerGroup) => (
+          <Box key={headerGroup.id} sx={{ display: 'flex' }}>
+            {headerGroup.headers.map((header) => (
+              <Box
+                key={header.id}
+                sx={{
+                  px: 1,
+                  py: 0.75,
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  ...templateCellSx(header.column.columnDef.size),
+                }}
+              >
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(header.column.columnDef.header, header.getContext())}
+              </Box>
+            ))}
+          </Box>
+        ))}
+      </Box>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={order} strategy={verticalListSortingStrategy}>
+          <Box sx={{ position: 'relative', height: `${rowVirtualizer.getTotalSize()}px` }}>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const row = rows[virtualRow.index];
+              return (
+                <SortableTemplateRow key={row.id} row={row} virtualRow={virtualRow} />
+              );
+            })}
+          </Box>
+        </SortableContext>
+      </DndContext>
+    </Box>
   );
 }
 
@@ -1440,7 +1754,7 @@ export default function Config() {
   );
 
   const templatesPanel = (
-    <Box>
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <SectionHeader icon={<TemplatesIcon fontSize="small" />} title={t('config.templates')} />
       <Tabs
         value={templatesTab}
@@ -1492,6 +1806,10 @@ export default function Config() {
           sx={{ minHeight: 36, textTransform: 'none' }}
         />
       </Tabs>
+      <TemplatesTable
+        key={TEMPLATE_STREAM_KINDS[templatesTab]}
+        streamKind={TEMPLATE_STREAM_KINDS[templatesTab]}
+      />
     </Box>
   );
 
@@ -1519,7 +1837,7 @@ export default function Config() {
   );
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto', py: 2, px: 1, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+    <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto', py: 2, px: 1, display: 'flex', gap: 2, height: '100%', minHeight: 0 }}>
       <Tabs
         orientation="vertical"
         value={mainTab}
@@ -1574,7 +1892,7 @@ export default function Config() {
           label={t('config.update')}
         />
       </Tabs>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
         {mainTab === ConfigTab.Appearance && appearancePanel}
         {mainTab === ConfigTab.FileExtensions && fileExtensionsPanel}
         {mainTab === ConfigTab.Formatting && formattingPanel}
