@@ -2,6 +2,7 @@
 
 ## 0.10.0
 
+* Upgraded MediaInfoLib to v26.05
 * Added "Open in MkvToolNix GUI" action to the card view for video files when MKVToolNix is configured.
 * Added multi-language support to the Windows installers.
 * Added Italian as a new supported language.

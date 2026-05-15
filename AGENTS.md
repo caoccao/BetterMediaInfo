@@ -164,7 +164,7 @@ The application uses MUI's built-in theming system:
 External libraries that must be built before BetterMediaInfo:
 - **zlib** v1.3.2: Compression library (static build required)
 - **ZenLib**: MediaArea utility library
-- **MediaInfoLib** v26.01: Core media analysis library
+- **MediaInfoLib** v26.05: Core media analysis library
 
 The build process expects these libraries to be in sibling directories:
 ```
