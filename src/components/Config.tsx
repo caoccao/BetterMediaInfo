@@ -60,6 +60,7 @@ import {
 } from '@mui/icons-material';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
+  type CollisionDetection,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -68,6 +69,8 @@ import {
   KeyboardSensor,
   PointerSensor,
   closestCenter,
+  pointerWithin,
+  rectIntersection,
   useDraggable,
   useDroppable,
   useSensor,
@@ -283,9 +286,22 @@ function emptyTemplates(): Protocol.ConfigTemplates {
 }
 
 const LEFT_CONTAINER_ID = 'templates-left-container';
+const RIGHT_CONTAINER_ID = 'templates-right-container';
 
 // Disable sortable's auto-shifting so the drop indicator is the sole visual cue.
 const noShiftStrategy = () => null;
+
+// Pointer-first detection: reflects what the user is actually pointing at,
+// so dragging from left into the right pane reliably resolves to the right
+// container droppable instead of being pulled back to a nearby left row by
+// closestCenter's source-bias.
+const templateCollisionDetection: CollisionDetection = (args) => {
+  const pointerHits = pointerWithin(args);
+  if (pointerHits.length > 0) return pointerHits;
+  const rectHits = rectIntersection(args);
+  if (rectHits.length > 0) return rectHits;
+  return closestCenter(args);
+};
 
 function templateRowSx(isDragging: boolean) {
   return {
@@ -624,6 +640,16 @@ function TemplatesPanelBody({
     onChange({ properties: [] });
   }, [leftProperties, onChange]);
 
+  const rightPaneRef = useRef<HTMLDivElement | null>(null);
+  const { setNodeRef: setRightDropNode } = useDroppable({ id: RIGHT_CONTAINER_ID });
+  const attachRightPaneRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      rightPaneRef.current = node;
+      setRightDropNode(node);
+    },
+    [setRightDropNode],
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -664,19 +690,38 @@ function TemplatesPanelBody({
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      const { active, over } = event;
+      const { active, over, activatorEvent, delta } = event;
       const activeIdStr = String(active.id);
       const source = activeIdStr.startsWith('L:') ? 'left' : 'right';
       const dragSet = dragSetRef.current.slice();
       const overId = over ? String(over.id) : null;
       const overInLeft = overId === LEFT_CONTAINER_ID || (overId?.startsWith('L:') ?? false);
 
+      // Hit-test the pointer against the right pane's bounding rect directly.
+      // dnd-kit's collision detection can be biased toward the source's side
+      // when DragOverlay + a SortableContext are involved, so we don't rely
+      // on overId alone to decide the "drop on right pane" case.
+      let droppedOnRightPane = overId === RIGHT_CONTAINER_ID;
+      if (!droppedOnRightPane && rightPaneRef.current) {
+        const evt = activatorEvent as { clientX?: number; clientY?: number } | undefined;
+        if (evt && typeof evt.clientX === 'number' && typeof evt.clientY === 'number') {
+          const dropX = evt.clientX + delta.x;
+          const dropY = evt.clientY + delta.y;
+          const rect = rightPaneRef.current.getBoundingClientRect();
+          droppedOnRightPane =
+            dropX >= rect.left &&
+            dropX <= rect.right &&
+            dropY >= rect.top &&
+            dropY <= rect.bottom;
+        }
+      }
+
       resetDrag();
 
       if (dragSet.length === 0) return;
 
       if (source === 'right') {
-        if (!overInLeft) return;
+        if (!overInLeft || droppedOnRightPane) return;
         let targetIndex = leftProperties.length;
         if (overId && overId.startsWith('L:')) {
           const overProp = overId.slice(2);
@@ -697,7 +742,7 @@ function TemplatesPanelBody({
       }
 
       // source === 'left'
-      if (!overInLeft) {
+      if (droppedOnRightPane) {
         const remove = new Set(dragSet);
         const next = leftProperties.filter((p) => !remove.has(p));
         if (next.length === leftProperties.length) return;
@@ -705,6 +750,7 @@ function TemplatesPanelBody({
         setLeftSelection(new Set());
         return;
       }
+      if (!overInLeft) return;
 
       let targetIndex = leftProperties.length;
       if (overId && overId.startsWith('L:')) {
@@ -803,7 +849,7 @@ function TemplatesPanelBody({
       </Box>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={templateCollisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -839,6 +885,7 @@ function TemplatesPanelBody({
             />
           </Box>
           <Box
+            ref={attachRightPaneRef}
             sx={{
               flex: 1,
               minWidth: 0,
@@ -848,6 +895,11 @@ function TemplatesPanelBody({
               borderColor: 'divider',
               borderRadius: 1,
               overflow: 'hidden',
+              bgcolor:
+                activeId?.startsWith('L:') && overId === RIGHT_CONTAINER_ID
+                  ? 'action.selected'
+                  : undefined,
+              transition: 'background-color 120ms',
             }}
           >
             <TemplateTableHeader
@@ -897,6 +949,13 @@ function TemplatesPanelBody({
           ) : null}
         </DragOverlay>
       </DndContext>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: 'block', textAlign: 'center' }}
+      >
+        {t('config.templatesInstruction')}
+      </Typography>
     </Box>
   );
 }

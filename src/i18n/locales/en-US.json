@@ -120,6 +120,7 @@
     "removeAll": "Remove All",
     "property": "Property",
     "availableProperty": "Available Property",
+    "templatesInstruction": "Drag properties between tables to add or remove them. Drag within the left table to reorder.",
     "bitRate": "Bit Rate",
     "size": "Size",
     "precision": "Precision",

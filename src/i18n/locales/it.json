@@ -120,6 +120,7 @@
     "removeAll": "Rimuovi tutto",
     "property": "Proprietà",
     "availableProperty": "Proprietà disponibile",
+    "templatesInstruction": "Trascina le proprietà tra le tabelle per aggiungerle o rimuoverle. Trascina all'interno della tabella di sinistra per riordinarle.",
     "bitRate": "Bitrate",
     "size": "Dimensione",
     "precision": "Precisione",

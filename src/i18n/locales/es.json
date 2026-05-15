@@ -120,6 +120,7 @@
     "removeAll": "Quitar todo",
     "property": "Propiedad",
     "availableProperty": "Propiedad disponible",
+    "templatesInstruction": "Arrastra propiedades entre las tablas para añadirlas o quitarlas. Arrastra dentro de la tabla izquierda para reordenarlas.",
     "bitRate": "Tasa de bits",
     "size": "Tamaño",
     "precision": "Precisión",

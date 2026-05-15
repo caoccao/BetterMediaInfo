@@ -120,6 +120,7 @@
     "removeAll": "すべて削除",
     "property": "プロパティ",
     "availableProperty": "利用可能なプロパティ",
+    "templatesInstruction": "テーブル間でプロパティをドラッグして追加または削除できます。左のテーブル内でドラッグして並べ替えできます。",
     "bitRate": "ビットレート",
     "size": "サイズ",
     "precision": "精度",

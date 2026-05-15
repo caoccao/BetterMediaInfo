@@ -120,6 +120,7 @@
     "removeAll": "Alle entfernen",
     "property": "Eigenschaft",
     "availableProperty": "Verfügbare Eigenschaft",
+    "templatesInstruction": "Eigenschaften zwischen den Tabellen ziehen, um sie hinzuzufügen oder zu entfernen. Innerhalb der linken Tabelle ziehen, um die Reihenfolge zu ändern.",
     "bitRate": "Bitrate",
     "size": "Größe",
     "precision": "Genauigkeit",

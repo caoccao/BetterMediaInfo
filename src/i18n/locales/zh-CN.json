@@ -120,6 +120,7 @@
     "removeAll": "全部移除",
     "property": "属性",
     "availableProperty": "可用属性",
+    "templatesInstruction": "在两个表格之间拖动属性以添加或移除，在左侧表格内拖动以重新排序。",
     "bitRate": "码率",
     "size": "大小",
     "precision": "精度",

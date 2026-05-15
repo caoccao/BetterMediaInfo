@@ -120,6 +120,7 @@
     "removeAll": "Tout supprimer",
     "property": "Propriété",
     "availableProperty": "Propriété disponible",
+    "templatesInstruction": "Glissez les propriétés entre les tables pour les ajouter ou les supprimer. Glissez dans la table de gauche pour les réorganiser.",
     "bitRate": "Débit",
     "size": "Taille",
     "precision": "Précision",

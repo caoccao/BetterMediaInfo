@@ -120,6 +120,7 @@
     "removeAll": "全部移除",
     "property": "屬性",
     "availableProperty": "可用屬性",
+    "templatesInstruction": "於兩個表格之間拖曳屬性以新增或移除，於左側表格內拖曳以重新排序。",
     "bitRate": "位元率",
     "size": "大小",
     "precision": "精度",
