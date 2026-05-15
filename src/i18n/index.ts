@@ -16,6 +16,7 @@
  */
 
 import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 import de from './locales/de.json';
 import enUS from './locales/en-US.json';
@@ -27,24 +28,26 @@ import zhCN from './locales/zh-CN.json';
 import zhHK from './locales/zh-HK.json';
 import zhTW from './locales/zh-TW.json';
 
-i18n.use(initReactI18next).init({
-  resources: {
-    'de': { translation: de },
-    'en-US': { translation: enUS },
-    'es': { translation: es },
-    'fr': { translation: fr },
-    'it': { translation: it },
-    'ja': { translation: ja },
-    'zh-CN': { translation: zhCN },
-    'zh-HK': { translation: zhHK },
-    'zh-TW': { translation: zhTW },
-  },
-  lng: 'en-US',
-  fallbackLng: 'en-US',
-  interpolation: {
-    escapeValue: false,
-  },
-});
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: {
+      'de': { translation: de },
+      'en-US': { translation: enUS },
+      'es': { translation: es },
+      'fr': { translation: fr },
+      'it': { translation: it },
+      'ja': { translation: ja },
+      'zh-CN': { translation: zhCN },
+      'zh-HK': { translation: zhHK },
+      'zh-TW': { translation: zhTW },
+    },
+    fallbackLng: 'en-US',
+    interpolation: {
+      escapeValue: false,
+    },
+  });
 
 export function changeLanguage(language: string) {
   i18n.changeLanguage(language);

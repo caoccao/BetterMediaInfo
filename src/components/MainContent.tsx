@@ -522,8 +522,19 @@ export default function MainContent() {
       <Dialog
         open={dialogJsonCode !== null}
         onClose={() => setDialogJsonCode(null)}
-        maxWidth="lg"
-        fullWidth
+        maxWidth={false}
+        slotProps={{
+          paper: {
+            sx: {
+              width: '90vw',
+              height: '90vh',
+              maxWidth: 'none',
+              maxHeight: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          },
+        }}
       >
         <DialogTitle>{dialogJsonCode?.title}</DialogTitle>
         <DialogActions sx={{ justifyContent: 'center', gap: 1, pt: 0 }}>
@@ -537,8 +548,8 @@ export default function MainContent() {
             {t('dialog.close')}
           </Button>
         </DialogActions>
-        <DialogContent>
-          <Box sx={{ height: 'calc(80vh - 150px)', border: 1, borderColor: 'divider' }}>
+        <DialogContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flex: 1, minHeight: 0, border: 1, borderColor: 'divider' }}>
             <Editor
               height="100%"
               language="json"
