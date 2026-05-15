@@ -526,6 +526,17 @@ export default function MainContent() {
         fullWidth
       >
         <DialogTitle>{dialogJsonCode?.title}</DialogTitle>
+        <DialogActions sx={{ justifyContent: 'center', gap: 1, pt: 0 }}>
+          <Button variant="contained" color="primary" onClick={handleCopyJsonCode} sx={{ textTransform: 'none' }}>
+            {t('dialog.copy')}
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleSaveJsonCode} sx={{ textTransform: 'none' }}>
+            {t('dialog.save')}
+          </Button>
+          <Button variant="outlined" onClick={() => setDialogJsonCode(null)} sx={{ textTransform: 'none' }}>
+            {t('dialog.close')}
+          </Button>
+        </DialogActions>
         <DialogContent>
           <Box sx={{ height: 'calc(80vh - 150px)', border: 1, borderColor: 'divider' }}>
             <Editor
@@ -544,17 +555,6 @@ export default function MainContent() {
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', gap: 1 }}>
-          <Button variant="contained" color="primary" onClick={handleCopyJsonCode} sx={{ textTransform: 'none' }}>
-            {t('dialog.copy')}
-          </Button>
-          <Button variant="contained" color="primary" onClick={handleSaveJsonCode} sx={{ textTransform: 'none' }}>
-            {t('dialog.save')}
-          </Button>
-          <Button variant="outlined" onClick={() => setDialogJsonCode(null)} sx={{ textTransform: 'none' }}>
-            {t('dialog.close')}
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Blu-ray Folder Confirmation Dialog */}

@@ -176,6 +176,7 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
         sx={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'center',
           gap: 1,
           px: 2,
           py: 1,
@@ -184,7 +185,6 @@ export default function ExportDialog({ open, onClose, file, streams }: ExportDia
           flexShrink: 0,
         }}
       >
-        <Box sx={{ flex: 1 }} />
         <ToggleButtonGroup
           value={format}
           exclusive
