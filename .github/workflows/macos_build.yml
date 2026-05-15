@@ -100,7 +100,7 @@ jobs:
 
     - name: Build BetterMediaInfo
       run: |
-        pnpm install
+        pnpm install --frozen-lockfile
         pnpm tauri build
 
     - name: Upload the Artifact
