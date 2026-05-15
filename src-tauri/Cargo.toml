@@ -20,11 +20,11 @@ tauri-build = { version = "2.5", features = [] }
 
 [dependencies]
 # https://crates.io/crates/tauri
-tauri = { version = "2.9", features = [] }
+tauri = { version = "2.10", features = [] }
 # https://crates.io/crates/tauri-plugin-clipboard-manager
 tauri-plugin-clipboard-manager = "2.3"
 # https://crates.io/crates/tauri-plugin-dialog
-tauri-plugin-dialog = "2.4"
+tauri-plugin-dialog = "2.7"
 # https://crates.io/crates/tauri-plugin-shell
 tauri-plugin-shell = "2.3"
 serde = { version = "1", features = ["derive"] }
