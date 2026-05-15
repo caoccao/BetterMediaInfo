@@ -38,7 +38,7 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { DataGrid, GridColDef, GridRowsProp, useGridApiRef } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -297,7 +297,7 @@ function AppCard({ logo, title, intro, githubUrl, isPrimary }: AppCardProps) {
         <Button
           size="small"
           startIcon={<GitHubIcon />}
-          onClick={() => shellOpen(githubUrl)}
+          onClick={() => openUrl(githubUrl)}
           sx={(theme) => ({
             textTransform: 'none',
             color: theme.palette.mode === 'dark' ? '#93c5fd' : '#1d4ed8',
@@ -440,7 +440,7 @@ function EmptyWelcome() {
             </Typography>
             <Link
               component="button"
-              onClick={() => shellOpen(AUTHOR_URL)}
+              onClick={() => openUrl(AUTHOR_URL)}
               underline="hover"
               sx={(theme) => ({
                 fontSize: '0.75rem',
@@ -455,7 +455,7 @@ function EmptyWelcome() {
             <GitHubIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             <Link
               component="button"
-              onClick={() => shellOpen(GITHUB_URL)}
+              onClick={() => openUrl(GITHUB_URL)}
               underline="hover"
               sx={(theme) => ({
                 fontSize: '0.75rem',

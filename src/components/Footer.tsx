@@ -16,7 +16,7 @@
  */
 
 import { Box, Link, Typography } from '@mui/material';
-import { open } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
@@ -27,17 +27,17 @@ export default function Footer() {
       <Typography variant="caption" component="div">
         <Link
           component="button"
-          onClick={() => open('https://paypal.me/caoccao?locale.x=en_US')}
+          onClick={() => openUrl('https://paypal.me/caoccao?locale.x=en_US')}
         >
           {t('footer.donate')}
         </Link>
       </Typography>
       <Typography variant="caption" component="div" sx={{ mt: 0.5 }}>
         {t('footer.copyright')}{' '}
-        <Link component="button" onClick={() => open('https://github.com/caoccao')}>
+        <Link component="button" onClick={() => openUrl('https://github.com/caoccao')}>
           Sam Cao
         </Link>{' '}
-        <Link component="button" onClick={() => open('https://www.caoccao.com/')}>
+        <Link component="button" onClick={() => openUrl('https://www.caoccao.com/')}>
           caoccao.com
         </Link>
       </Typography>

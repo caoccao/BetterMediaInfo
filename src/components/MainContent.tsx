@@ -37,7 +37,7 @@ import { useTranslation } from 'react-i18next';
 import { getCurrentWindow, type DragDropEvent } from '@tauri-apps/api/window';
 import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import Editor from '@monaco-editor/react';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
@@ -440,7 +440,7 @@ export default function MainContent() {
             <Link
               component="button"
               variant="body2"
-              onClick={() => shellOpen('https://github.com/caoccao/BetterMediaInfo/releases')}
+              onClick={() => openUrl('https://github.com/caoccao/BetterMediaInfo/releases')}
               sx={{ cursor: 'pointer' }}
             >
               {t('update.newVersionAvailable', { version: newVersion })}

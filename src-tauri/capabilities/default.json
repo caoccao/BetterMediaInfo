@@ -16,6 +16,6 @@
     "core:window:allow-unminimize",
     "core:webview:allow-create-webview-window",
     "dialog:default",
-    "shell:allow-open"
+    "opener:default"
   ]
 }

@@ -39,7 +39,7 @@ import {
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PersonIcon from '@mui/icons-material/Person';
-import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useTranslation } from 'react-i18next';
 
 import appIconUrl from '../../src-tauri/icons/icon.png';
@@ -220,7 +220,7 @@ export default function About() {
             sx={{ width: '100%', alignItems: 'stretch' }}
           >
             <Card elevation={0} sx={{ ...infoCardSx, flexShrink: 0 }}>
-              <CardActionArea onClick={() => shellOpen(AUTHOR_URL)} sx={{ height: '100%' }}>
+              <CardActionArea onClick={() => openUrl(AUTHOR_URL)} sx={{ height: '100%' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ background: GRADIENT, width: 48, height: 48 }}>
                     <PersonIcon />
@@ -238,7 +238,7 @@ export default function About() {
             </Card>
 
             <Card elevation={0} sx={{ ...infoCardSx, flex: 1, minWidth: 0 }}>
-              <CardActionArea onClick={() => shellOpen(GITHUB_URL)} sx={{ height: '100%' }}>
+              <CardActionArea onClick={() => openUrl(GITHUB_URL)} sx={{ height: '100%' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ bgcolor: '#24292f', width: 48, height: 48 }}>
                     <GitHubIcon sx={{ color: '#fff' }} />
