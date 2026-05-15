@@ -95,11 +95,10 @@ jobs:
 
     - name: Build BetterMediaInfo
       run: |
-        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-        pnpm install
         cd src-tauri
         cargo test -r
         cd ..
+        pnpm install
         pnpm tauri build
 
     - name: Upload the Artifact
