@@ -86,10 +86,10 @@ jobs:
 
     - name: Build BetterMediaInfo
       run: |
-        pnpm install
         cd src-tauri
         cargo test -r
         cd ..
+        pnpm install
         pnpm tauri build
 
     - name: Upload the deb
