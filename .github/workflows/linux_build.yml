@@ -40,11 +40,6 @@ jobs:
       with:
         node-version: 24
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v5
-      with:
-        version: 11
-
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
@@ -84,11 +79,18 @@ jobs:
         ./configure --enable-static
         make -j 4
 
-    - name: Build BetterMediaInfo
+    - name: Test BetterMediaInfo
       run: |
         cd src-tauri
         cargo test -r
-        cd ..
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v5
+      with:
+        version: 11
+
+    - name: Build BetterMediaInfo
+      run: |
         pnpm install
         pnpm tauri build
 
