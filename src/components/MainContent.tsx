@@ -545,13 +545,13 @@ export default function MainContent() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', gap: 1 }}>
-          <Button variant="contained" color="primary" onClick={handleCopyJsonCode}>
+          <Button variant="contained" color="primary" onClick={handleCopyJsonCode} sx={{ textTransform: 'none' }}>
             {t('dialog.copy')}
           </Button>
-          <Button variant="contained" color="primary" onClick={handleSaveJsonCode}>
+          <Button variant="contained" color="primary" onClick={handleSaveJsonCode} sx={{ textTransform: 'none' }}>
             {t('dialog.save')}
           </Button>
-          <Button variant="outlined" onClick={() => setDialogJsonCode(null)}>
+          <Button variant="outlined" onClick={() => setDialogJsonCode(null)} sx={{ textTransform: 'none' }}>
             {t('dialog.close')}
           </Button>
         </DialogActions>
