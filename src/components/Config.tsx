@@ -15,13 +15,15 @@
  *   limitations under the License.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
   Checkbox,
   FormControl,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   MenuItem,
   Paper,
   Select,
@@ -32,10 +34,12 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
   BrightnessAuto as AutoIcon,
+  Clear as ClearIcon,
   ClosedCaption as SubtitleIcon,
   DarkMode as DarkIcon,
   Description as TemplatesIcon,
@@ -58,30 +62,23 @@ import { open } from '@tauri-apps/plugin-dialog';
 import {
   DndContext,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   closestCenter,
+  useDraggable,
+  useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-  type ColumnDef,
-  type Row,
-  type RowSelectionState,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { type VirtualItem, useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import {
@@ -252,8 +249,6 @@ function StreamFormatPanel({
   );
 }
 
-const templatesScrollPositions = new Map<Protocol.StreamKind, number>();
-
 const TEMPLATE_STREAM_KINDS: Protocol.StreamKind[] = [
   Protocol.StreamKind.General,
   Protocol.StreamKind.Video,
@@ -277,100 +272,239 @@ const STREAM_KIND_TO_TEMPLATE_KEY: Record<Protocol.StreamKind, keyof Protocol.Co
 
 function emptyTemplates(): Protocol.ConfigTemplates {
   return {
-    general: { enabled: false, properties: [] },
-    video: { enabled: false, properties: [] },
-    audio: { enabled: false, properties: [] },
-    text: { enabled: false, properties: [] },
-    other: { enabled: false, properties: [] },
-    image: { enabled: false, properties: [] },
-    menu: { enabled: false, properties: [] },
+    general: { properties: [] },
+    video: { properties: [] },
+    audio: { properties: [] },
+    text: { properties: [] },
+    other: { properties: [] },
+    image: { properties: [] },
+    menu: { properties: [] },
   };
 }
 
-const templateCellSx = (size: number | undefined): React.CSSProperties => ({
-  width: size ? `${size}px` : undefined,
-  flex: size ? '0 0 auto' : '1 1 0',
+const LEFT_CONTAINER_ID = 'templates-left-container';
+
+// Disable sortable's auto-shifting so the drop indicator is the sole visual cue.
+const noShiftStrategy = () => null;
+
+function templateRowSx(isDragging: boolean) {
+  return {
+    display: 'flex',
+    alignItems: 'stretch',
+    borderBottom: 1,
+    borderColor: 'divider',
+    bgcolor: 'background.paper',
+    cursor: 'grab',
+    userSelect: 'none',
+    opacity: isDragging ? 0.4 : 1,
+    '&:hover': { bgcolor: 'action.hover' },
+  } as const;
+}
+
+const templateCheckCellSx = {
+  width: 40,
+  flex: '0 0 auto',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const;
+
+const templatePropCellSx = {
+  flex: '1 1 0',
   minWidth: 0,
-});
+  px: 1,
+  py: 0.5,
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '0.8125rem',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const;
 
-function SortableTemplateRow({
-  row,
-  virtualRow,
-  disabled,
+function DropIndicator({ position }: { position: 'top' | 'bottom' }) {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        [position]: -1,
+        height: 2,
+        bgcolor: 'primary.main',
+        zIndex: 5,
+        pointerEvents: 'none',
+      }}
+    />
+  );
+}
+
+function SortableLeftRow({
+  property,
+  checked,
+  onCheck,
+  isActive,
+  showIndicator,
 }: {
-  row: Row<Protocol.Parameter>;
-  virtualRow: VirtualItem;
-  disabled: boolean;
+  property: string;
+  checked: boolean;
+  onCheck: (next: boolean) => void;
+  isActive: boolean;
+  showIndicator: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: row.id,
-    disabled,
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: `L:${property}`,
   });
-
   return (
     <Box
       ref={setNodeRef}
-      {...(disabled ? {} : attributes)}
-      {...(disabled ? {} : listeners)}
+      {...attributes}
+      {...listeners}
       style={{
-        position: 'absolute',
-        top: virtualRow.start,
-        left: 0,
-        width: '100%',
-        height: virtualRow.size,
         transform: CSS.Transform.toString(transform),
         transition,
-        zIndex: isDragging ? 2 : 1,
       }}
-      sx={{
-        display: 'flex',
-        borderBottom: 1,
-        borderColor: 'divider',
-        bgcolor: isDragging ? 'action.selected' : 'transparent',
-        cursor: disabled ? 'default' : isDragging ? 'grabbing' : 'grab',
-        userSelect: 'none',
-        opacity: isDragging ? 0.85 : 1,
-        boxShadow: isDragging ? 2 : 0,
-        '&:hover': {
-          bgcolor: disabled ? 'transparent' : isDragging ? 'action.selected' : 'action.hover',
-        },
-      }}
+      sx={{ ...templateRowSx(isActive), position: 'relative' }}
     >
-      {row.getVisibleCells().map((cell) => {
-        const stopDrag = cell.column.id === 'select';
-        return (
-          <Box
-            key={cell.id}
-            onPointerDown={stopDrag ? (e) => e.stopPropagation() : undefined}
-            sx={{
-              px: 1,
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: '0.8125rem',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              ...templateCellSx(cell.column.columnDef.size),
-            }}
-          >
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </Box>
-        );
-      })}
+      {showIndicator && <DropIndicator position="top" />}
+      <Box onPointerDown={(e) => e.stopPropagation()} sx={templateCheckCellSx}>
+        <Checkbox size="small" checked={checked} onChange={(e) => onCheck(e.target.checked)} />
+      </Box>
+      <Box sx={templatePropCellSx}>{property}</Box>
     </Box>
   );
 }
 
-function TemplatesTable({
+function DraggableRightRow({
+  property,
+  checked,
+  onCheck,
+  isActive,
+}: {
+  property: string;
+  checked: boolean;
+  onCheck: (next: boolean) => void;
+  isActive: boolean;
+}) {
+  const { attributes, listeners, setNodeRef } = useDraggable({ id: `R:${property}` });
+  return (
+    <Box
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      sx={templateRowSx(isActive)}
+    >
+      <Box onPointerDown={(e) => e.stopPropagation()} sx={templateCheckCellSx}>
+        <Checkbox size="small" checked={checked} onChange={(e) => onCheck(e.target.checked)} />
+      </Box>
+      <Box sx={templatePropCellSx}>{property}</Box>
+    </Box>
+  );
+}
+
+function TemplateTableHeader({
+  label,
+  checked,
+  indeterminate,
+  onToggle,
+  disabled,
+}: {
+  label: string;
+  checked: boolean;
+  indeterminate: boolean;
+  onToggle: (next: boolean) => void;
+  disabled: boolean;
+}) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
+      }}
+    >
+      <Box sx={templateCheckCellSx}>
+        <Checkbox
+          size="small"
+          disabled={disabled}
+          checked={checked}
+          indeterminate={indeterminate}
+          onChange={(e) => onToggle(e.target.checked)}
+        />
+      </Box>
+      <Box sx={{ ...templatePropCellSx, py: 0.75, fontWeight: 600 }}>{label}</Box>
+    </Box>
+  );
+}
+
+function LeftDropArea({
+  leftProperties,
+  leftSelection,
+  onToggle,
+  activeId,
+  overId,
+  dragSet,
+}: {
+  leftProperties: string[];
+  leftSelection: Set<string>;
+  onToggle: (property: string, next: boolean) => void;
+  activeId: string | null;
+  overId: string | null;
+  dragSet: string[];
+}) {
+  const { setNodeRef } = useDroppable({ id: LEFT_CONTAINER_ID });
+  const leftIds = useMemo(() => leftProperties.map((p) => `L:${p}`), [leftProperties]);
+  const dragSetSet = useMemo(() => new Set(dragSet), [dragSet]);
+  const showContainerIndicator =
+    activeId !== null && overId === LEFT_CONTAINER_ID;
+  return (
+    <Box
+      ref={setNodeRef}
+      sx={{
+        flex: 1,
+        minHeight: 80,
+        overflow: 'auto',
+        position: 'relative',
+      }}
+    >
+      <SortableContext items={leftIds} strategy={noShiftStrategy}>
+        {leftProperties.map((property) => (
+          <SortableLeftRow
+            key={property}
+            property={property}
+            checked={leftSelection.has(property)}
+            onCheck={(next) => onToggle(property, next)}
+            isActive={activeId === `L:${property}`}
+            showIndicator={
+              activeId !== null &&
+              overId === `L:${property}` &&
+              !dragSetSet.has(property)
+            }
+          />
+        ))}
+      {showContainerIndicator && (
+        <Box sx={{ position: 'relative', height: 2 }}>
+          <DropIndicator position="top" />
+        </Box>
+      )}
+      </SortableContext>
+    </Box>
+  );
+}
+
+function TemplatesPanelBody({
   streamKind,
   group,
   onChange,
-  disabled,
 }: {
   streamKind: Protocol.StreamKind;
   group: Protocol.ConfigTemplateGroup;
   onChange: (group: Protocol.ConfigTemplateGroup) => void;
-  disabled: boolean;
 }) {
   const { t } = useTranslation();
   const mediaInfoParameters = useAppStore((state) => state.mediaInfoParameters);
@@ -382,223 +516,386 @@ function TemplatesTable({
     }
   }, [mediaInfoParameters.length, initParameters]);
 
-  const data = useMemo(
-    () => mediaInfoParameters.filter((p) => p.stream === streamKind),
+  const availableProperties = useMemo(
+    () =>
+      mediaInfoParameters
+        .filter((p) => p.stream === streamKind)
+        .map((p) => p.property)
+        .sort((a, b) => a.localeCompare(b)),
     [mediaInfoParameters, streamKind],
   );
 
-  // Derive ordered data, order list, and selection state from the persisted group
-  // and the current set of parameters. Saved property names from `group.properties`
-  // keep their order and `enabled` flag; any parameter not yet in `group` is
-  // appended at the end (in ID order), enabled by default.
-  const { orderedData, order, rowSelection } = useMemo(() => {
-    const byName = new Map(data.map((row) => [row.property, row]));
-    const seen = new Set<string>();
-    const orderedRows: Protocol.Parameter[] = [];
-    const selection: RowSelectionState = {};
-    for (const prop of group.properties) {
-      const row = byName.get(prop.property);
-      if (row && !seen.has(prop.property)) {
-        orderedRows.push(row);
-        selection[prop.property] = prop.enabled;
-        seen.add(prop.property);
-      }
-    }
-    const sortedRemaining = data
-      .filter((row) => !seen.has(row.property))
-      .sort((a, b) => a.id - b.id);
-    for (const row of sortedRemaining) {
-      orderedRows.push(row);
-      selection[row.property] = true;
-    }
-    return {
-      orderedData: orderedRows,
-      order: orderedRows.map((row) => row.property),
-      rowSelection: selection,
-    };
-  }, [data, group]);
+  const leftProperties = group.properties;
 
-  const emitChange = useCallback(
-    (nextOrder: string[], nextSelection: RowSelectionState) => {
-      const properties: Protocol.ConfigTemplateProperty[] = nextOrder.map((name) => ({
-        property: name,
-        enabled: !!nextSelection[name],
-      }));
-      onChange({ enabled: group.enabled, properties });
+  const [filter, setFilter] = useState('');
+  const [leftSelection, setLeftSelection] = useState<Set<string>>(() => new Set());
+  const [rightSelection, setRightSelection] = useState<Set<string>>(() => new Set());
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const dragSetRef = useRef<string[]>([]);
+
+  // Drop stale selections when underlying lists change.
+  useEffect(() => {
+    setLeftSelection((prev) => {
+      if (prev.size === 0) return prev;
+      const valid = new Set(leftProperties);
+      const next = new Set<string>();
+      let changed = false;
+      prev.forEach((p) => {
+        if (valid.has(p)) next.add(p);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [leftProperties]);
+
+  useEffect(() => {
+    setRightSelection((prev) => {
+      if (prev.size === 0) return prev;
+      const valid = new Set(availableProperties);
+      const next = new Set<string>();
+      let changed = false;
+      prev.forEach((p) => {
+        if (valid.has(p)) next.add(p);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [availableProperties]);
+
+  const filteredRight = useMemo(() => {
+    const f = filter.trim().toLowerCase();
+    if (!f) return availableProperties;
+    return availableProperties.filter((p) => p.toLowerCase().includes(f));
+  }, [availableProperties, filter]);
+
+  const handleToggleLeft = useCallback((property: string, next: boolean) => {
+    setLeftSelection((prev) => {
+      const updated = new Set(prev);
+      if (next) updated.add(property);
+      else updated.delete(property);
+      return updated;
+    });
+  }, []);
+
+  const handleToggleRight = useCallback((property: string, next: boolean) => {
+    setRightSelection((prev) => {
+      const updated = new Set(prev);
+      if (next) updated.add(property);
+      else updated.delete(property);
+      return updated;
+    });
+  }, []);
+
+  const handleToggleAllLeft = useCallback(
+    (next: boolean) => {
+      setLeftSelection((prev) => {
+        const updated = new Set(prev);
+        if (next) leftProperties.forEach((p) => updated.add(p));
+        else leftProperties.forEach((p) => updated.delete(p));
+        return updated;
+      });
     },
-    [onChange, group.enabled],
+    [leftProperties],
   );
 
-  const handleRowSelectionChange = useCallback(
-    (updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
-      if (disabled) return;
-      const next =
-        typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection) : updaterOrValue;
-      emitChange(order, next);
+  const handleToggleAllRight = useCallback(
+    (next: boolean) => {
+      setRightSelection((prev) => {
+        const updated = new Set(prev);
+        if (next) filteredRight.forEach((p) => updated.add(p));
+        else filteredRight.forEach((p) => updated.delete(p));
+        return updated;
+      });
     },
-    [disabled, emitChange, order, rowSelection],
+    [filteredRight],
   );
 
-  const columns = useMemo<ColumnDef<Protocol.Parameter>[]>(
-    () => [
-      {
-        id: 'select',
-        size: 48,
-        header: ({ table }) => (
-          <Checkbox
-            size="small"
-            disabled={disabled}
-            checked={table.getIsAllRowsSelected()}
-            indeterminate={!table.getIsAllRowsSelected() && table.getIsSomeRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            size="small"
-            disabled={disabled}
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-          />
-        ),
-      },
-      {
-        id: 'id',
-        accessorKey: 'id',
-        size: 80,
-        header: t('about.id'),
-        cell: ({ getValue }) => getValue<number>(),
-      },
-      {
-        id: 'property',
-        accessorKey: 'property',
-        header: t('about.property'),
-        cell: ({ getValue }) => getValue<string>(),
-      },
-    ],
-    [t, disabled],
-  );
+  const handleAddAll = useCallback(() => {
+    if (filteredRight.length === 0) return;
+    const existing = new Set(leftProperties);
+    const toAdd = filteredRight.filter((p) => !existing.has(p));
+    if (toAdd.length === 0) return;
+    onChange({ properties: [...leftProperties, ...toAdd] });
+  }, [filteredRight, leftProperties, onChange]);
 
-  const table = useReactTable({
-    data: orderedData,
-    columns,
-    state: { rowSelection },
-    onRowSelectionChange: handleRowSelectionChange,
-    getRowId: (row) => row.property,
-    enableRowSelection: true,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  const parentRef = useRef<HTMLDivElement>(null);
-  const { rows } = table.getRowModel();
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
-    overscan: 10,
-  });
-
-  const scrollRestoredRef = useRef(false);
-  useLayoutEffect(() => {
-    if (scrollRestoredRef.current) return;
-    if (rows.length === 0) return;
-    const saved = templatesScrollPositions.get(streamKind);
-    if (saved !== undefined && parentRef.current) {
-      parentRef.current.scrollTop = saved;
-    }
-    scrollRestoredRef.current = true;
-  }, [rows.length, streamKind]);
-
-  const handleScroll = useCallback(() => {
-    if (!scrollRestoredRef.current) return;
-    if (parentRef.current) {
-      templatesScrollPositions.set(streamKind, parentRef.current.scrollTop);
-    }
-  }, [streamKind]);
+  const handleRemoveAll = useCallback(() => {
+    if (leftProperties.length === 0) return;
+    onChange({ properties: [] });
+  }, [leftProperties, onChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    if (disabled) return;
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = order.indexOf(String(active.id));
-    const newIndex = order.indexOf(String(over.id));
-    if (oldIndex < 0 || newIndex < 0) return;
-    const nextOrder = arrayMove(order, oldIndex, newIndex);
-    emitChange(nextOrder, rowSelection);
-  };
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const id = String(event.active.id);
+      const source = id.startsWith('L:') ? 'left' : 'right';
+      const prop = id.slice(2);
+      if (source === 'left') {
+        if (leftSelection.size > 0 && leftSelection.has(prop)) {
+          dragSetRef.current = leftProperties.filter((p) => leftSelection.has(p));
+        } else {
+          dragSetRef.current = [prop];
+        }
+      } else {
+        if (rightSelection.size > 0 && rightSelection.has(prop)) {
+          dragSetRef.current = availableProperties.filter((p) => rightSelection.has(p));
+        } else {
+          dragSetRef.current = [prop];
+        }
+      }
+      setActiveId(id);
+    },
+    [leftSelection, rightSelection, leftProperties, availableProperties],
+  );
+
+  const resetDrag = useCallback(() => {
+    setActiveId(null);
+    setOverId(null);
+    dragSetRef.current = [];
+  }, []);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    setOverId(event.over ? String(event.over.id) : null);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      const activeIdStr = String(active.id);
+      const source = activeIdStr.startsWith('L:') ? 'left' : 'right';
+      const dragSet = dragSetRef.current.slice();
+      const overId = over ? String(over.id) : null;
+      const overInLeft = overId === LEFT_CONTAINER_ID || (overId?.startsWith('L:') ?? false);
+
+      resetDrag();
+
+      if (dragSet.length === 0) return;
+
+      if (source === 'right') {
+        if (!overInLeft) return;
+        let targetIndex = leftProperties.length;
+        if (overId && overId.startsWith('L:')) {
+          const overProp = overId.slice(2);
+          const idx = leftProperties.indexOf(overProp);
+          targetIndex = idx >= 0 ? idx : leftProperties.length;
+        }
+        const existing = new Set(leftProperties);
+        const toAdd = dragSet.filter((p) => !existing.has(p));
+        if (toAdd.length === 0) return;
+        const next = [
+          ...leftProperties.slice(0, targetIndex),
+          ...toAdd,
+          ...leftProperties.slice(targetIndex),
+        ];
+        onChange({ properties: next });
+        setRightSelection(new Set());
+        return;
+      }
+
+      // source === 'left'
+      if (!overInLeft) {
+        const remove = new Set(dragSet);
+        const next = leftProperties.filter((p) => !remove.has(p));
+        if (next.length === leftProperties.length) return;
+        onChange({ properties: next });
+        setLeftSelection(new Set());
+        return;
+      }
+
+      let targetIndex = leftProperties.length;
+      if (overId && overId.startsWith('L:')) {
+        const overProp = overId.slice(2);
+        if (dragSet.includes(overProp)) return;
+        const idx = leftProperties.indexOf(overProp);
+        if (idx < 0) return;
+        targetIndex = idx;
+      }
+      const dragSetMembers = new Set(dragSet);
+      const remaining = leftProperties.filter((p) => !dragSetMembers.has(p));
+      const removedBefore = leftProperties
+        .slice(0, targetIndex)
+        .reduce((acc, p) => (dragSetMembers.has(p) ? acc + 1 : acc), 0);
+      const adjusted = targetIndex - removedBefore;
+      const next = [
+        ...remaining.slice(0, adjusted),
+        ...dragSet,
+        ...remaining.slice(adjusted),
+      ];
+      if (
+        next.length === leftProperties.length &&
+        next.every((p, i) => p === leftProperties[i])
+      ) {
+        return;
+      }
+      onChange({ properties: next });
+    },
+    [leftProperties, onChange, resetDrag],
+  );
+
+  const leftCheckedCount = useMemo(
+    () => leftProperties.reduce((acc, p) => (leftSelection.has(p) ? acc + 1 : acc), 0),
+    [leftProperties, leftSelection],
+  );
+  const leftAllChecked = leftProperties.length > 0 && leftCheckedCount === leftProperties.length;
+  const leftSomeChecked = leftCheckedCount > 0 && leftCheckedCount < leftProperties.length;
+
+  const filteredRightSize = filteredRight.length;
+  const rightCheckedInFiltered = useMemo(
+    () => filteredRight.reduce((acc, p) => (rightSelection.has(p) ? acc + 1 : acc), 0),
+    [filteredRight, rightSelection],
+  );
+  const rightAllChecked = filteredRightSize > 0 && rightCheckedInFiltered === filteredRightSize;
+  const rightSomeChecked = rightCheckedInFiltered > 0 && rightCheckedInFiltered < filteredRightSize;
+
+  const overlayProperty = activeId ? activeId.slice(2) : null;
+  const overlayCount = activeId ? dragSetRef.current.length : 0;
 
   return (
-    <Box
-      ref={parentRef}
-      onScroll={handleScroll}
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        overflow: 'auto',
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 1,
-      }}
-    >
-      <Box
-        sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 3,
-          bgcolor: 'background.paper',
-          borderBottom: 1,
-          borderColor: 'divider',
-        }}
-      >
-        {table.getHeaderGroups().map((headerGroup) => (
-          <Box key={headerGroup.id} sx={{ display: 'flex' }}>
-            {headerGroup.headers.map((header) => (
-              <Box
-                key={header.id}
-                sx={{
-                  px: 1,
-                  py: 0.75,
-                  fontWeight: 600,
-                  fontSize: '0.8125rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  ...templateCellSx(header.column.columnDef.size),
-                }}
-              >
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(header.column.columnDef.header, header.getContext())}
-              </Box>
-            ))}
-          </Box>
-        ))}
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+        <TextField
+          size="small"
+          placeholder={t('config.filter')}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          sx={{ flex: 1 }}
+          slotProps={{
+            input: {
+              endAdornment: filter ? (
+                <InputAdornment position="end">
+                  <Tooltip title={t('config.clear')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('config.clear')}
+                      onClick={() => setFilter('')}
+                      edge="end"
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ) : null,
+            },
+          }}
+        />
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleAddAll}
+          disabled={filteredRight.length === 0}
+          sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 36 }}
+        >
+          {t('config.addAll')}
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleRemoveAll}
+          disabled={leftProperties.length === 0}
+          sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 36 }}
+        >
+          {t('config.removeAll')}
+        </Button>
       </Box>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={resetDrag}
       >
-        <SortableContext items={order} strategy={verticalListSortingStrategy}>
-          <Box sx={{ position: 'relative', height: `${rowVirtualizer.getTotalSize()}px` }}>
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const row = rows[virtualRow.index];
-              return (
-                <SortableTemplateRow
-                  key={row.id}
-                  row={row}
-                  virtualRow={virtualRow}
-                  disabled={disabled}
-                />
-              );
-            })}
+        <Box sx={{ display: 'flex', gap: 1, flex: 1, minHeight: 0 }}>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+            }}
+          >
+            <TemplateTableHeader
+              label={t('config.property')}
+              checked={leftAllChecked}
+              indeterminate={leftSomeChecked}
+              onToggle={handleToggleAllLeft}
+              disabled={leftProperties.length === 0}
+            />
+            <LeftDropArea
+              leftProperties={leftProperties}
+              leftSelection={leftSelection}
+              onToggle={handleToggleLeft}
+              activeId={activeId}
+              overId={overId}
+              dragSet={dragSetRef.current}
+            />
           </Box>
-        </SortableContext>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+            }}
+          >
+            <TemplateTableHeader
+              label={t('config.availableProperty')}
+              checked={rightAllChecked}
+              indeterminate={rightSomeChecked}
+              onToggle={handleToggleAllRight}
+              disabled={filteredRightSize === 0}
+            />
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              {filteredRight.map((property) => (
+                <DraggableRightRow
+                  key={property}
+                  property={property}
+                  checked={rightSelection.has(property)}
+                  onCheck={(next) => handleToggleRight(property, next)}
+                  isActive={activeId === `R:${property}`}
+                />
+              ))}
+            </Box>
+          </Box>
+        </Box>
+        <DragOverlay dropAnimation={null}>
+          {overlayProperty ? (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 1,
+                py: 0.5,
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                boxShadow: 4,
+                fontSize: '0.8125rem',
+              }}
+            >
+              <span>{overlayProperty}</span>
+              {overlayCount > 1 && (
+                <Typography variant="caption" color="text.secondary">
+                  +{overlayCount - 1}
+                </Typography>
+              )}
+            </Box>
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </Box>
   );
@@ -690,34 +987,13 @@ export default function Config() {
       setDetailViewShowMenu(config.view?.detail?.showMenu ?? true);
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
       setTemplates({
-        general: {
-          enabled: config.templates?.general?.enabled ?? false,
-          properties: config.templates?.general?.properties ?? [],
-        },
-        video: {
-          enabled: config.templates?.video?.enabled ?? false,
-          properties: config.templates?.video?.properties ?? [],
-        },
-        audio: {
-          enabled: config.templates?.audio?.enabled ?? false,
-          properties: config.templates?.audio?.properties ?? [],
-        },
-        text: {
-          enabled: config.templates?.text?.enabled ?? false,
-          properties: config.templates?.text?.properties ?? [],
-        },
-        other: {
-          enabled: config.templates?.other?.enabled ?? false,
-          properties: config.templates?.other?.properties ?? [],
-        },
-        image: {
-          enabled: config.templates?.image?.enabled ?? false,
-          properties: config.templates?.image?.properties ?? [],
-        },
-        menu: {
-          enabled: config.templates?.menu?.enabled ?? false,
-          properties: config.templates?.menu?.properties ?? [],
-        },
+        general: { properties: config.templates?.general?.properties ?? [] },
+        video: { properties: config.templates?.video?.properties ?? [] },
+        audio: { properties: config.templates?.audio?.properties ?? [] },
+        text: { properties: config.templates?.text?.properties ?? [] },
+        other: { properties: config.templates?.other?.properties ?? [] },
+        image: { properties: config.templates?.image?.properties ?? [] },
+        menu: { properties: config.templates?.menu?.properties ?? [] },
       });
     }
   }, [config]);
@@ -1910,36 +2186,14 @@ export default function Config() {
         if (!templatesKey) return null;
         const activeGroup = templates[templatesKey];
         return (
-          <>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  size="small"
-                  checked={activeGroup.enabled}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    setTemplates((prev) => ({
-                      ...prev,
-                      [templatesKey]: enabled
-                        ? { enabled: true, properties: prev[templatesKey].properties }
-                        : { enabled: false, properties: [] },
-                    }));
-                  }}
-                />
-              }
-              label={t('config.enableTemplates')}
-              sx={{ mb: 1 }}
-            />
-            <TemplatesTable
-              key={activeStreamKind}
-              streamKind={activeStreamKind}
-              group={activeGroup}
-              disabled={!activeGroup.enabled}
-              onChange={(nextGroup) =>
-                setTemplates((prev) => ({ ...prev, [templatesKey]: nextGroup }))
-              }
-            />
-          </>
+          <TemplatesPanelBody
+            key={activeStreamKind}
+            streamKind={activeStreamKind}
+            group={activeGroup}
+            onChange={(nextGroup) =>
+              setTemplates((prev) => ({ ...prev, [templatesKey]: nextGroup }))
+            }
+          />
         );
       })()}
     </Box>

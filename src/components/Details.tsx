@@ -23,6 +23,7 @@ import {
   CardContent,
   Checkbox,
   IconButton,
+  InputAdornment,
   Tooltip,
   TextField,
   Table,
@@ -40,6 +41,7 @@ import JavascriptIcon from '@mui/icons-material/Javascript';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import RemoveDoneIcon from '@mui/icons-material/RemoveDone';
+import ClearIcon from '@mui/icons-material/Clear';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
 import type { ExportStream } from '../lib/export';
@@ -143,12 +145,11 @@ export default function Details({ file }: DetailsProps) {
   ): Array<[string, string]> => {
     const templateKey = STREAM_KIND_TO_TEMPLATE_KEY[properties.stream];
     const group = templateKey ? config?.templates?.[templateKey] : undefined;
-    if (group?.enabled && group.properties.length > 0) {
+    if (group && group.properties.length > 0) {
       const ordered: Array<[string, string]> = [];
-      for (const prop of group.properties) {
-        if (!prop.enabled) continue;
-        if (!(prop.property in properties.propertyMap)) continue;
-        ordered.push([prop.property, properties.propertyMap[prop.property]]);
+      for (const propName of group.properties) {
+        if (!(propName in properties.propertyMap)) continue;
+        ordered.push([propName, properties.propertyMap[propName]]);
       }
       return ordered;
     }
@@ -304,6 +305,24 @@ export default function Details({ file }: DetailsProps) {
             onChange={(e) => setQuery(e.target.value)}
             size="small"
             fullWidth
+            slotProps={{
+              input: {
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <Tooltip title={t('details.clear')}>
+                      <IconButton
+                        size="small"
+                        aria-label={t('details.clear')}
+                        onClick={() => setQuery('')}
+                        edge="end"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
           />
         </CardContent>
       </Card>

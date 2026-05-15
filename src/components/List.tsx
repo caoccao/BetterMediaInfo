@@ -24,6 +24,7 @@ import {
   CardContent,
   Divider,
   IconButton,
+  InputAdornment,
   Link,
   Stack,
   Tooltip,
@@ -49,6 +50,7 @@ import NotesIcon from '@mui/icons-material/Notes';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PersonIcon from '@mui/icons-material/Person';
+import ClearIcon from '@mui/icons-material/Clear';
 import * as Protocol from '../lib/protocol';
 import { AUTHOR_NAME, AUTHOR_URL, GITHUB_URL } from '../lib/constants';
 import { useAppStore } from '../lib/store';
@@ -886,6 +888,24 @@ export default function List() {
         size="small"
         fullWidth
         sx={{ flexShrink: 0 }}
+        slotProps={{
+          input: {
+            endAdornment: query ? (
+              <InputAdornment position="end">
+                <Tooltip title={t('list.clear')}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('list.clear')}
+                    onClick={() => setQuery('')}
+                    edge="end"
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </InputAdornment>
+            ) : null,
+          },
+        }}
       />
 
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

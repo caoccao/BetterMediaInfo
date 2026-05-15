@@ -128,14 +128,8 @@ export interface ConfigWindow {
   size: ConfigWindowSize;
 }
 
-export interface ConfigTemplateProperty {
-  property: string;
-  enabled: boolean;
-}
-
 export interface ConfigTemplateGroup {
-  enabled: boolean;
-  properties: ConfigTemplateProperty[];
+  properties: string[];
 }
 
 export interface ConfigTemplates {

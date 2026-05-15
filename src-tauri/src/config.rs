@@ -105,18 +105,40 @@ impl Default for Config {
   }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ConfigTemplateProperty {
-  pub property: String,
-  pub enabled: bool,
-}
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ConfigTemplateGroup {
-  #[serde(default)]
-  pub enabled: bool,
-  #[serde(default)]
-  pub properties: Vec<ConfigTemplateProperty>,
+  #[serde(default, deserialize_with = "deserialize_template_properties")]
+  pub properties: Vec<String>,
+}
+
+// Accepts both the new format (array of strings) and the legacy format
+// (array of `{ property, enabled }` objects) so existing config files
+// load without manual migration.
+fn deserialize_template_properties<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+  D: serde::Deserializer<'de>,
+{
+  #[derive(Deserialize)]
+  #[serde(untagged)]
+  enum Item {
+    Name(String),
+    Legacy {
+      property: String,
+      #[serde(default)]
+      #[allow(dead_code)]
+      enabled: Option<bool>,
+    },
+  }
+  let items = Vec::<Item>::deserialize(deserializer)?;
+  Ok(
+    items
+      .into_iter()
+      .map(|item| match item {
+        Item::Name(s) => s,
+        Item::Legacy { property, .. } => property,
+      })
+      .collect(),
+  )
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
