@@ -15,11 +15,12 @@
  *   limitations under the License.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AppBar,
   Box,
   Button,
+  Checkbox,
   IconButton,
   InputAdornment,
   Table,
@@ -45,27 +46,81 @@ import {
   buildCommonPropertiesMap,
   STREAM_KIND_COLORS,
 } from '../lib/cardTables';
+import {
+  MergeAudioData,
+  MergeData,
+  MergeTextData,
+  MergeVideoData,
+} from '../lib/merge';
 import { getConfig, getPropertiesMap, suggestMergeOutputPath } from '../lib/service';
-
-/**
- * Holds every user-editable field in the merge window. Stream property maps
- * coming from media info are read-only, so any edits the user makes (titles,
- * destination path, ...) are tracked here. This is the structure that will
- * later be turned into the mkvmerge command-line arguments.
- */
-interface MergeEdits {
-  destinationFile: string;
-  titles: Record<string, string>;
-}
-
-function titleKey(stream: Protocol.StreamKind, num: number): string {
-  return `${stream}:${num}`;
-}
 
 function buildMergeCommand(mkvToolNixPath: string, sourceFile: string, destinationFile: string): string {
   const sep = getSep();
   const mkvmergePath = `${mkvToolNixPath}${sep}mkvmerge`;
   return `"${mkvmergePath}" -o "${destinationFile}" "${sourceFile}"`;
+}
+
+/**
+ * Helpers that bridge the table-driven render loop to the type-specific
+ * MergeData API. Each stream kind has its own class and its own setters
+ * on MergeData; these helpers dispatch by the iteration's stream kind.
+ */
+type EditableTrack = MergeVideoData | MergeAudioData | MergeTextData;
+
+function trackBindingsFor(
+  stream: Protocol.StreamKind,
+  num: number,
+  data: MergeData,
+): EditableTrack | null {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.findVideo(num);
+    case Protocol.StreamKind.Audio: return data.findAudio(num);
+    case Protocol.StreamKind.Text: return data.findText(num);
+    default: return null;
+  }
+}
+
+function titleSetterFor(
+  data: MergeData,
+  stream: Protocol.StreamKind,
+  num: number,
+  value: string,
+): MergeData {
+  switch (stream) {
+    case Protocol.StreamKind.General: return data.withGeneralTitle(value);
+    case Protocol.StreamKind.Video: return data.withVideoTitle(num, value);
+    case Protocol.StreamKind.Audio: return data.withAudioTitle(num, value);
+    case Protocol.StreamKind.Text: return data.withTextTitle(num, value);
+    default: return data;
+  }
+}
+
+function defaultSetterFor(
+  data: MergeData,
+  stream: Protocol.StreamKind,
+  num: number,
+  value: boolean,
+): MergeData {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.withVideoDefault(num, value);
+    case Protocol.StreamKind.Audio: return data.withAudioDefault(num, value);
+    case Protocol.StreamKind.Text: return data.withTextDefault(num, value);
+    default: return data;
+  }
+}
+
+function forcedSetterFor(
+  data: MergeData,
+  stream: Protocol.StreamKind,
+  num: number,
+  value: boolean,
+): MergeData {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.withVideoForced(num, value);
+    case Protocol.StreamKind.Audio: return data.withAudioForced(num, value);
+    case Protocol.StreamKind.Text: return data.withTextForced(num, value);
+    default: return data;
+  }
 }
 
 interface MergeProps {
@@ -75,7 +130,7 @@ interface MergeProps {
 
 function Merge({ file, mkvToolNixPath }: MergeProps) {
   const { t } = useTranslation();
-  const [edits, setEdits] = useState<MergeEdits>({ destinationFile: '', titles: {} });
+  const [mergeData, setMergeData] = useState<MergeData>(() => new MergeData());
   const [config, setConfig] = useState<Protocol.Config | null>(null);
   const [propertyMaps, setPropertyMaps] = useState<Array<Protocol.StreamPropertyMap>>([]);
 
@@ -84,20 +139,11 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     [config, t]
   );
 
-  const setDestinationFile = useCallback((value: string) => {
-    setEdits((prev) => ({ ...prev, destinationFile: value }));
-  }, []);
-
-  const setTitle = useCallback((stream: Protocol.StreamKind, num: number, value: string) => {
-    setEdits((prev) => ({
-      ...prev,
-      titles: { ...prev.titles, [titleKey(stream, num)]: value },
-    }));
-  }, []);
-
   useEffect(() => {
-    suggestMergeOutputPath(file).then(setDestinationFile);
-  }, [file, setDestinationFile]);
+    suggestMergeOutputPath(file).then((path) => {
+      setMergeData((prev) => prev.withDestinationFile(path));
+    });
+  }, [file]);
 
   useEffect(() => {
     getConfig().then(setConfig).catch(() => setConfig(null));
@@ -115,29 +161,26 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     getPropertiesMap(file, properties)
       .then((maps) => {
         setPropertyMaps(maps);
-        const titles: Record<string, string> = {};
-        for (const map of maps) {
-          const value = map.propertyMap['Title'];
-          if (value !== undefined) {
-            titles[titleKey(map.stream, map.num)] = value;
-          }
-        }
-        setEdits((prev) => ({ ...prev, titles }));
+        setMergeData((prev) => {
+          const fresh = MergeData.fromPropertyMaps(maps);
+          fresh.destinationFile = prev.destinationFile;
+          return fresh;
+        });
       })
       .catch(() => {
         setPropertyMaps([]);
-        setEdits((prev) => ({ ...prev, titles: {} }));
+        setMergeData((prev) => new MergeData(prev.destinationFile));
       });
   }, [file, commonPropertiesMap]);
 
   const handleCopyCommand = async () => {
-    if (!edits.destinationFile) { return; }
-    const command = buildMergeCommand(mkvToolNixPath, file, edits.destinationFile);
+    if (!mergeData.destinationFile) { return; }
+    const command = buildMergeCommand(mkvToolNixPath, file, mergeData.destinationFile);
     await writeText(command);
   };
 
   const handleMerge = async () => {
-    // TODO: implement merge action — will consume `edits`
+    // TODO: implement merge action — will consume `mergeData`
   };
 
   const handleClose = async () => {
@@ -163,18 +206,18 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
         <Toolbar variant="dense" sx={{ gap: 1 }}>
           <TextField
             size="small"
-            value={edits.destinationFile}
-            onChange={(e) => setDestinationFile(e.target.value)}
+            value={mergeData.destinationFile}
+            onChange={(e) => setMergeData((prev) => prev.withDestinationFile(e.target.value))}
             sx={{ flex: 1, '& .MuiInputBase-root': { height: 32 } }}
             slotProps={{
               input: {
-                endAdornment: edits.destinationFile ? (
+                endAdornment: mergeData.destinationFile ? (
                   <InputAdornment position="end">
                     <Tooltip title={t('merge.clearDestinationFile')}>
                       <IconButton
                         size="small"
                         aria-label={t('merge.clearDestinationFile')}
-                        onClick={() => setDestinationFile('')}
+                        onClick={() => setMergeData((prev) => prev.withDestinationFile(''))}
                         edge="end"
                       >
                         <ClearIcon fontSize="small" />
@@ -187,10 +230,10 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           />
         </Toolbar>
         <Toolbar variant="dense" sx={{ gap: 1, justifyContent: 'center' }}>
-          <Button variant="outlined" size="small" disabled={!edits.destinationFile} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
             {t('merge.copyCommand')}
           </Button>
-          <Button variant="outlined" size="small" disabled={!edits.destinationFile} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
             {t('merge.merge')}
           </Button>
           <Tooltip title="Ctrl+W">
@@ -232,59 +275,91 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {streamMaps.map((map) => (
-                    <TableRow key={`${map.stream}:${map.num}`}>
-                      {commonProperties
-                        .filter((prop) => prop.inCardView)
-                        .map((prop) => {
-                          const isEditableTitle = prop.name === 'Title';
-                          const titleValue = edits.titles[titleKey(map.stream, map.num)] ?? '';
-                          return (
-                            <TableCell
-                              key={prop.name}
-                              align={prop.align}
-                              sx={{
-                                borderTop: `1px solid ${STREAM_KIND_COLORS[stream]}`,
-                                borderBottom: `1px solid ${STREAM_KIND_COLORS[stream]}`,
-                                borderLeft: `1px solid ${STREAM_KIND_COLORS[stream]}`,
-                                borderRight: `1px solid ${STREAM_KIND_COLORS[stream]}`,
-                                whiteSpace: 'pre-line',
-                              }}
-                            >
-                              {isEditableTitle ? (
-                                <TextField
-                                  size="small"
-                                  value={titleValue}
-                                  onChange={(e) => setTitle(map.stream, map.num, e.target.value)}
-                                  variant="standard"
-                                  fullWidth
-                                  slotProps={{
-                                    input: {
-                                      endAdornment: titleValue ? (
-                                        <InputAdornment position="end">
-                                          <Tooltip title={t('merge.clearTitle')}>
-                                            <IconButton
-                                              size="small"
-                                              aria-label={t('merge.clearTitle')}
-                                              onClick={() => setTitle(map.stream, map.num, '')}
-                                              edge="end"
-                                            >
-                                              <ClearIcon fontSize="small" />
-                                            </IconButton>
-                                          </Tooltip>
-                                        </InputAdornment>
-                                      ) : null,
-                                    },
-                                  }}
-                                />
-                              ) : (
-                                prop.format(map.propertyMap[prop.name], map.propertyMap)
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                    </TableRow>
-                  ))}
+                  {streamMaps.map((map) => {
+                    const trackRefs = trackBindingsFor(map.stream, map.num, mergeData);
+                    const titleValue = map.stream === Protocol.StreamKind.General
+                      ? mergeData.general.title
+                      : trackRefs?.title ?? '';
+                    const setTitleValue = (value: string) => {
+                      setMergeData((prev) => titleSetterFor(prev, map.stream, map.num, value));
+                    };
+                    return (
+                      <TableRow key={`${map.stream}:${map.num}`}>
+                        {commonProperties
+                          .filter((prop) => prop.inCardView)
+                          .map((prop) => {
+                            const isEditableTitle = prop.name === 'Title';
+                            const isDefault = prop.name === 'Default';
+                            const isForced = prop.name === 'Forced';
+                            return (
+                              <TableCell
+                                key={prop.name}
+                                align={prop.align}
+                                sx={{
+                                  borderTop: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                  borderBottom: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                  borderLeft: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                  borderRight: `1px solid ${STREAM_KIND_COLORS[stream]}`,
+                                  whiteSpace: 'pre-line',
+                                }}
+                              >
+                                {isEditableTitle ? (
+                                  <TextField
+                                    size="small"
+                                    value={titleValue}
+                                    onChange={(e) => setTitleValue(e.target.value)}
+                                    variant="standard"
+                                    fullWidth
+                                    slotProps={{
+                                      input: {
+                                        endAdornment: titleValue ? (
+                                          <InputAdornment position="end">
+                                            <Tooltip title={t('merge.clearTitle')}>
+                                              <IconButton
+                                                size="small"
+                                                aria-label={t('merge.clearTitle')}
+                                                onClick={() => setTitleValue('')}
+                                                edge="end"
+                                              >
+                                                <ClearIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                          </InputAdornment>
+                                        ) : null,
+                                      },
+                                    }}
+                                  />
+                                ) : isDefault && trackRefs ? (
+                                  <Checkbox
+                                    size="small"
+                                    checked={trackRefs.isDefault}
+                                    onChange={(e) =>
+                                      setMergeData((prev) =>
+                                        defaultSetterFor(prev, map.stream, map.num, e.target.checked)
+                                      )
+                                    }
+                                    sx={{ p: 0 }}
+                                  />
+                                ) : isForced && trackRefs ? (
+                                  <Checkbox
+                                    size="small"
+                                    checked={trackRefs.isForced}
+                                    onChange={(e) =>
+                                      setMergeData((prev) =>
+                                        forcedSetterFor(prev, map.stream, map.num, e.target.checked)
+                                      )
+                                    }
+                                    sx={{ p: 0 }}
+                                  />
+                                ) : (
+                                  prop.format(map.propertyMap[prop.name], map.propertyMap)
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
