@@ -110,6 +110,10 @@ export async function cancelMkvextract(): Promise<void> {
   return await invoke<void>("cancel_mkvextract");
 }
 
+export async function suggestMergeOutputPath(sourceFile: string): Promise<string> {
+  return await invoke<string>("suggest_merge_output_path", { sourceFile });
+}
+
 export async function getFiles(files: string[]): Promise<string[]> {
   return await invoke<string[]>("get_files", { files });
 }

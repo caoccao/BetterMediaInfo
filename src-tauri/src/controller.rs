@@ -248,6 +248,30 @@ fn validate_path_as_file(path: &Path) -> Result<()> {
   }
 }
 
+pub fn suggest_merge_output_path(source_file: String) -> String {
+  let source = Path::new(source_file.as_str());
+  let parent = source.parent().unwrap_or_else(|| Path::new(""));
+  let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+  let is_mkv = source
+    .extension()
+    .and_then(|e| e.to_str())
+    .map(|e| e.eq_ignore_ascii_case("mkv"))
+    .unwrap_or(false);
+  let mut counter: u32 = if is_mkv { 1 } else { 0 };
+  loop {
+    let name = if counter == 0 {
+      format!("{stem}.mkv")
+    } else {
+      format!("{stem} ({counter}).mkv")
+    };
+    let candidate = parent.join(&name);
+    if !candidate.exists() {
+      return candidate.to_string_lossy().into_owned();
+    }
+    counter = if counter == 0 { 2 } else { counter + 1 };
+  }
+}
+
 pub async fn write_text_file(file: String, text: String) -> Result<()> {
   let path = Path::new(file.as_str());
   let mut file = File::create(path)?;

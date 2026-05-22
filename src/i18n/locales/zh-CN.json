@@ -147,6 +147,12 @@
     "themeEmerald": "翡翠",
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix 路径",
+    "priority": "优先级",
+    "priorityLowest": "最低",
+    "priorityLower": "较低",
+    "priorityNormal": "普通",
+    "priorityHigher": "较高",
+    "priorityHighest": "最高",
     "browse": "浏览",
     "detect": "检测",
     "registerContextMenu": "注册右键菜单",
@@ -189,6 +195,7 @@
     "copyCommand": "复制命令",
     "extract": "提取",
     "browse": "浏览...",
+    "clearOutputDir": "清除输出目录",
     "extracting": "正在提取...",
     "cancel": "取消",
     "close": "关闭",
@@ -204,6 +211,14 @@
       "mkvextractNotAvailable": "mkvextract 不可用，请在设置中检查 MKVToolNix 路径。{{detail}}",
       "mkvextractFailed": "mkvextract 失败：{{detail}}"
     }
+  },
+  "merge": {
+    "copyCommand": "复制命令",
+    "merge": "合并",
+    "close": "关闭",
+    "title": "标题",
+    "clearTitle": "清除标题",
+    "clearDestinationFile": "清除目标文件"
   },
   "about": {
     "tagline": "现代化的 MediaInfo 桌面图形界面",

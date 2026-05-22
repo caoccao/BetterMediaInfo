@@ -147,6 +147,12 @@
     "themeEmerald": "翡翠",
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix 路徑",
+    "priority": "優先順序",
+    "priorityLowest": "最低",
+    "priorityLower": "較低",
+    "priorityNormal": "一般",
+    "priorityHigher": "較高",
+    "priorityHighest": "最高",
     "browse": "瀏覽",
     "detect": "偵測",
     "registerContextMenu": "註冊右鍵選單",
@@ -189,6 +195,7 @@
     "copyCommand": "複製命令",
     "extract": "提取",
     "browse": "瀏覽...",
+    "clearOutputDir": "清除輸出目錄",
     "extracting": "正在提取...",
     "cancel": "取消",
     "close": "關閉",
@@ -204,6 +211,14 @@
       "mkvextractNotAvailable": "mkvextract 不可用，請在設定中檢查 MKVToolNix 路徑。{{detail}}",
       "mkvextractFailed": "mkvextract 失敗：{{detail}}"
     }
+  },
+  "merge": {
+    "copyCommand": "複製指令",
+    "merge": "合併",
+    "close": "關閉",
+    "title": "標題",
+    "clearTitle": "清除標題",
+    "clearDestinationFile": "清除目標檔案"
   },
   "about": {
     "tagline": "現代化的 MediaInfo 桌面圖形介面",

@@ -147,6 +147,12 @@
     "themeEmerald": "Emerald",
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix Path",
+    "priority": "Priority",
+    "priorityLowest": "Lowest",
+    "priorityLower": "Lower",
+    "priorityNormal": "Normal",
+    "priorityHigher": "Higher",
+    "priorityHighest": "Highest",
     "browse": "Browse",
     "detect": "Detect",
     "registerContextMenu": "Register Context Menu",
@@ -189,6 +195,7 @@
     "copyCommand": "Copy Command",
     "extract": "Extract",
     "browse": "Browse...",
+    "clearOutputDir": "Clear output directory",
     "extracting": "Extracting...",
     "cancel": "Cancel",
     "close": "Close",
@@ -204,6 +211,14 @@
       "mkvextractNotAvailable": "mkvextract is not available. Please check the MKVToolNix path in Settings. {{detail}}",
       "mkvextractFailed": "mkvextract failed: {{detail}}"
     }
+  },
+  "merge": {
+    "copyCommand": "Copy Command",
+    "merge": "Merge",
+    "close": "Close",
+    "title": "Title",
+    "clearTitle": "Clear title",
+    "clearDestinationFile": "Clear destination file"
   },
   "about": {
     "tagline": "A modern desktop GUI for MediaInfo",

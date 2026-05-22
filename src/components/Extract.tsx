@@ -27,6 +27,8 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   LinearProgress,
   Table,
   TableBody,
@@ -40,6 +42,7 @@ import {
   Typography,
 } from '@mui/material';
 import AttachmentIcon from '@mui/icons-material/Attachment';
+import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
 import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -488,6 +491,24 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
             value={outputDir}
             onChange={(e) => setOutputDir(e.target.value)}
             sx={{ flex: 1, '& .MuiInputBase-root': { height: 32 } }}
+            slotProps={{
+              input: {
+                endAdornment: outputDir ? (
+                  <InputAdornment position="end">
+                    <Tooltip title={t('extract.clearOutputDir')}>
+                      <IconButton
+                        size="small"
+                        aria-label={t('extract.clearOutputDir')}
+                        onClick={() => setOutputDir('')}
+                        edge="end"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
           />
           <Button
             variant="outlined"

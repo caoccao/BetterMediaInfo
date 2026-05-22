@@ -41,7 +41,6 @@ import {
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { DataGrid, GridColDef, GridRowsProp, useGridApiRef } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
@@ -60,166 +59,13 @@ import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
 import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isMkvtoolnixFound, isMpcHcFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui, openMpcHc } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
+import { openMergeWindow } from '../lib/merge';
+import { formatStreamCount } from '../lib/format';
 import {
-  formatStreamCount,
-  transformBitRate,
-  transformDefault,
-  transformDolbyVision,
-  transformDuration,
-  transformFPS,
-  transformResolution,
-  transformSamplingRate,
-  transformSize,
-  transformTime,
-} from '../lib/format';
-
-enum OrderByType {
-  None,
-  Number,
-  String,
-}
-
-interface PropertyDefinition {
-  align: 'left' | 'right' | 'center';
-  format: (value: any, rowData: Record<string, string>) => string;
-  header: string | null;
-  inCardView: boolean;
-  inListView: boolean;
-  name: string;
-  orderByType: OrderByType;
-  virtual: boolean;
-}
-
-function createPropertyDef(
-  name: string,
-  format: (value: any, rowData: Record<string, string>) => string = transformDefault,
-  header: string | null = null
-): PropertyDefinition {
-  return {
-    align: 'left',
-    format,
-    header,
-    inCardView: false,
-    inListView: false,
-    name,
-    orderByType: OrderByType.String,
-    virtual: false,
-  };
-}
-
-type Formatter = (value: any, rowData: Record<string, string>) => string;
-
-function createBitRateFormatter(streamFormat: Protocol.ConfigStreamFormat | undefined): Formatter {
-  return (value, _rowData) => {
-    const precision = streamFormat?.bitRate?.precision ?? Protocol.FormatPrecision.Two;
-    const unit = streamFormat?.bitRate?.unit ?? Protocol.FormatUnit.KMGT;
-    return transformBitRate(value, precision, unit);
-  };
-}
-
-function createSizeFormatter(streamFormat: Protocol.ConfigStreamFormat | undefined): Formatter {
-  return (value, _rowData) => {
-    const precision = streamFormat?.size?.precision ?? Protocol.FormatPrecision.Two;
-    const unit = streamFormat?.size?.unit ?? Protocol.FormatUnit.KMGT;
-    return transformSize(value, precision, unit);
-  };
-}
-
-function buildCommonPropertiesMap(
-  config: Protocol.Config | null,
-  t: TFunction,
-): Map<Protocol.StreamKind, PropertyDefinition[]> {
-  const videoBitRateFormatter = createBitRateFormatter(config?.video);
-  const videoSizeFormatter = createSizeFormatter(config?.video);
-  const audioBitRateFormatter = createBitRateFormatter(config?.audio);
-  const audioSizeFormatter = createSizeFormatter(config?.audio);
-  const subtitleBitRateFormatter = createBitRateFormatter(config?.subtitle);
-  const subtitleSizeFormatter = createSizeFormatter(config?.subtitle);
-  // General uses video format settings for file size
-  const general: PropertyDefinition[] = [
-    { ...createPropertyDef('CompleteName'), header: t('list.header.filePath'), inListView: true },
-    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('FileSize', videoSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Duration', transformDuration, t('list.header.duration')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Time', transformTime, t('list.header.time')), orderByType: OrderByType.None, align: 'right', virtual: true, inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Encoded_Date'), header: t('list.header.encodedDate'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Video:Count'), orderByType: OrderByType.Number, header: t('list.header.videoCount'), inListView: true },
-    { ...createPropertyDef('Audio:Count'), orderByType: OrderByType.Number, header: t('list.header.audioCount'), inListView: true },
-    { ...createPropertyDef('Text:Count'), orderByType: OrderByType.Number, header: t('list.header.textCount'), inListView: true },
-    { ...createPropertyDef('Image:Count'), orderByType: OrderByType.Number, header: t('list.header.imageCount'), inListView: true },
-    { ...createPropertyDef('Menu:Count'), orderByType: OrderByType.Number, header: t('list.header.menuCount'), inListView: true },
-  ];
-
-  const video: PropertyDefinition[] = [
-    { ...createPropertyDef('ID'), header: t('list.header.id'), inCardView: true },
-    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Language'), header: t('list.header.language'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Resolution', transformResolution, t('list.header.resolution')), orderByType: OrderByType.None, virtual: true, inCardView: true, inListView: true },
-    { ...createPropertyDef('HDR_Format_Compatibility'), header: t('list.header.hdr'), inCardView: true, inListView: true },
-    { ...createPropertyDef('HDR_Format', transformDolbyVision, t('list.header.dv')), inCardView: true, inListView: true },
-    { ...createPropertyDef('ScanType'), header: t('list.header.scanType'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
-    { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
-    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.depth'), inCardView: true, inListView: true },
-    { ...createPropertyDef('FrameRate', transformFPS, t('list.header.fps')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('BitRate', videoBitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', videoSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Width') },
-    { ...createPropertyDef('Height') },
-  ];
-
-  const audio: PropertyDefinition[] = [
-    { ...createPropertyDef('ID'), header: t('list.header.id'), inCardView: true },
-    { ...createPropertyDef('Format_Commercial'), header: t('list.header.format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Language'), header: t('list.header.language'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Channel(s)'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.channels'), inCardView: true, inListView: true },
-    { ...createPropertyDef('BitDepth'), orderByType: OrderByType.Number, align: 'right', header: t('list.header.depth'), inCardView: true, inListView: true },
-    { ...createPropertyDef('SamplingRate', transformSamplingRate, t('list.header.sampling')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
-    { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
-    { ...createPropertyDef('BitRate_Mode'), header: t('list.header.mode'), inCardView: true, inListView: true },
-    { ...createPropertyDef('BitRate', audioBitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', audioSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  ];
-
-  const text: PropertyDefinition[] = [
-    { ...createPropertyDef('ID'), header: t('list.header.id'), inCardView: true },
-    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Language'), header: t('list.header.language'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Title'), header: t('list.header.title'), inCardView: true, inListView: true },
-    { ...createPropertyDef('Default'), header: t('list.header.default'), inCardView: true },
-    { ...createPropertyDef('Forced'), header: t('list.header.forced'), inCardView: true },
-    { ...createPropertyDef('BitRate', subtitleBitRateFormatter, t('list.header.bitRate')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-    { ...createPropertyDef('StreamSize', subtitleSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
-  ];
-
-  const menu: PropertyDefinition[] = [
-    { ...createPropertyDef('StreamKindID'), header: t('list.header.id'), inCardView: true },
-    { ...createPropertyDef('Inform'), header: t('list.header.menu'), inCardView: true },
-  ];
-
-  return new Map<Protocol.StreamKind, PropertyDefinition[]>([
-    [Protocol.StreamKind.General, general],
-    [Protocol.StreamKind.Video, video],
-    [Protocol.StreamKind.Audio, audio],
-    [Protocol.StreamKind.Text, text],
-    [Protocol.StreamKind.Menu, menu],
-  ]);
-}
-
-const STREAM_KIND_COLORS: Record<Protocol.StreamKind, string> = {
-  [Protocol.StreamKind.General]: '#84cc16',
-  [Protocol.StreamKind.Video]: '#f97316',
-  [Protocol.StreamKind.Audio]: '#f59e0b',
-  [Protocol.StreamKind.Text]: '#10b981',
-  [Protocol.StreamKind.Other]: '#a3a3a3',
-  [Protocol.StreamKind.Image]: '#0ea5e9',
-  [Protocol.StreamKind.Menu]: '#6366f1',
-  [Protocol.StreamKind.Max]: '#84cc16',
-};
+  buildCommonPropertiesMap,
+  OrderByType,
+  STREAM_KIND_COLORS,
+} from '../lib/cardTables';
 
 const BATCH_MKV_EXTRACT_URL = 'https://github.com/caoccao/BatchMkvExtract';
 const BD_MASTER_URL = 'https://github.com/caoccao/BDMaster';
@@ -998,7 +844,7 @@ export default function List() {
                     )}
                     {showMerge && (
                       <Tooltip title={t('list.merge')}>
-                        <IconButton size="small">
+                        <IconButton size="small" onClick={() => openMergeWindow(file)}>
                           <TransformIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>

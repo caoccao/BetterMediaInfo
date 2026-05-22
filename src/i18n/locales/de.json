@@ -147,6 +147,12 @@
     "themeEmerald": "Smaragd",
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix-Pfad",
+    "priority": "Priorität",
+    "priorityLowest": "Niedrigste",
+    "priorityLower": "Niedriger",
+    "priorityNormal": "Normal",
+    "priorityHigher": "Höher",
+    "priorityHighest": "Höchste",
     "browse": "Durchsuchen",
     "detect": "Erkennen",
     "registerContextMenu": "Kontextmenü registrieren",
@@ -189,6 +195,7 @@
     "copyCommand": "Befehl kopieren",
     "extract": "Extrahieren",
     "browse": "Durchsuchen...",
+    "clearOutputDir": "Ausgabeverzeichnis löschen",
     "extracting": "Extrahieren...",
     "cancel": "Abbrechen",
     "close": "Schließen",
@@ -204,6 +211,14 @@
       "mkvextractNotAvailable": "mkvextract ist nicht verfügbar. Bitte überprüfen Sie den MKVToolNix-Pfad in den Einstellungen. {{detail}}",
       "mkvextractFailed": "mkvextract fehlgeschlagen: {{detail}}"
     }
+  },
+  "merge": {
+    "copyCommand": "Befehl kopieren",
+    "merge": "Zusammenführen",
+    "close": "Schließen",
+    "title": "Titel",
+    "clearTitle": "Titel löschen",
+    "clearDestinationFile": "Zieldatei löschen"
   },
   "about": {
     "tagline": "Eine moderne Desktop-Oberfläche für MediaInfo",

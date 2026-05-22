@@ -976,6 +976,7 @@ export default function Config() {
   const [audioFormat, setAudioFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
+  const [mkvPriority, setMkvPriority] = useState<Protocol.MkvPriority>(Protocol.MkvPriority.Lowest);
   const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
   const [batchMkvExtractPath, setBatchMkvExtractPath] = useState('');
   const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
@@ -1031,6 +1032,7 @@ export default function Config() {
       setAudioFormat(initStreamFormat(config.audio));
       setSubtitleFormat(initStreamFormat(config.subtitle));
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
+      setMkvPriority(config.mkv?.priority ?? Protocol.MkvPriority.Lowest);
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setBdMasterPath(config.bdMaster?.path ?? '');
       setMpcHcPath(config.mpcHc?.path ?? '');
@@ -1084,7 +1086,7 @@ export default function Config() {
     video: toConfigStreamFormat(videoFormat),
     audio: toConfigStreamFormat(audioFormat),
     subtitle: toConfigStreamFormat(subtitleFormat),
-    mkv: { mkvToolNixPath },
+    mkv: { mkvToolNixPath, priority: mkvPriority },
     batchMkvExtract: { path: batchMkvExtractPath },
     bdMaster: { path: bdMasterPath },
     mpcHc: { path: mpcHcPath },
@@ -1500,6 +1502,7 @@ export default function Config() {
     audioFormat,
     subtitleFormat,
     mkvToolNixPath,
+    mkvPriority,
     batchMkvExtractPath,
     bdMasterPath,
     mpcHcPath,
@@ -2070,6 +2073,25 @@ export default function Config() {
           >
             {mkvtoolnixFound ? t('config.mkvtoolnixFound') : t('config.mkvtoolnixNotFound')}
           </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              {t('config.priority')}
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <Select
+                value={mkvPriority}
+                onChange={(e) => {
+                  setMkvPriority(e.target.value as Protocol.MkvPriority);
+                }}
+              >
+                <MenuItem value={Protocol.MkvPriority.Highest}>{t('config.priorityHighest')}</MenuItem>
+                <MenuItem value={Protocol.MkvPriority.Higher}>{t('config.priorityHigher')}</MenuItem>
+                <MenuItem value={Protocol.MkvPriority.Normal}>{t('config.priorityNormal')}</MenuItem>
+                <MenuItem value={Protocol.MkvPriority.Lower}>{t('config.priorityLower')}</MenuItem>
+                <MenuItem value={Protocol.MkvPriority.Lowest}>{t('config.priorityLowest')}</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
       </Paper>
 

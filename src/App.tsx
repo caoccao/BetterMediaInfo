@@ -23,6 +23,7 @@ import * as Protocol from './lib/protocol';
 import { changeLanguage } from './i18n';
 import Layout from './components/Layout';
 import Extract from './components/Extract';
+import Merge from './components/Merge';
 import NotificationSnackbar from './components/NotificationSnackbar';
 
 function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
@@ -156,9 +157,17 @@ function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
   }
 }
 
-function getExtractParams(): { file: string; displayMode: Protocol.DisplayMode; theme: Protocol.Theme; language: Protocol.Language; mkvToolNixPath: string } | null {
+interface SubWindowParams {
+  file: string;
+  displayMode: Protocol.DisplayMode;
+  theme: Protocol.Theme;
+  language: Protocol.Language;
+  mkvToolNixPath: string;
+}
+
+function getSubWindowParams(key: 'extract' | 'merge'): SubWindowParams | null {
   const params = new URLSearchParams(window.location.search);
-  const file = params.get('extract');
+  const file = params.get(key);
   if (!file) return null;
   return {
     file,
@@ -178,58 +187,60 @@ interface ConfigChangeEvent {
 }
 
 function App() {
-  const extractParams = useMemo(() => getExtractParams(), []);
+  const extractParams = useMemo(() => getSubWindowParams('extract'), []);
+  const mergeParams = useMemo(() => getSubWindowParams('merge'), []);
+  const subWindowParams = extractParams ?? mergeParams;
   const storeDisplayMode = useAppStore((state) => state.config?.displayMode ?? Protocol.DisplayMode.Auto);
   const storeTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
   const storeLanguage = useAppStore((state) => state.config?.language ?? Protocol.Language.EnUS);
   const initConfig = useAppStore((state) => state.initConfig);
   const initAbout = useAppStore((state) => state.initAbout);
 
-  const [extractDisplayMode, setExtractDisplayMode] = useState<Protocol.DisplayMode>(
-    extractParams?.displayMode ?? Protocol.DisplayMode.Auto
+  const [subWindowDisplayMode, setSubWindowDisplayMode] = useState<Protocol.DisplayMode>(
+    subWindowParams?.displayMode ?? Protocol.DisplayMode.Auto
   );
-  const [extractTheme, setExtractTheme] = useState<Protocol.Theme>(
-    extractParams?.theme ?? Protocol.Theme.Ocean
+  const [subWindowTheme, setSubWindowTheme] = useState<Protocol.Theme>(
+    subWindowParams?.theme ?? Protocol.Theme.Ocean
   );
 
-  const displayMode = extractParams ? extractDisplayMode : storeDisplayMode;
-  const selectedTheme = extractParams ? extractTheme : storeTheme;
+  const displayMode = subWindowParams ? subWindowDisplayMode : storeDisplayMode;
+  const selectedTheme = subWindowParams ? subWindowTheme : storeTheme;
 
   useEffect(() => {
-    if (!extractParams) {
+    if (!subWindowParams) {
       initConfig();
       initAbout();
     }
-  }, [initConfig, initAbout, extractParams]);
+  }, [initConfig, initAbout, subWindowParams]);
 
-  // Extract window: apply initial language from URL params
+  // Sub-window: apply initial language from URL params
   useEffect(() => {
-    if (extractParams) {
-      changeLanguage(extractParams.language);
+    if (subWindowParams) {
+      changeLanguage(subWindowParams.language);
     }
-  }, [extractParams]);
+  }, [subWindowParams]);
 
-  // Main window: emit appearance changes to extract windows
+  // Main window: emit appearance changes to sub-windows
   useEffect(() => {
-    if (!extractParams) {
+    if (!subWindowParams) {
       emit(CONFIG_CHANGE_EVENT, {
         displayMode: storeDisplayMode,
         theme: storeTheme,
         language: storeLanguage,
       } as ConfigChangeEvent);
     }
-  }, [storeDisplayMode, storeTheme, storeLanguage, extractParams]);
+  }, [storeDisplayMode, storeTheme, storeLanguage, subWindowParams]);
 
-  // Extract window: listen for appearance changes from main window
+  // Sub-window: listen for appearance changes from main window
   useEffect(() => {
-    if (!extractParams) return;
+    if (!subWindowParams) return;
     const unlisten = listen<ConfigChangeEvent>(CONFIG_CHANGE_EVENT, (event) => {
-      setExtractDisplayMode(event.payload.displayMode);
-      setExtractTheme(event.payload.theme);
+      setSubWindowDisplayMode(event.payload.displayMode);
+      setSubWindowTheme(event.payload.theme);
       changeLanguage(event.payload.language);
     });
     return () => { unlisten.then((fn) => fn()); };
-  }, [extractParams]);
+  }, [subWindowParams]);
 
   const prefersDarkMode = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -341,7 +352,13 @@ function App() {
           color: 'text.primary',
         }}
       >
-        {extractParams ? <Extract file={extractParams.file} mkvToolNixPath={extractParams.mkvToolNixPath} /> : <Layout />}
+        {extractParams ? (
+          <Extract file={extractParams.file} mkvToolNixPath={extractParams.mkvToolNixPath} />
+        ) : mergeParams ? (
+          <Merge file={mergeParams.file} mkvToolNixPath={mergeParams.mkvToolNixPath} />
+        ) : (
+          <Layout />
+        )}
         <NotificationSnackbar />
       </Box>
     </ThemeProvider>

@@ -236,10 +236,27 @@ impl Default for UpdateCheckInterval {
   }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub enum MkvPriority {
+  Lowest,
+  Lower,
+  Normal,
+  Higher,
+  Highest,
+}
+
+impl Default for MkvPriority {
+  fn default() -> Self {
+    Self::Lowest
+  }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigMkv {
   #[serde(rename = "mkvToolNixPath", default = "ConfigMkv::default_mkv_toolnix_path")]
   pub mkv_toolnix_path: String,
+  #[serde(default)]
+  pub priority: MkvPriority,
 }
 
 impl ConfigMkv {
@@ -258,6 +275,7 @@ impl Default for ConfigMkv {
   fn default() -> Self {
     Self {
       mkv_toolnix_path: Self::default_mkv_toolnix_path(),
+      priority: MkvPriority::default(),
     }
   }
 }

@@ -369,6 +369,7 @@ pub fn run() {
       get_properties,
       get_stream_count,
       set_config,
+      suggest_merge_output_path,
       write_binary_file,
       write_text_file
     ])
@@ -453,6 +454,12 @@ fn skip_version(version: String) -> Result<(), String> {
   let mut cfg = config::get_config();
   cfg.update.ignore_version = version;
   config::set_config(cfg).map_err(convert_error)
+}
+
+#[tauri::command]
+fn suggest_merge_output_path(source_file: String) -> String {
+  log::debug!("suggest_merge_output_path({})", source_file);
+  controller::suggest_merge_output_path(source_file)
 }
 
 #[tauri::command]

@@ -147,6 +147,12 @@
     "themeEmerald": "エメラルド",
     "mkv": "MKV",
     "mkvToolNixPath": "MKVToolNix パス",
+    "priority": "優先度",
+    "priorityLowest": "最低",
+    "priorityLower": "低め",
+    "priorityNormal": "標準",
+    "priorityHigher": "高め",
+    "priorityHighest": "最高",
     "browse": "参照",
     "detect": "検出",
     "registerContextMenu": "コンテキストメニューを登録",
@@ -189,6 +195,7 @@
     "copyCommand": "コマンドをコピー",
     "extract": "抽出",
     "browse": "参照...",
+    "clearOutputDir": "出力ディレクトリをクリア",
     "extracting": "抽出中...",
     "cancel": "キャンセル",
     "close": "閉じる",
@@ -204,6 +211,14 @@
       "mkvextractNotAvailable": "mkvextract が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
       "mkvextractFailed": "mkvextract が失敗しました: {{detail}}"
     }
+  },
+  "merge": {
+    "copyCommand": "コマンドをコピー",
+    "merge": "結合",
+    "close": "閉じる",
+    "title": "タイトル",
+    "clearTitle": "タイトルをクリア",
+    "clearDestinationFile": "出力ファイルをクリア"
   },
   "about": {
     "tagline": "MediaInfo のモダンなデスクトップ GUI",

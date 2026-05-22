@@ -147,6 +147,12 @@
     "themeEmerald": "Esmeralda",
     "mkv": "MKV",
     "mkvToolNixPath": "Ruta de MKVToolNix",
+    "priority": "Prioridad",
+    "priorityLowest": "Mínima",
+    "priorityLower": "Baja",
+    "priorityNormal": "Normal",
+    "priorityHigher": "Alta",
+    "priorityHighest": "Máxima",
     "browse": "Examinar",
     "detect": "Detectar",
     "registerContextMenu": "Registrar menú contextual",
@@ -189,6 +195,7 @@
     "copyCommand": "Copiar comando",
     "extract": "Extraer",
     "browse": "Examinar...",
+    "clearOutputDir": "Borrar carpeta de salida",
     "extracting": "Extrayendo...",
     "cancel": "Cancelar",
     "close": "Cerrar",
@@ -204,6 +211,14 @@
       "mkvextractNotAvailable": "mkvextract no está disponible. Verifique la ruta de MKVToolNix en Configuración. {{detail}}",
       "mkvextractFailed": "mkvextract falló: {{detail}}"
     }
+  },
+  "merge": {
+    "copyCommand": "Copiar comando",
+    "merge": "Combinar",
+    "close": "Cerrar",
+    "title": "Título",
+    "clearTitle": "Borrar título",
+    "clearDestinationFile": "Borrar archivo de destino"
   },
   "about": {
     "tagline": "Una GUI de escritorio moderna para MediaInfo",

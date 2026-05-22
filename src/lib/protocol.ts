@@ -63,8 +63,17 @@ export interface ConfigStreamFormat {
   size: ConfigSize;
 }
 
+export enum MkvPriority {
+  Lowest = "Lowest",
+  Lower = "Lower",
+  Normal = "Normal",
+  Higher = "Higher",
+  Highest = "Highest",
+}
+
 export interface ConfigMkv {
   mkvToolNixPath: string;
+  priority: MkvPriority;
 }
 
 export interface ConfigBatchMkvExtract {
