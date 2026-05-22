@@ -164,6 +164,31 @@ interface TrackArgInput {
   isForced: boolean;
 }
 
+/**
+ * Pick the right MKV-family extension for the given merge data.
+ * mkvmerge can only produce an MKV-family container, and the convention is:
+ *   - has video    → .mkv
+ *   - audio-only   → .mka
+ *   - subtitle-only → .mks
+ *   - nothing      → null (output not possible)
+ */
+function pickExtension(data: MergeData): 'mkv' | 'mka' | 'mks' | null {
+  if (data.videos.some((v) => v.isEnabled)) { return 'mkv'; }
+  if (data.audios.some((a) => a.isEnabled)) { return 'mka'; }
+  if (data.texts.some((t) => t.isEnabled)) { return 'mks'; }
+  return null;
+}
+
+function replaceFileExtension(path: string, ext: string): string {
+  if (!path) { return path; }
+  const sepIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+  const dotIdx = path.lastIndexOf('.');
+  if (dotIdx > sepIdx) {
+    return path.substring(0, dotIdx) + '.' + ext;
+  }
+  return path + '.' + ext;
+}
+
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -191,15 +216,15 @@ function buildMergeArgs(
     stream: Protocol.StreamKind,
     tracks: TrackArgInput[],
     selectFlag: string,
-    excludeAllFlag: string,
+    noFlag: string,
   ): number[] => {
     const built = tracks
       .map((t) => ({ track: t, tid: getMkvmergeTid(stream, t.num, propertyMaps) }))
       .filter((entry): entry is { track: TrackArgInput; tid: number } => entry.tid !== null);
     const enabled = built.filter((e) => e.track.isEnabled);
-    if (built.length > 0 && enabled.length === 0) {
-      args.push(excludeAllFlag);
-    } else if (enabled.length > 0) {
+    if (enabled.length === 0) {
+      args.push(noFlag);
+    } else if (enabled.length < built.length) {
       args.push(selectFlag, enabled.map((e) => String(e.tid)).join(','));
     }
     for (const { track, tid } of enabled) {
@@ -214,12 +239,12 @@ function buildMergeArgs(
     return enabled.map((e) => e.tid);
   };
 
-  const videoTids = emitTrackType(Protocol.StreamKind.Video, mergeData.videos, '-d', '-D');
-  const audioTids = emitTrackType(Protocol.StreamKind.Audio, mergeData.audios, '-a', '-A');
-  const textTids = emitTrackType(Protocol.StreamKind.Text, mergeData.texts, '-s', '-S');
+  const videoTids = emitTrackType(Protocol.StreamKind.Video, mergeData.videos, '-d', '--no-video');
+  const audioTids = emitTrackType(Protocol.StreamKind.Audio, mergeData.audios, '-a', '--no-audio');
+  const textTids = emitTrackType(Protocol.StreamKind.Text, mergeData.texts, '-s', '--no-subtitles');
 
-  // Chapters (menus): mkvmerge handles them as a single all-or-nothing unit.
-  if (mergeData.menus.length > 0 && !mergeData.menus.some((m) => m.isEnabled)) {
+  // Chapters (menus): all-or-nothing. Always emit --no-chapters when none enabled.
+  if (!mergeData.menus.some((m) => m.isEnabled)) {
     args.push('--no-chapters');
   }
 
@@ -454,6 +479,20 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     [config, t]
   );
 
+  const desiredExtension = useMemo(() => pickExtension(mergeData), [mergeData]);
+  const canMerge = desiredExtension !== null;
+
+  // Keep the destination file extension in sync with what mkvmerge can
+  // actually produce: .mkv (has video), .mka (audio-only), .mks (text-only).
+  useEffect(() => {
+    if (!desiredExtension) { return; }
+    setMergeData((prev) => {
+      if (!prev.destinationFile) { return prev; }
+      const next = replaceFileExtension(prev.destinationFile, desiredExtension);
+      return next === prev.destinationFile ? prev : prev.withDestinationFile(next);
+    });
+  }, [desiredExtension]);
+
   useEffect(() => {
     suggestMergeOutputPath(file).then((path) => {
       setMergeData((prev) => prev.withDestinationFile(path));
@@ -653,10 +692,10 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           />
         </Toolbar>
         <Toolbar variant="dense" sx={{ gap: 1, justifyContent: 'center' }}>
-          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile || !canMerge} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
             {t('merge.copyCommand')}
           </Button>
-          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile || merging} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile || !canMerge || merging} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
             {t('merge.merge')}
           </Button>
           <Tooltip title="Ctrl+W">
