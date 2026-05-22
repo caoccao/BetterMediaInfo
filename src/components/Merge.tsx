@@ -49,6 +49,7 @@ import {
 import {
   MergeAudioData,
   MergeData,
+  MergeMenuData,
   MergeTextData,
   MergeVideoData,
 } from '../lib/merge';
@@ -66,6 +67,7 @@ function buildMergeCommand(mkvToolNixPath: string, sourceFile: string, destinati
  * on MergeData; these helpers dispatch by the iteration's stream kind.
  */
 type EditableTrack = MergeVideoData | MergeAudioData | MergeTextData;
+type AnyStreamEntry = EditableTrack | MergeMenuData;
 
 function trackBindingsFor(
   stream: Protocol.StreamKind,
@@ -77,6 +79,35 @@ function trackBindingsFor(
     case Protocol.StreamKind.Audio: return data.findAudio(num);
     case Protocol.StreamKind.Text: return data.findText(num);
     default: return null;
+  }
+}
+
+function streamEntryFor(
+  stream: Protocol.StreamKind,
+  num: number,
+  data: MergeData,
+): AnyStreamEntry | null {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.findVideo(num);
+    case Protocol.StreamKind.Audio: return data.findAudio(num);
+    case Protocol.StreamKind.Text: return data.findText(num);
+    case Protocol.StreamKind.Menu: return data.findMenu(num);
+    default: return null;
+  }
+}
+
+function enabledSetterFor(
+  data: MergeData,
+  stream: Protocol.StreamKind,
+  num: number,
+  value: boolean,
+): MergeData {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.withVideoEnabled(num, value);
+    case Protocol.StreamKind.Audio: return data.withAudioEnabled(num, value);
+    case Protocol.StreamKind.Text: return data.withTextEnabled(num, value);
+    case Protocol.StreamKind.Menu: return data.withMenuEnabled(num, value);
+    default: return data;
   }
 }
 
@@ -277,6 +308,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                 <TableBody>
                   {streamMaps.map((map) => {
                     const trackRefs = trackBindingsFor(map.stream, map.num, mergeData);
+                    const streamEntry = streamEntryFor(map.stream, map.num, mergeData);
                     const titleValue = map.stream === Protocol.StreamKind.General
                       ? mergeData.general.title
                       : trackRefs?.title ?? '';
@@ -291,6 +323,8 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                             const isEditableTitle = prop.name === 'Title';
                             const isDefault = prop.name === 'Default';
                             const isForced = prop.name === 'Forced';
+                            const isId = (prop.name === 'ID' || prop.name === 'StreamKindID')
+                              && streamEntry !== null;
                             return (
                               <TableCell
                                 key={prop.name}
@@ -303,7 +337,21 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                                   whiteSpace: 'pre-line',
                                 }}
                               >
-                                {isEditableTitle ? (
+                                {isId && streamEntry ? (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <Checkbox
+                                      size="small"
+                                      checked={streamEntry.isEnabled}
+                                      onChange={(e) =>
+                                        setMergeData((prev) =>
+                                          enabledSetterFor(prev, map.stream, map.num, e.target.checked)
+                                        )
+                                      }
+                                      sx={{ p: 0 }}
+                                    />
+                                    <span>{prop.format(map.propertyMap[prop.name], map.propertyMap)}</span>
+                                  </Box>
+                                ) : isEditableTitle ? (
                                   <TextField
                                     size="small"
                                     value={titleValue}

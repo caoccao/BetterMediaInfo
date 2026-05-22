@@ -78,83 +78,92 @@ export class MergeGeneralData {
 }
 
 /**
- * Editable fields for a single video track.
+ * Editable fields for a single video track. `isEnabled` controls whether
+ * the track is muxed into the merge output.
  */
 export class MergeVideoData {
   num: number;
+  isEnabled: boolean;
   title: string;
   isDefault: boolean;
   isForced: boolean;
 
-  constructor(num: number, title = '', isDefault = false, isForced = false) {
+  constructor(num: number, isEnabled = true, title = '', isDefault = false, isForced = false) {
     this.num = num;
+    this.isEnabled = isEnabled;
     this.title = title;
     this.isDefault = isDefault;
     this.isForced = isForced;
   }
 
   clone(): MergeVideoData {
-    return new MergeVideoData(this.num, this.title, this.isDefault, this.isForced);
+    return new MergeVideoData(this.num, this.isEnabled, this.title, this.isDefault, this.isForced);
   }
 }
 
 /**
- * Editable fields for a single audio track.
+ * Editable fields for a single audio track. `isEnabled` controls whether
+ * the track is muxed into the merge output.
  */
 export class MergeAudioData {
   num: number;
+  isEnabled: boolean;
   title: string;
   isDefault: boolean;
   isForced: boolean;
 
-  constructor(num: number, title = '', isDefault = false, isForced = false) {
+  constructor(num: number, isEnabled = true, title = '', isDefault = false, isForced = false) {
     this.num = num;
+    this.isEnabled = isEnabled;
     this.title = title;
     this.isDefault = isDefault;
     this.isForced = isForced;
   }
 
   clone(): MergeAudioData {
-    return new MergeAudioData(this.num, this.title, this.isDefault, this.isForced);
+    return new MergeAudioData(this.num, this.isEnabled, this.title, this.isDefault, this.isForced);
   }
 }
 
 /**
- * Editable fields for a single subtitle / text track.
+ * Editable fields for a single subtitle / text track. `isEnabled` controls
+ * whether the track is muxed into the merge output.
  */
 export class MergeTextData {
   num: number;
+  isEnabled: boolean;
   title: string;
   isDefault: boolean;
   isForced: boolean;
 
-  constructor(num: number, title = '', isDefault = false, isForced = false) {
+  constructor(num: number, isEnabled = true, title = '', isDefault = false, isForced = false) {
     this.num = num;
+    this.isEnabled = isEnabled;
     this.title = title;
     this.isDefault = isDefault;
     this.isForced = isForced;
   }
 
   clone(): MergeTextData {
-    return new MergeTextData(this.num, this.title, this.isDefault, this.isForced);
+    return new MergeTextData(this.num, this.isEnabled, this.title, this.isDefault, this.isForced);
   }
 }
 
 /**
- * Editable fields for a single menu (chapter) track. Menus currently expose
- * no editable cells in the merge window, but the entry exists so the
- * hierarchy reflects every stream type and so we can add menu-level
- * options later without changing callers.
+ * Editable fields for a single menu (chapter) track. `isEnabled` controls
+ * whether the chapters are muxed into the merge output.
  */
 export class MergeMenuData {
   num: number;
+  isEnabled: boolean;
 
-  constructor(num: number) {
+  constructor(num: number, isEnabled = true) {
     this.num = num;
+    this.isEnabled = isEnabled;
   }
 
   clone(): MergeMenuData {
-    return new MergeMenuData(this.num);
+    return new MergeMenuData(this.num, this.isEnabled);
   }
 }
 
@@ -230,6 +239,13 @@ export class MergeData {
     return next;
   }
 
+  withVideoEnabled(num: number, value: boolean): MergeData {
+    const next = this.clone();
+    const track = next.findVideo(num);
+    if (track) { track.isEnabled = value; }
+    return next;
+  }
+
   withVideoTitle(num: number, value: string): MergeData {
     const next = this.clone();
     const track = next.findVideo(num);
@@ -248,6 +264,13 @@ export class MergeData {
     const next = this.clone();
     const track = next.findVideo(num);
     if (track) { track.isForced = value; }
+    return next;
+  }
+
+  withAudioEnabled(num: number, value: boolean): MergeData {
+    const next = this.clone();
+    const track = next.findAudio(num);
+    if (track) { track.isEnabled = value; }
     return next;
   }
 
@@ -272,6 +295,13 @@ export class MergeData {
     return next;
   }
 
+  withTextEnabled(num: number, value: boolean): MergeData {
+    const next = this.clone();
+    const track = next.findText(num);
+    if (track) { track.isEnabled = value; }
+    return next;
+  }
+
   withTextTitle(num: number, value: string): MergeData {
     const next = this.clone();
     const track = next.findText(num);
@@ -293,6 +323,13 @@ export class MergeData {
     return next;
   }
 
+  withMenuEnabled(num: number, value: boolean): MergeData {
+    const next = this.clone();
+    const track = next.findMenu(num);
+    if (track) { track.isEnabled = value; }
+    return next;
+  }
+
   /**
    * Build a MergeData from media info property maps. The destination file
    * is left empty — callers fill it in separately via withDestinationFile.
@@ -308,16 +345,16 @@ export class MergeData {
           if (map.num === 0) { data.general.title = titleValue; }
           break;
         case Protocol.StreamKind.Video:
-          data.videos.push(new MergeVideoData(map.num, titleValue, isDefault, isForced));
+          data.videos.push(new MergeVideoData(map.num, true, titleValue, isDefault, isForced));
           break;
         case Protocol.StreamKind.Audio:
-          data.audios.push(new MergeAudioData(map.num, titleValue, isDefault, isForced));
+          data.audios.push(new MergeAudioData(map.num, true, titleValue, isDefault, isForced));
           break;
         case Protocol.StreamKind.Text:
-          data.texts.push(new MergeTextData(map.num, titleValue, isDefault, isForced));
+          data.texts.push(new MergeTextData(map.num, true, titleValue, isDefault, isForced));
           break;
         case Protocol.StreamKind.Menu:
-          data.menus.push(new MergeMenuData(map.num));
+          data.menus.push(new MergeMenuData(map.num, true));
           break;
       }
     }
