@@ -123,6 +123,18 @@ pub struct MkvextractProgressEvent {
   pub error: Option<String>,
 }
 
+pub struct MkvmergeState {
+  pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct MkvmergeProgressEvent {
+  pub percent: u32,
+  pub done: bool,
+  pub cancelled: bool,
+  pub error: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct UpdateCheckResult {
   #[serde(rename = "hasUpdate")]

@@ -15,14 +15,20 @@
  *   limitations under the License.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppBar,
   Box,
   Button,
   Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   IconButton,
   InputAdornment,
+  LinearProgress,
   Table,
   TableBody,
   TableCell,
@@ -32,6 +38,7 @@ import {
   TextField,
   Toolbar,
   Tooltip,
+  Typography,
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
@@ -56,6 +63,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { sep as getSep } from '@tauri-apps/api/path';
 import * as Protocol from '../lib/protocol';
@@ -70,12 +78,178 @@ import {
   MergeTextData,
   MergeVideoData,
 } from '../lib/merge';
-import { getConfig, getPropertiesMap, suggestMergeOutputPath } from '../lib/service';
+import {
+  cancelMkvmerge,
+  getConfig,
+  getPropertiesMap,
+  runMkvmerge,
+  suggestMergeOutputPath,
+} from '../lib/service';
 
-function buildMergeCommand(mkvToolNixPath: string, sourceFile: string, destinationFile: string): string {
+const IS_WINDOWS = typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent);
+
+/**
+ * Quote a single command-line argument for safe copy-paste into the
+ * target platform's shell.
+ *
+ * Windows: wraps in double quotes with Microsoft C runtime-style
+ * backslash escaping (works for mkvmerge.exe and other native binaries
+ * invoked from cmd or PowerShell, as long as the argument doesn't contain
+ * cmd shell metachars that need additional escaping — titles/paths
+ * generally don't).
+ *
+ * POSIX (Linux / macOS): wraps in single quotes; the close-then-escape
+ * trick handles embedded apostrophes.
+ */
+function shellQuote(arg: string): string {
+  if (IS_WINDOWS) {
+    if (arg.length > 0 && !/[\s"]/.test(arg)) {
+      return arg;
+    }
+    let result = '"';
+    let backslashes = 0;
+    for (const ch of arg) {
+      if (ch === '\\') {
+        backslashes++;
+      } else if (ch === '"') {
+        result += '\\'.repeat(backslashes * 2 + 1) + '"';
+        backslashes = 0;
+      } else {
+        result += '\\'.repeat(backslashes) + ch;
+        backslashes = 0;
+      }
+    }
+    result += '\\'.repeat(backslashes * 2) + '"';
+    return result;
+  }
+  if (arg.length > 0 && /^[A-Za-z0-9_./:=+,@%-]+$/.test(arg)) {
+    return arg;
+  }
+  return "'" + arg.replace(/'/g, "'\\''") + "'";
+}
+
+/**
+ * Look up an mkvmerge track ID for a (stream, num) pair. mediainfo's
+ * `ID` for MKV files is the EBML TrackNumber (1-based); mkvmerge uses
+ * 0-based TIDs in its command line, so we subtract 1.
+ */
+function getMkvmergeTid(
+  stream: Protocol.StreamKind,
+  num: number,
+  propertyMaps: Array<Protocol.StreamPropertyMap>,
+): number | null {
+  const map = propertyMaps.find((m) => m.stream === stream && m.num === num);
+  if (!map) { return null; }
+  const idStr = map.propertyMap['ID'];
+  if (!idStr) { return null; }
+  const id = parseInt(idStr, 10);
+  if (Number.isNaN(id)) { return null; }
+  return id - 1;
+}
+
+function getLanguageCode(
+  stream: Protocol.StreamKind,
+  num: number,
+  propertyMaps: Array<Protocol.StreamPropertyMap>,
+): string {
+  const map = propertyMaps.find((m) => m.stream === stream && m.num === num);
+  return (map?.propertyMap['Language'] ?? '').trim();
+}
+
+interface TrackArgInput {
+  num: number;
+  isEnabled: boolean;
+  title: string;
+  isDefault: boolean;
+  isForced: boolean;
+}
+
+function formatTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+/**
+ * Build the raw mkvmerge argv (everything AFTER the mkvmerge binary itself).
+ * Used both for the "Run merge" subprocess invocation (which doesn't need
+ * shell quoting) and for the "Copy Command" string (which does).
+ */
+function buildMergeArgs(
+  sourceFile: string,
+  mergeData: MergeData,
+  propertyMaps: Array<Protocol.StreamPropertyMap>,
+): string[] {
+  const args: string[] = [];
+
+  // Global options
+  args.push('-o', mergeData.destinationFile);
+  args.push('--title', mergeData.general.title);
+
+  const emitTrackType = (
+    stream: Protocol.StreamKind,
+    tracks: TrackArgInput[],
+    selectFlag: string,
+    excludeAllFlag: string,
+  ): number[] => {
+    const built = tracks
+      .map((t) => ({ track: t, tid: getMkvmergeTid(stream, t.num, propertyMaps) }))
+      .filter((entry): entry is { track: TrackArgInput; tid: number } => entry.tid !== null);
+    const enabled = built.filter((e) => e.track.isEnabled);
+    if (built.length > 0 && enabled.length === 0) {
+      args.push(excludeAllFlag);
+    } else if (enabled.length > 0) {
+      args.push(selectFlag, enabled.map((e) => String(e.tid)).join(','));
+    }
+    for (const { track, tid } of enabled) {
+      args.push('--track-name', `${tid}:${track.title}`);
+      const lang = getLanguageCode(stream, track.num, propertyMaps);
+      if (lang.length > 0) {
+        args.push('--language', `${tid}:${lang}`);
+      }
+      args.push('--default-track-flag', `${tid}:${track.isDefault ? 1 : 0}`);
+      args.push('--forced-display-flag', `${tid}:${track.isForced ? 1 : 0}`);
+    }
+    return enabled.map((e) => e.tid);
+  };
+
+  const videoTids = emitTrackType(Protocol.StreamKind.Video, mergeData.videos, '-d', '-D');
+  const audioTids = emitTrackType(Protocol.StreamKind.Audio, mergeData.audios, '-a', '-A');
+  const textTids = emitTrackType(Protocol.StreamKind.Text, mergeData.texts, '-s', '-S');
+
+  // Chapters (menus): mkvmerge handles them as a single all-or-nothing unit.
+  if (mergeData.menus.length > 0 && !mergeData.menus.some((m) => m.isEnabled)) {
+    args.push('--no-chapters');
+  }
+
+  // Source file (per-input-file options above all attach to this file).
+  args.push(sourceFile);
+
+  // Track order: top-to-bottom visual order across enabled video → audio → text.
+  const orderedTracks = [
+    ...videoTids.map((tid) => `0:${tid}`),
+    ...audioTids.map((tid) => `0:${tid}`),
+    ...textTids.map((tid) => `0:${tid}`),
+  ];
+  if (orderedTracks.length > 0) {
+    args.push('--track-order', orderedTracks.join(','));
+  }
+
+  return args;
+}
+
+function buildMergeCommand(
+  mkvToolNixPath: string,
+  sourceFile: string,
+  mergeData: MergeData,
+  propertyMaps: Array<Protocol.StreamPropertyMap>,
+): string {
   const sep = getSep();
-  const mkvmergePath = `${mkvToolNixPath}${sep}mkvmerge`;
-  return `"${mkvmergePath}" -o "${destinationFile}" "${sourceFile}"`;
+  const mkvmergeBinary = IS_WINDOWS ? 'mkvmerge.exe' : 'mkvmerge';
+  const mkvmergePath = `${mkvToolNixPath}${sep}${mkvmergeBinary}`;
+  const args = buildMergeArgs(sourceFile, mergeData, propertyMaps);
+  return [shellQuote(mkvmergePath), ...args.map(shellQuote)].join(' ');
 }
 
 /**
@@ -262,6 +436,18 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
   const [mergeData, setMergeData] = useState<MergeData>(() => new MergeData());
   const [config, setConfig] = useState<Protocol.Config | null>(null);
   const [propertyMaps, setPropertyMaps] = useState<Array<Protocol.StreamPropertyMap>>([]);
+  const [merging, setMerging] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [eta, setEta] = useState(0);
+  const [closeWhenDone, setCloseWhenDone] = useState(false);
+  const closeWhenDoneRef = useRef(false);
+  const [completion, setCompletion] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const startTimeRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+
+  useEffect(() => { closeWhenDoneRef.current = closeWhenDone; }, [closeWhenDone]);
 
   const commonPropertiesMap = useMemo(
     () => buildCommonPropertiesMap(config, t),
@@ -302,19 +488,113 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
       });
   }, [file, commonPropertiesMap]);
 
+  // Listen for mkvmerge progress events
+  useEffect(() => {
+    const unlisten = getCurrentWebviewWindow().listen<Protocol.MkvmergeProgress>('mkvmerge-progress', (event) => {
+      const { percent, done, cancelled, error: progressError } = event.payload;
+      setProgress(percent);
+      if (done) {
+        const elapsedSec = Math.round((Date.now() - startTimeRef.current) / 1000);
+        setMerging(false);
+        if (cancelled) {
+          setDialogOpen(false);
+          setCompletion(null);
+        } else if (progressError) {
+          setCompletion({
+            type: 'error',
+            message: t('merge.error.mkvmergeFailed', { detail: progressError }),
+          });
+        } else if (closeWhenDoneRef.current) {
+          setDialogOpen(false);
+          setCompletion(null);
+          getCurrentWindow().close();
+        } else {
+          setCompletion({
+            type: 'success',
+            message: t('merge.mergeComplete', { seconds: elapsedSec }),
+          });
+        }
+      }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [t]);
+
+  // Timer for elapsed / ETA
+  useEffect(() => {
+    if (merging) {
+      startTimeRef.current = Date.now();
+      setElapsed(0);
+      setEta(0);
+      timerRef.current = setInterval(() => {
+        const elapsedSec = (Date.now() - startTimeRef.current) / 1000;
+        setElapsed(elapsedSec);
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = undefined;
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = undefined;
+      }
+    };
+  }, [merging]);
+
+  // Recompute ETA when progress or elapsed changes
+  useEffect(() => {
+    if (progress > 0 && progress < 100 && elapsed > 0) {
+      const totalEstimated = elapsed / (progress / 100);
+      setEta(totalEstimated - elapsed);
+    }
+  }, [progress, elapsed]);
+
   const handleCopyCommand = async () => {
     if (!mergeData.destinationFile) { return; }
-    const command = buildMergeCommand(mkvToolNixPath, file, mergeData.destinationFile);
+    const command = buildMergeCommand(mkvToolNixPath, file, mergeData, propertyMaps);
     await writeText(command);
   };
 
   const handleMerge = async () => {
-    // TODO: implement merge action — will consume `mergeData`
+    if (!mergeData.destinationFile || merging) { return; }
+    setMerging(true);
+    setProgress(0);
+    setCompletion(null);
+    setDialogOpen(true);
+    try {
+      const args = buildMergeArgs(file, mergeData, propertyMaps);
+      await runMkvmerge(args);
+    } catch (err) {
+      const msg = String(err);
+      setDialogOpen(false);
+      setMerging(false);
+      if (msg.includes('MKVMERGE_NOT_AVAILABLE:')) {
+        const detail = msg.split('MKVMERGE_NOT_AVAILABLE:')[1];
+        setCompletion({
+          type: 'error',
+          message: t('merge.error.mkvmergeNotAvailable', { detail }),
+        });
+        setDialogOpen(true);
+      } else {
+        setCompletion({ type: 'error', message: msg });
+        setDialogOpen(true);
+      }
+    }
+  };
+
+  const handleCancel = async () => {
+    await cancelMkvmerge();
   };
 
   const handleClose = async () => {
+    if (merging) { return; }
     await getCurrentWindow().close();
   };
+
+  // Cancel any in-flight merge when the window closes
+  useEffect(() => {
+    return () => { cancelMkvmerge(); };
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -376,12 +656,12 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           <Button variant="outlined" size="small" disabled={!mergeData.destinationFile} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
             {t('merge.copyCommand')}
           </Button>
-          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile || merging} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
             {t('merge.merge')}
           </Button>
           <Tooltip title="Ctrl+W">
             <span>
-              <Button variant="outlined" size="small" onClick={handleClose} startIcon={<CloseIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+              <Button variant="outlined" size="small" disabled={merging} onClick={handleClose} startIcon={<CloseIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('merge.close')}
               </Button>
             </span>
@@ -556,6 +836,55 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           );
         })}
       </Box>
+      <Dialog open={dialogOpen} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('merge.merging')}</DialogTitle>
+        <DialogContent>
+          {completion ? (
+            <Typography variant="body2" color={completion.type === 'error' ? 'error' : 'text.primary'} sx={{ mt: 1 }}>
+              {completion.message}
+            </Typography>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                <LinearProgress variant="determinate" value={progress} sx={{ flex: 1 }} />
+                <Typography variant="body2" sx={{ minWidth: 40, textAlign: 'right' }}>
+                  {progress}%
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('merge.elapsed')}: {formatTime(elapsed)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t('merge.eta')}: {progress > 0 && progress < 100 ? formatTime(eta) : '--:--:--'}
+                </Typography>
+              </Box>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={completion ? undefined : { justifyContent: 'space-between' }}>
+          {completion ? (
+            <Button variant="contained" onClick={() => { setDialogOpen(false); setCompletion(null); }}>
+              {t('merge.close')}
+            </Button>
+          ) : (
+            <>
+              <FormControlLabel
+                sx={{ ml: 0 }}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={closeWhenDone}
+                    onChange={(e) => setCloseWhenDone(e.target.checked)}
+                  />
+                }
+                label={<Typography variant="body2">{t('merge.closeWhenDone')}</Typography>}
+              />
+              <Button variant="contained" color="error" onClick={handleCancel}>{t('merge.cancel')}</Button>
+            </>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

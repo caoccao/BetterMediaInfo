@@ -218,7 +218,17 @@
     "close": "關閉",
     "title": "標題",
     "clearTitle": "清除標題",
-    "clearDestinationFile": "清除目標檔案"
+    "clearDestinationFile": "清除目標檔案",
+    "merging": "正在合併...",
+    "cancel": "取消",
+    "elapsed": "已用時間",
+    "eta": "剩餘時間",
+    "closeWhenDone": "合併完成後關閉視窗",
+    "mergeComplete": "合併在 {{seconds}} 秒內完成。",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge 不可用，請在設定中檢查 MKVToolNix 路徑。{{detail}}",
+      "mkvmergeFailed": "mkvmerge 失敗：{{detail}}"
+    }
   },
   "about": {
     "tagline": "現代化的 MediaInfo 桌面圖形介面",

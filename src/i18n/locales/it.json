@@ -218,7 +218,17 @@
     "close": "Chiudi",
     "title": "Titolo",
     "clearTitle": "Cancella titolo",
-    "clearDestinationFile": "Cancella file di destinazione"
+    "clearDestinationFile": "Cancella file di destinazione",
+    "merging": "Unione in corso...",
+    "cancel": "Annulla",
+    "elapsed": "Trascorso",
+    "eta": "Tempo rimanente",
+    "closeWhenDone": "Chiudi la finestra al termine dell'unione",
+    "mergeComplete": "Unione completata in {{seconds}} secondi.",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge non è disponibile. Controlla il percorso MKVToolNix in 'Impostazioni'. {{detail}}",
+      "mkvmergeFailed": "Errore mkvmerge: {{detail}}"
+    }
   },
   "about": {
     "tagline": "Una moderna GUI desktop per MediaInfo",

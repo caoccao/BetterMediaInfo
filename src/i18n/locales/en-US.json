@@ -218,7 +218,17 @@
     "close": "Close",
     "title": "Title",
     "clearTitle": "Clear title",
-    "clearDestinationFile": "Clear destination file"
+    "clearDestinationFile": "Clear destination file",
+    "merging": "Merging...",
+    "cancel": "Cancel",
+    "elapsed": "Elapsed",
+    "eta": "ETA",
+    "closeWhenDone": "Close window when merging is done",
+    "mergeComplete": "Merge completed in {{seconds}} seconds.",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge is not available. Please check the MKVToolNix path in Settings. {{detail}}",
+      "mkvmergeFailed": "mkvmerge failed: {{detail}}"
+    }
   },
   "about": {
     "tagline": "A modern desktop GUI for MediaInfo",

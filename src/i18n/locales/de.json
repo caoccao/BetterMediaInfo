@@ -218,7 +218,17 @@
     "close": "Schließen",
     "title": "Titel",
     "clearTitle": "Titel löschen",
-    "clearDestinationFile": "Zieldatei löschen"
+    "clearDestinationFile": "Zieldatei löschen",
+    "merging": "Zusammenführen läuft...",
+    "cancel": "Abbrechen",
+    "elapsed": "Vergangen",
+    "eta": "Verbleibend",
+    "closeWhenDone": "Fenster nach Abschluss schließen",
+    "mergeComplete": "Zusammenführung in {{seconds}} Sekunden abgeschlossen.",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge ist nicht verfügbar. Bitte überprüfen Sie den MKVToolNix-Pfad in den Einstellungen. {{detail}}",
+      "mkvmergeFailed": "mkvmerge fehlgeschlagen: {{detail}}"
+    }
   },
   "about": {
     "tagline": "Eine moderne Desktop-Oberfläche für MediaInfo",

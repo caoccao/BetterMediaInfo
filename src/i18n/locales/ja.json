@@ -218,7 +218,17 @@
     "close": "閉じる",
     "title": "タイトル",
     "clearTitle": "タイトルをクリア",
-    "clearDestinationFile": "出力ファイルをクリア"
+    "clearDestinationFile": "出力ファイルをクリア",
+    "merging": "結合中...",
+    "cancel": "キャンセル",
+    "elapsed": "経過時間",
+    "eta": "残り時間",
+    "closeWhenDone": "結合完了後にウィンドウを閉じる",
+    "mergeComplete": "結合が {{seconds}} 秒で完了しました。",
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge が利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
+      "mkvmergeFailed": "mkvmerge が失敗しました: {{detail}}"
+    }
   },
   "about": {
     "tagline": "MediaInfo のモダンなデスクトップ GUI",

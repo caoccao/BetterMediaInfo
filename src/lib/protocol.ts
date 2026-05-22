@@ -333,6 +333,13 @@ export interface MkvextractProgress {
   error: string | null;
 }
 
+export interface MkvmergeProgress {
+  percent: number;
+  done: boolean;
+  cancelled: boolean;
+  error: string | null;
+}
+
 export enum TabType {
   About,
   Config,

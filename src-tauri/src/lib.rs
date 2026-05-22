@@ -37,7 +37,10 @@ mod streams;
 #[cfg(target_os = "windows")]
 mod taskbar;
 
-use protocol::{MkvextractProgressEvent, MkvextractState, UpdateCheckResult, UpdateCheckState};
+use protocol::{
+  MkvextractProgressEvent, MkvextractState, MkvmergeProgressEvent, MkvmergeState,
+  UpdateCheckResult, UpdateCheckState,
+};
 
 fn convert_error(error: anyhow::Error) -> String {
   error.to_string()
@@ -49,6 +52,21 @@ async fn cancel_mkvextract(
   state: tauri::State<'_, MkvextractState>,
 ) -> Result<(), String> {
   log::debug!("cancel_mkvextract({})", window.label());
+  let label = window.label().to_owned();
+  let child = state.children.lock().unwrap().remove(&label);
+  if let Some(mut child) = child {
+    let _ = child.kill();
+    let _ = child.wait();
+  }
+  Ok(())
+}
+
+#[tauri::command]
+async fn cancel_mkvmerge(
+  window: tauri::Window,
+  state: tauri::State<'_, MkvmergeState>,
+) -> Result<(), String> {
+  log::debug!("cancel_mkvmerge({})", window.label());
   let label = window.label().to_owned();
   let child = state.children.lock().unwrap().remove(&label);
   if let Some(mut child) = child {
@@ -219,6 +237,9 @@ pub fn run() {
     .manage(MkvextractState {
       children: Arc::new(Mutex::new(HashMap::new())),
     })
+    .manage(MkvmergeState {
+      children: Arc::new(Mutex::new(HashMap::new())),
+    })
     .manage(UpdateCheckState {
       result: Arc::new(Mutex::new(None)),
     })
@@ -365,6 +386,8 @@ pub fn run() {
       open_mpchc,
       run_mkvextract,
       cancel_mkvextract,
+      run_mkvmerge,
+      cancel_mkvmerge,
       get_parameters,
       get_properties,
       get_stream_count,
@@ -433,6 +456,70 @@ async fn run_mkvextract(
       }
     }
     let _ = window_clone.emit_to(target, "mkvextract-progress", MkvextractProgressEvent {
+      percent: 100,
+      done: true,
+      cancelled,
+      error,
+    });
+  }).await.map_err(|e| e.to_string())?;
+  Ok(())
+}
+
+#[tauri::command]
+async fn run_mkvmerge(
+  window: tauri::Window,
+  args: Vec<String>,
+  state: tauri::State<'_, MkvmergeState>,
+) -> Result<(), String> {
+  log::debug!("run_mkvmerge({:?})", args);
+  let mut child = mkvtoolnix::spawn_mkvmerge(&args).map_err(convert_error)?;
+  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
+  let label = window.label().to_owned();
+  state.children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = state.children.clone();
+  let window_clone = window.clone();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+  tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
+    mkvtoolnix::read_mkvmerge_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvmerge_progress(line) {
+        #[cfg(target_os = "windows")]
+        if let Some(hwnd) = hwnd_raw {
+          taskbar::set_progress(hwnd, percent);
+        }
+        let _ = window_clone.emit_to(target.clone(), "mkvmerge-progress", MkvmergeProgressEvent {
+          percent,
+          done: false,
+          cancelled: false,
+          error: None,
+        });
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => {
+        match c.wait() {
+          Ok(status) if status.success() => (false, None),
+          Ok(status) => (false, Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1)))),
+          Err(e) => (false, Some(e.to_string())),
+        }
+      }
+      None => (true, None),
+    };
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
+    let _ = window_clone.emit_to(target, "mkvmerge-progress", MkvmergeProgressEvent {
       percent: 100,
       done: true,
       cancelled,

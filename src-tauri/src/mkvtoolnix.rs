@@ -411,6 +411,35 @@ pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Chi
     .map_err(|e| anyhow::anyhow!("MKVEXTRACT_NOT_AVAILABLE:{}: {}", mkvextract_path.display(), e))
 }
 
+pub fn spawn_mkvmerge(args: &[String]) -> Result<std::process::Child> {
+  let cfg = config::get_config();
+  let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, &["mkvmerge"]);
+  persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
+  let mkvmerge_path = get_tool_path(&resolution.path, "mkvmerge");
+  let mut cmd = std::process::Command::new(&mkvmerge_path);
+  cmd.args(args)
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::piped());
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  cmd.spawn()
+    .map_err(|e| anyhow::anyhow!("MKVMERGE_NOT_AVAILABLE:{}: {}", mkvmerge_path.display(), e))
+}
+
+pub(crate) fn parse_mkvmerge_progress(line: &str) -> Option<u32> {
+  parse_mkvextract_progress(line)
+}
+
+pub(crate) fn read_mkvmerge_output<F>(reader: impl Read, on_line: F)
+where
+  F: FnMut(&str),
+{
+  read_mkvextract_output(reader, on_line)
+}
+
 fn validate_path_as_file(path: &Path) -> Result<()> {
   if !path.exists() {
     Err(anyhow::anyhow!("Path {} does not exist.", path.display()))

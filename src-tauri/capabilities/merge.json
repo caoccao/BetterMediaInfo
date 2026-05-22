@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "merge",
+  "description": "Capability for the merge windows",
+  "windows": [
+    "merge-*"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "clipboard-manager:allow-write-text",
+    "dialog:default"
+  ]
+}
