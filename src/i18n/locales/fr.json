@@ -31,6 +31,7 @@
     "addFolder": "Ajouter un dossier",
     "json": "Json",
     "extract": "Extraire",
+    "merge": "Fusionner",
     "openInBatchMkvExtract": "Ouvrir dans BatchMkvExtract",
     "openInBDMaster": "Ouvrir dans BDMaster",
     "openInMkvToolNixGui": "Ouvrir dans MkvToolNix GUI",

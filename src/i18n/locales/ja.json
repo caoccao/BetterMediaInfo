@@ -31,6 +31,7 @@
     "addFolder": "フォルダを追加",
     "json": "Json",
     "extract": "抽出",
+    "merge": "結合",
     "openInBatchMkvExtract": "BatchMkvExtract で開く",
     "openInBDMaster": "BDMaster で開く",
     "openInMkvToolNixGui": "MkvToolNix GUI で開く",

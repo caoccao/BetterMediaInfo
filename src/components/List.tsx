@@ -46,6 +46,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
+import TransformIcon from '@mui/icons-material/Transform';
 import NotesIcon from '@mui/icons-material/Notes';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -928,11 +929,20 @@ export default function List() {
                   const isMkv = file.toLowerCase().endsWith('.mkv');
                   const isIso = file.toLowerCase().endsWith('.iso');
                   const showExtract = isMkv;
+                  const videoTrackCount = mediaFileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Video)?.count ?? 0;
+                  const showMerge = mkvtoolnixGuiAvailable && videoTrackCount > 0;
                   const showBatchMkvExtract = isMkv && batchMkvExtractAvailable;
                   const showBDMaster = isIso && bdMasterAvailable;
                   const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
                   const showMpcHc = isVideoFile(file) && mpcHcAvailable;
-                  const hasFirstGroup = showExtract || showBatchMkvExtract || showBDMaster || showMkvToolNixGui || showMpcHc;
+                  const externalToolCount =
+                    (showBatchMkvExtract ? 1 : 0) +
+                    (showBDMaster ? 1 : 0) +
+                    (showMkvToolNixGui ? 1 : 0) +
+                    (showMpcHc ? 1 : 0);
+                  const internalToolCount =
+                    (showMerge ? 1 : 0) +
+                    (showExtract ? 1 : 0);
                   return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {showBDMaster && (
@@ -944,13 +954,6 @@ export default function List() {
                             alt="BDMaster"
                             sx={{ width: 18, height: 18, objectFit: 'contain' }}
                           />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    {showExtract && (
-                      <Tooltip title={t('list.extract')}>
-                        <IconButton size="small" onClick={() => openExtractWindow(file)}>
-                          <ContentCutIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -990,7 +993,24 @@ export default function List() {
                         </IconButton>
                       </Tooltip>
                     )}
-                    {hasFirstGroup && (
+                    {externalToolCount > 0 && (
+                      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                    )}
+                    {showMerge && (
+                      <Tooltip title={t('list.merge')}>
+                        <IconButton size="small">
+                          <TransformIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {showExtract && (
+                      <Tooltip title={t('list.extract')}>
+                        <IconButton size="small" onClick={() => openExtractWindow(file)}>
+                          <ContentCutIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {internalToolCount > 0 && (
                       <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                     )}
                     <Tooltip title={t('list.json')}>
