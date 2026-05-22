@@ -37,6 +37,23 @@ import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TransformIcon from '@mui/icons-material/Transform';
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
@@ -154,6 +171,87 @@ function forcedSetterFor(
   }
 }
 
+function reorderFor(
+  data: MergeData,
+  stream: Protocol.StreamKind,
+  activeNum: number,
+  overNum: number,
+): MergeData {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.withReorderedVideos(activeNum, overNum);
+    case Protocol.StreamKind.Audio: return data.withReorderedAudios(activeNum, overNum);
+    case Protocol.StreamKind.Text: return data.withReorderedTexts(activeNum, overNum);
+    case Protocol.StreamKind.Menu: return data.withReorderedMenus(activeNum, overNum);
+    default: return data;
+  }
+}
+
+/**
+ * Returns the stream property maps for the given stream, ordered by the
+ * current row order tracked in mergeData. For General (single row) and
+ * any unknown stream, returns the input as-is.
+ */
+function orderedStreamMaps(
+  stream: Protocol.StreamKind,
+  streamMaps: Array<Protocol.StreamPropertyMap>,
+  data: MergeData,
+): Array<Protocol.StreamPropertyMap> {
+  let nums: number[];
+  switch (stream) {
+    case Protocol.StreamKind.Video: nums = data.videos.map((v) => v.num); break;
+    case Protocol.StreamKind.Audio: nums = data.audios.map((a) => a.num); break;
+    case Protocol.StreamKind.Text: nums = data.texts.map((t) => t.num); break;
+    case Protocol.StreamKind.Menu: nums = data.menus.map((m) => m.num); break;
+    default: return streamMaps;
+  }
+  if (nums.length === 0) { return streamMaps; }
+  const byNum = new Map(streamMaps.map((map) => [map.num, map]));
+  return nums
+    .map((n) => byNum.get(n))
+    .filter((m): m is Protocol.StreamPropertyMap => !!m);
+}
+
+function rowId(stream: Protocol.StreamKind, num: number): string {
+  return `${stream}:${num}`;
+}
+
+function parseRowId(id: string): { stream: Protocol.StreamKind; num: number } | null {
+  const parts = id.split(':');
+  if (parts.length !== 2) { return null; }
+  const streamValues = Object.values(Protocol.StreamKind) as string[];
+  if (!streamValues.includes(parts[0])) { return null; }
+  const num = Number(parts[1]);
+  if (Number.isNaN(num)) { return null; }
+  return { stream: parts[0] as Protocol.StreamKind, num };
+}
+
+interface SortableTableRowProps {
+  id: string;
+  sortable: boolean;
+  children: React.ReactNode;
+}
+
+function SortableTableRow({ id, sortable, children }: SortableTableRowProps) {
+  const sortableProps = useSortable({ id, disabled: !sortable });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortableProps;
+  return (
+    <TableRow
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: sortable ? 'grab' : undefined,
+      }}
+      sx={sortable ? { '&:hover': { bgcolor: 'action.hover' } } : undefined}
+    >
+      {children}
+    </TableRow>
+  );
+}
+
 interface MergeProps {
   file: string;
   mkvToolNixPath: string;
@@ -218,6 +316,20 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     await getCurrentWindow().close();
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (stream: Protocol.StreamKind) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) { return; }
+    const activeRow = parseRowId(String(active.id));
+    const overRow = parseRowId(String(over.id));
+    if (!activeRow || !overRow || activeRow.stream !== overRow.stream) { return; }
+    setMergeData((prev) => reorderFor(prev, stream, activeRow.num, overRow.num));
+  };
+
   useEffect(() => {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'w' || e.key === 'W')) {
@@ -278,9 +390,12 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
       </AppBar>
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {[...commonPropertiesMap.entries()].map(([stream, commonProperties]) => {
-          const streamMaps = propertyMaps.filter((map) => map.stream === stream);
-          if (streamMaps.length === 0) { return null; }
-          return (
+          const rawStreamMaps = propertyMaps.filter((map) => map.stream === stream);
+          if (rawStreamMaps.length === 0) { return null; }
+          const sortable = stream !== Protocol.StreamKind.General;
+          const streamMaps = orderedStreamMaps(stream, rawStreamMaps, mergeData);
+          const sortableIds = streamMaps.map((map) => rowId(map.stream, map.num));
+          const tableContent = (
             <TableContainer key={stream} sx={{ mt: 1 }}>
               <Table size="small">
                 <TableHead>
@@ -316,7 +431,11 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                       setMergeData((prev) => titleSetterFor(prev, map.stream, map.num, value));
                     };
                     return (
-                      <TableRow key={`${map.stream}:${map.num}`}>
+                      <SortableTableRow
+                        key={`${map.stream}:${map.num}`}
+                        id={rowId(map.stream, map.num)}
+                        sortable={sortable}
+                      >
                         {commonProperties
                           .filter((prop) => prop.inCardView)
                           .map((prop) => {
@@ -338,7 +457,10 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                                 }}
                               >
                                 {isId && streamEntry ? (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Box
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                  >
                                     <Checkbox
                                       size="small"
                                       checked={streamEntry.isEnabled}
@@ -352,65 +474,85 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                                     <span>{prop.format(map.propertyMap[prop.name], map.propertyMap)}</span>
                                   </Box>
                                 ) : isEditableTitle ? (
-                                  <TextField
-                                    size="small"
-                                    value={titleValue}
-                                    onChange={(e) => setTitleValue(e.target.value)}
-                                    variant="standard"
-                                    fullWidth
-                                    slotProps={{
-                                      input: {
-                                        endAdornment: titleValue ? (
-                                          <InputAdornment position="end">
-                                            <Tooltip title={t('merge.clearTitle')}>
-                                              <IconButton
-                                                size="small"
-                                                aria-label={t('merge.clearTitle')}
-                                                onClick={() => setTitleValue('')}
-                                                edge="end"
-                                              >
-                                                <ClearIcon fontSize="small" />
-                                              </IconButton>
-                                            </Tooltip>
-                                          </InputAdornment>
-                                        ) : null,
-                                      },
-                                    }}
-                                  />
+                                  <Box onPointerDown={(e) => e.stopPropagation()}>
+                                    <TextField
+                                      size="small"
+                                      value={titleValue}
+                                      onChange={(e) => setTitleValue(e.target.value)}
+                                      variant="standard"
+                                      fullWidth
+                                      slotProps={{
+                                        input: {
+                                          endAdornment: titleValue ? (
+                                            <InputAdornment position="end">
+                                              <Tooltip title={t('merge.clearTitle')}>
+                                                <IconButton
+                                                  size="small"
+                                                  aria-label={t('merge.clearTitle')}
+                                                  onClick={() => setTitleValue('')}
+                                                  edge="end"
+                                                >
+                                                  <ClearIcon fontSize="small" />
+                                                </IconButton>
+                                              </Tooltip>
+                                            </InputAdornment>
+                                          ) : null,
+                                        },
+                                      }}
+                                    />
+                                  </Box>
                                 ) : isDefault && trackRefs ? (
-                                  <Checkbox
-                                    size="small"
-                                    checked={trackRefs.isDefault}
-                                    onChange={(e) =>
-                                      setMergeData((prev) =>
-                                        defaultSetterFor(prev, map.stream, map.num, e.target.checked)
-                                      )
-                                    }
-                                    sx={{ p: 0 }}
-                                  />
+                                  <Box onPointerDown={(e) => e.stopPropagation()}>
+                                    <Checkbox
+                                      size="small"
+                                      checked={trackRefs.isDefault}
+                                      onChange={(e) =>
+                                        setMergeData((prev) =>
+                                          defaultSetterFor(prev, map.stream, map.num, e.target.checked)
+                                        )
+                                      }
+                                      sx={{ p: 0 }}
+                                    />
+                                  </Box>
                                 ) : isForced && trackRefs ? (
-                                  <Checkbox
-                                    size="small"
-                                    checked={trackRefs.isForced}
-                                    onChange={(e) =>
-                                      setMergeData((prev) =>
-                                        forcedSetterFor(prev, map.stream, map.num, e.target.checked)
-                                      )
-                                    }
-                                    sx={{ p: 0 }}
-                                  />
+                                  <Box onPointerDown={(e) => e.stopPropagation()}>
+                                    <Checkbox
+                                      size="small"
+                                      checked={trackRefs.isForced}
+                                      onChange={(e) =>
+                                        setMergeData((prev) =>
+                                          forcedSetterFor(prev, map.stream, map.num, e.target.checked)
+                                        )
+                                      }
+                                      sx={{ p: 0 }}
+                                    />
+                                  </Box>
                                 ) : (
                                   prop.format(map.propertyMap[prop.name], map.propertyMap)
                                 )}
                               </TableCell>
                             );
                           })}
-                      </TableRow>
+                      </SortableTableRow>
                     );
                   })}
                 </TableBody>
               </Table>
             </TableContainer>
+          );
+          if (!sortable) { return tableContent; }
+          return (
+            <DndContext
+              key={stream}
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={handleDragEnd(stream)}
+            >
+              <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+                {tableContent}
+              </SortableContext>
+            </DndContext>
           );
         })}
       </Box>

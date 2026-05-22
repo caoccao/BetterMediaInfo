@@ -227,6 +227,30 @@ export class MergeData {
     return this.menus.find((t) => t.num === num) ?? null;
   }
 
+  withReorderedVideos(activeNum: number, overNum: number): MergeData {
+    const next = this.clone();
+    next.videos = moveByNum(next.videos, activeNum, overNum);
+    return next;
+  }
+
+  withReorderedAudios(activeNum: number, overNum: number): MergeData {
+    const next = this.clone();
+    next.audios = moveByNum(next.audios, activeNum, overNum);
+    return next;
+  }
+
+  withReorderedTexts(activeNum: number, overNum: number): MergeData {
+    const next = this.clone();
+    next.texts = moveByNum(next.texts, activeNum, overNum);
+    return next;
+  }
+
+  withReorderedMenus(activeNum: number, overNum: number): MergeData {
+    const next = this.clone();
+    next.menus = moveByNum(next.menus, activeNum, overNum);
+    return next;
+  }
+
   withDestinationFile(value: string): MergeData {
     const next = this.clone();
     next.destinationFile = value;
@@ -364,4 +388,15 @@ export class MergeData {
 
 function parseYesNo(value: string | undefined): boolean {
   return (value ?? '').trim().toLowerCase() === 'yes';
+}
+
+function moveByNum<T extends { num: number }>(items: T[], activeNum: number, overNum: number): T[] {
+  if (activeNum === overNum) { return items; }
+  const fromIndex = items.findIndex((t) => t.num === activeNum);
+  const toIndex = items.findIndex((t) => t.num === overNum);
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) { return items; }
+  const next = items.slice();
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
 }
