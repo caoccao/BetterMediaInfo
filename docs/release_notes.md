@@ -4,6 +4,14 @@
 
 * Upgraded MediaInfoLib to v26.05
 * Added "Open in MkvToolNix GUI" action to the card view for video files when MKVToolNix is configured.
+* Added MKV merge with stream selection, editable track metadata, progress tracking, cancellation, and clipboard command copy.
+* Added drag-and-drop stream reordering in the MKV merge window.
+* Added automatic output extension selection for MKV merge based on enabled stream types.
+* Added toolbar actions and keyboard shortcuts for toggling streams, resetting default streams, and resetting forced streams in the MKV merge window.
+* Added editable language dropdowns in the MKV merge window, backed by preferred languages from MKV options.
+* Added MKV title autocompletion settings and editable title dropdowns in the MKV merge window.
+* Added MKVToolNix additional parameter settings, including configurable mkvmerge process priority.
+* Added keyboard shortcuts and updated tooltips for MKV merge and extract commands.
 * Added multi-language support to the Windows installers.
 * Added Italian as a new supported language.
 * Added BDMaster integration with Blu-ray folder detection and "Open in BDMaster" action for ISO files.
@@ -12,6 +20,7 @@
 * Added MPC HC integration on Windows with auto-detection and an "Open in MPC HC" action for video files.
 * Added templates for customization of the details view.
 * Added export to details view.
+* Improved configuration backward compatibility so missing JSON nodes use default values while preserving existing settings.
 
 ## 0.9.0
 
