@@ -516,6 +516,189 @@ function LanguageAutocomplete({
   );
 }
 
+function firstMatchingTitleOptionIndex(options: Array<string>, inputValue: string): number {
+  const query = inputValue.trim().toLocaleLowerCase();
+  if (query.length === 0) { return -1; }
+
+  const startsWithIndex = options.findIndex((option) => option.toLocaleLowerCase().startsWith(query));
+  if (startsWithIndex >= 0) { return startsWithIndex; }
+
+  return options.findIndex((option) => option.toLocaleLowerCase().includes(query));
+}
+
+interface TitleAutocompleteProps {
+  value: string;
+  options: Array<string>;
+  onChange: (value: string) => void;
+}
+
+function TitleAutocomplete({
+  value,
+  options,
+  onChange,
+}: TitleAutocompleteProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const listboxRef = useRef<HTMLUListElement | null>(null);
+  const [dropdownPlacement, setDropdownPlacement] = useState<'bottom-start' | 'top-start'>('bottom-start');
+  const [dropdownOpenVersion, setDropdownOpenVersion] = useState(0);
+  const matchingOptionIndex = useMemo(
+    () => firstMatchingTitleOptionIndex(options, value),
+    [options, value],
+  );
+  const updateDropdownPlacement = useCallback(() => {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) { return; }
+
+    const visibleRows = Math.min(options.length, LANGUAGE_OPTION_VISIBLE_ROWS);
+    const dropdownHeight = visibleRows * LANGUAGE_OPTION_ROW_HEIGHT;
+    const below = window.innerHeight - rect.bottom - 8;
+    const above = rect.top - 8;
+    setDropdownPlacement(below >= dropdownHeight || below >= above ? 'bottom-start' : 'top-start');
+  }, [options.length]);
+  const handleOpen = useCallback(() => {
+    updateDropdownPlacement();
+    setDropdownOpenVersion((version) => version + 1);
+  }, [updateDropdownPlacement]);
+  const scrollToMatchingOption = useCallback((): boolean => {
+    if (matchingOptionIndex < 0 || !listboxRef.current) { return false; }
+
+    const visibleRows = Math.min(options.length, LANGUAGE_OPTION_VISIBLE_ROWS);
+    const firstVisibleIndex = Math.max(0, matchingOptionIndex - Math.floor(visibleRows / 2));
+    listboxRef.current.scrollTop = firstVisibleIndex * LANGUAGE_OPTION_ROW_HEIGHT;
+    return true;
+  }, [matchingOptionIndex, options.length]);
+
+  useLayoutEffect(() => {
+    if (matchingOptionIndex < 0) { return; }
+
+    scrollToMatchingOption();
+    let followUpAnimationFrame = 0;
+    const animationFrame = requestAnimationFrame(() => {
+      scrollToMatchingOption();
+      followUpAnimationFrame = requestAnimationFrame(scrollToMatchingOption);
+    });
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(followUpAnimationFrame);
+    };
+  }, [dropdownOpenVersion, matchingOptionIndex, scrollToMatchingOption, value]);
+
+  return (
+    <Autocomplete<string, false, false, true>
+      ref={rootRef}
+      freeSolo
+      fullWidth
+      size="small"
+      options={options}
+      filterOptions={(allOptions) => allOptions}
+      value={value}
+      inputValue={value}
+      renderOption={(props, option, state) => {
+        const { key, ...optionProps } = props;
+        const isMatchedOption = state.index === matchingOptionIndex;
+
+        return (
+          <Box
+            key={key}
+            component="li"
+            {...optionProps}
+            sx={{
+              bgcolor: isMatchedOption ? 'action.selected' : undefined,
+              '&.Mui-focused': {
+                bgcolor: isMatchedOption ? 'action.selected' : 'action.hover',
+              },
+            }}
+          >
+            {option}
+          </Box>
+        );
+      }}
+      onChange={(_e, nextValue) => {
+        onChange(nextValue ?? '');
+      }}
+      onInputChange={(_e, nextValue, reason) => {
+        if (reason === 'input' || reason === 'clear') {
+          onChange(nextValue);
+        }
+      }}
+      onOpen={handleOpen}
+      slotProps={{
+        popper: {
+          placement: dropdownPlacement,
+          modifiers: [
+            { name: 'flip', enabled: false },
+            {
+              name: 'preventOverflow',
+              enabled: true,
+              options: {
+                mainAxis: true,
+                altAxis: false,
+                padding: 8,
+              },
+            },
+            { name: 'offset', options: { offset: [0, 0] } },
+          ],
+          sx: {
+            width: 'max-content !important',
+            minWidth: 320,
+            maxWidth: 'calc(100vw - 32px)',
+            '& .MuiAutocomplete-paper': {
+              width: 'max-content',
+              minWidth: 320,
+              maxWidth: 'calc(100vw - 32px)',
+            },
+            '& .MuiAutocomplete-listbox': {
+              p: 0,
+              boxSizing: 'border-box',
+              maxHeight: `min(${LANGUAGE_DROPDOWN_MAX_HEIGHT}px, calc(100vh - 16px))`,
+              overflowY: options.length > LANGUAGE_OPTION_VISIBLE_ROWS ? 'auto' : 'hidden',
+            },
+            '& .MuiAutocomplete-option': {
+              boxSizing: 'border-box',
+              height: LANGUAGE_OPTION_ROW_HEIGHT,
+              minHeight: LANGUAGE_OPTION_ROW_HEIGHT,
+              minWidth: 280,
+              py: 0.5,
+              whiteSpace: 'nowrap',
+            },
+          },
+        },
+        listbox: {
+          ref: listboxRef,
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          variant="standard"
+          fullWidth
+          slotProps={{
+            ...params.slotProps,
+            htmlInput: {
+              ...params.slotProps.htmlInput,
+              onFocus: (event: FocusEvent<HTMLInputElement>) => {
+                params.slotProps.htmlInput.onFocus?.(event);
+                updateDropdownPlacement();
+                event.currentTarget.select();
+              },
+              onClick: (event: MouseEvent<HTMLInputElement>) => {
+                params.slotProps.htmlInput.onClick?.(event);
+                updateDropdownPlacement();
+                event.currentTarget.select();
+              },
+              onMouseUp: (event: MouseEvent<HTMLInputElement>) => {
+                params.slotProps.htmlInput.onMouseUp?.(event);
+                event.preventDefault();
+              },
+            },
+          }}
+        />
+      )}
+    />
+  );
+}
+
 interface TrackArgInput {
   num: number;
   isEnabled: boolean;
@@ -959,6 +1142,18 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
       ...appendUnique(availableLanguageOptions),
     ];
   }, [availableLanguageOptions, preferredLanguageOptions]);
+  const titleOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return (config?.mkv?.titleAutocompletion?.titles ?? [])
+      .map((title) => title.trim())
+      .filter((title) => {
+        if (title.length === 0) { return false; }
+        const key = title.toLocaleLowerCase();
+        if (seen.has(key)) { return false; }
+        seen.add(key);
+        return true;
+      });
+  }, [config]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1393,6 +1588,8 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                           .filter((prop) => prop.inCardView)
                           .map((prop) => {
                             const isEditableTitle = prop.name === 'Title';
+                            const isGeneralTitle = isEditableTitle && map.stream === Protocol.StreamKind.General;
+                            const isEditableTrackTitle = isEditableTitle && trackRefs !== null;
                             const isEditableLanguage = prop.name === 'Language' && trackRefs !== null;
                             const isDefault = prop.name === 'Default';
                             const isForced = prop.name === 'Forced';
@@ -1427,7 +1624,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                                     />
                                     <span>{prop.format(map.propertyMap[prop.name], map.propertyMap)}</span>
                                   </Box>
-                                ) : isEditableTitle ? (
+                                ) : isGeneralTitle ? (
                                   <Box onPointerDown={(e) => e.stopPropagation()}>
                                     <TextField
                                       size="small"
@@ -1453,6 +1650,14 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                                           ) : null,
                                         },
                                       }}
+                                    />
+                                  </Box>
+                                ) : isEditableTrackTitle ? (
+                                  <Box sx={{ width: '100%' }} onPointerDown={(e) => e.stopPropagation()}>
+                                    <TitleAutocomplete
+                                      options={titleOptions}
+                                      value={titleValue}
+                                      onChange={setTitleValue}
                                     />
                                   </Box>
                                 ) : isEditableLanguage ? (
