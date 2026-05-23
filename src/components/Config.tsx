@@ -1481,6 +1481,7 @@ function SortableTitleAutocompletionRow({
   onEdit,
   onDelete,
   onStopEditing,
+  onCancelEditing,
   onTitleChange,
 }: {
   row: TitleAutocompletionRow;
@@ -1488,6 +1489,7 @@ function SortableTitleAutocompletionRow({
   onEdit: () => void;
   onDelete: () => void;
   onStopEditing: () => void;
+  onCancelEditing: () => void;
   onTitleChange: (title: string) => void;
 }) {
   const { t } = useTranslation();
@@ -1510,42 +1512,59 @@ function SortableTitleAutocompletionRow({
         '&:hover': { bgcolor: 'action.hover' },
       }}
     >
-      <TableCell sx={{ width: '70%' }}>
+      <TableCell sx={{ width: '70%', py: 0.5 }}>
         {isEditing ? (
           <TextField
             autoFocus
             fullWidth
             size="small"
+            variant="standard"
             value={row.title}
             onChange={(e) => onTitleChange(e.target.value)}
             onBlur={onStopEditing}
             onPointerDown={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
+              e.nativeEvent.stopImmediatePropagation();
               e.stopPropagation();
-              if (e.key === 'Enter' || e.key === 'Escape') {
-                e.currentTarget.blur();
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onStopEditing();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                onCancelEditing();
               }
+            }}
+            sx={{
+              '& .MuiInputBase-root': {
+                height: 32,
+                fontSize: '0.875rem',
+              },
+              '& .MuiInputBase-input': {
+                height: 20,
+                py: 0,
+              },
             }}
           />
         ) : (
-          <Typography variant="body2">{row.title}</Typography>
+          <Typography
+            variant="body2"
+            sx={{ display: 'flex', alignItems: 'center', minHeight: 32 }}
+          >
+            {row.title}
+          </Typography>
         )}
       </TableCell>
       <TableCell
         align="right"
-        sx={{ whiteSpace: 'nowrap' }}
+        sx={{ py: 0.5, whiteSpace: 'nowrap' }}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <Tooltip title={t('config.edit')}>
-          <IconButton size="small" aria-label={t('config.edit')} onClick={onEdit}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('config.delete')}>
-          <IconButton size="small" aria-label={t('config.delete')} onClick={onDelete}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <IconButton size="small" aria-label={t('config.edit')} onClick={onEdit}>
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label={t('config.delete')} onClick={onDelete}>
+          <DeleteIcon fontSize="small" />
+        </IconButton>
       </TableCell>
     </TableRow>
   );
@@ -1560,6 +1579,7 @@ function MkvTitleAutocompletionPanel({
 }) {
   const { t } = useTranslation();
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const editingOriginalRef = useRef<{ id: string; title: string } | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -1586,8 +1606,33 @@ function MkvTitleAutocompletionPanel({
   const handleAdd = useCallback(() => {
     const row = { id: nextTitleAutocompletionRowId(), title: '' };
     onRowsChange([...rows, row]);
+    editingOriginalRef.current = { id: row.id, title: row.title };
     setEditingRowId(row.id);
   }, [onRowsChange, rows]);
+
+  const handleStartEditing = useCallback((row: TitleAutocompletionRow) => {
+    editingOriginalRef.current = { id: row.id, title: row.title };
+    setEditingRowId(row.id);
+  }, []);
+
+  const handleStopEditing = useCallback((rowId: string) => {
+    editingOriginalRef.current = null;
+    setEditingRowId((current) => (current === rowId ? null : current));
+  }, []);
+
+  const handleCancelEditing = useCallback(
+    (row: TitleAutocompletionRow) => {
+      const original = editingOriginalRef.current;
+      if (original?.id === row.id) {
+        onRowsChange(rows.map((candidate) => (
+          candidate.id === row.id ? { ...candidate, title: original.title } : candidate
+        )));
+      }
+      editingOriginalRef.current = null;
+      setEditingRowId((current) => (current === row.id ? null : current));
+    },
+    [onRowsChange, rows],
+  );
 
   return (
     <Box>
@@ -1613,9 +1658,10 @@ function MkvTitleAutocompletionPanel({
                     key={row.id}
                     row={row}
                     isEditing={editingRowId === row.id}
-                    onEdit={() => setEditingRowId(row.id)}
+                    onEdit={() => handleStartEditing(row)}
                     onDelete={() => onRowsChange(rows.filter((candidate) => candidate.id !== row.id))}
-                    onStopEditing={() => setEditingRowId((current) => (current === row.id ? null : current))}
+                    onStopEditing={() => handleStopEditing(row.id)}
+                    onCancelEditing={() => handleCancelEditing(row)}
                     onTitleChange={(title) => {
                       onRowsChange(rows.map((candidate) => (
                         candidate.id === row.id ? { ...candidate, title } : candidate
@@ -1628,15 +1674,17 @@ function MkvTitleAutocompletionPanel({
           </Table>
         </TableContainer>
       </DndContext>
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<AddIcon />}
-        onClick={handleAdd}
-        sx={{ mt: 1, textTransform: 'none' }}
-      >
-        {t('config.add')}
-      </Button>
+      <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<AddIcon />}
+          onClick={handleAdd}
+          sx={{ textTransform: 'none' }}
+        >
+          {t('config.add')}
+        </Button>
+      </Box>
     </Box>
   );
 }
