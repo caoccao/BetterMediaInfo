@@ -20,6 +20,10 @@ import {
   Box,
   Button,
   Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -139,13 +143,24 @@ function toConfigStreamFormat(s: StreamFormatState): Protocol.ConfigStreamFormat
   };
 }
 
-function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+function SectionHeader({
+  icon,
+  title,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-      <Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-        {title}
-      </Typography>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          {title}
+        </Typography>
+      </Box>
+      {action}
     </Box>
   );
 }
@@ -857,34 +872,6 @@ function TemplatesPanelBody({
       >
         <Box sx={{ display: 'flex', gap: 1, flex: 1, minHeight: 0 }}>
           <Box
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 1,
-              overflow: 'hidden',
-            }}
-          >
-            <TemplateTableHeader
-              label={t('config.property')}
-              checked={leftAllChecked}
-              indeterminate={leftSomeChecked}
-              onToggle={handleToggleAllLeft}
-              disabled={leftProperties.length === 0}
-            />
-            <LeftDropArea
-              leftProperties={leftProperties}
-              leftSelection={leftSelection}
-              onToggle={handleToggleLeft}
-              activeId={activeId}
-              overId={overId}
-              dragSet={dragSetRef.current}
-            />
-          </Box>
-          <Box
             ref={attachRightPaneRef}
             sx={{
               flex: 1,
@@ -920,6 +907,34 @@ function TemplatesPanelBody({
                 />
               ))}
             </Box>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+            }}
+          >
+            <TemplateTableHeader
+              label={t('config.property')}
+              checked={leftAllChecked}
+              indeterminate={leftSomeChecked}
+              onToggle={handleToggleAllLeft}
+              disabled={leftProperties.length === 0}
+            />
+            <LeftDropArea
+              leftProperties={leftProperties}
+              leftSelection={leftSelection}
+              onToggle={handleToggleLeft}
+              activeId={activeId}
+              overId={overId}
+              dragSet={dragSetRef.current}
+            />
           </Box>
         </Box>
         <DragOverlay dropAnimation={null}>
@@ -978,6 +993,8 @@ export default function Config() {
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
   const [mkvPriority, setMkvPriority] = useState<Protocol.MkvPriority>(Protocol.MkvPriority.Lowest);
   const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
+  const [mkvOptionsDialogOpen, setMkvOptionsDialogOpen] = useState(false);
+  const [mkvOptionsTab, setMkvOptionsTab] = useState(0);
   const [batchMkvExtractPath, setBatchMkvExtractPath] = useState('');
   const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
   const [bdMasterPath, setBdMasterPath] = useState('');
@@ -2032,6 +2049,17 @@ export default function Config() {
             />
           }
           title={t('config.mkv')}
+          action={
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={!mkvtoolnixFound}
+              onClick={() => setMkvOptionsDialogOpen(true)}
+              sx={{ minWidth: 112, height: 32, textTransform: 'none' }}
+            >
+              {t('config.moreOptions')}
+            </Button>
+          }
         />
         <Box sx={{ py: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -2073,27 +2101,74 @@ export default function Config() {
           >
             {mkvtoolnixFound ? t('config.mkvtoolnixFound') : t('config.mkvtoolnixNotFound')}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
-            <Typography variant="body2" color="text.secondary">
-              {t('config.priority')}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <Select
-                value={mkvPriority}
-                onChange={(e) => {
-                  setMkvPriority(e.target.value as Protocol.MkvPriority);
-                }}
-              >
-                <MenuItem value={Protocol.MkvPriority.Highest}>{t('config.priorityHighest')}</MenuItem>
-                <MenuItem value={Protocol.MkvPriority.Higher}>{t('config.priorityHigher')}</MenuItem>
-                <MenuItem value={Protocol.MkvPriority.Normal}>{t('config.priorityNormal')}</MenuItem>
-                <MenuItem value={Protocol.MkvPriority.Lower}>{t('config.priorityLower')}</MenuItem>
-                <MenuItem value={Protocol.MkvPriority.Lowest}>{t('config.priorityLowest')}</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
         </Box>
       </Paper>
+
+      <Dialog
+        open={mkvOptionsDialogOpen}
+        onClose={() => setMkvOptionsDialogOpen(false)}
+        maxWidth={false}
+        slotProps={{
+          paper: {
+            sx: {
+              width: '90vw',
+              height: '90vh',
+              maxWidth: 'none',
+              maxHeight: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          },
+        }}
+      >
+        <DialogTitle>{t('config.mkvOptionsTitle')}</DialogTitle>
+        <DialogContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', p: 0 }}>
+          <Box sx={{ mx: 4, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+            <Tabs
+              value={mkvOptionsTab}
+              onChange={(_e, value: number) => setMkvOptionsTab(value)}
+              sx={{ mt: 0, minHeight: '24px', '& .MuiTab-root': { textTransform: 'none' } }}
+            >
+              <Tab label={t('config.general')} style={{ minHeight: '24px' }} sx={{ py: 0, my: 0 }} />
+            </Tabs>
+          </Box>
+          {mkvOptionsTab === 0 && (
+            <Box sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {t('config.priority')}
+                </Typography>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <Select
+                    value={mkvPriority}
+                    onChange={(e) => {
+                      setMkvPriority(e.target.value as Protocol.MkvPriority);
+                    }}
+                  >
+                    <MenuItem value={Protocol.MkvPriority.Highest}>{t('config.priorityHighest')}</MenuItem>
+                    <MenuItem value={Protocol.MkvPriority.Higher}>{t('config.priorityHigher')}</MenuItem>
+                    <MenuItem value={Protocol.MkvPriority.Normal}>{t('config.priorityNormal')}</MenuItem>
+                    <MenuItem value={Protocol.MkvPriority.Lower}>{t('config.priorityLower')}</MenuItem>
+                    <MenuItem value={Protocol.MkvPriority.Lowest}>{t('config.priorityLowest')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', gap: 1, pb: 2 }}>
+          <Button variant="contained" onClick={() => {}} sx={{ minWidth: 90, textTransform: 'none' }}>
+            {t('config.ok')}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setMkvOptionsDialogOpen(false)}
+            sx={{ minWidth: 90, textTransform: 'none' }}
+          >
+            {t('config.cancel')}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
         <SectionHeader
