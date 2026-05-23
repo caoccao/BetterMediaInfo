@@ -227,6 +227,7 @@
     "title": "Title",
     "clearTitle": "Clear title",
     "clearDestinationFile": "Clear destination file",
+    "toggleAllStreams": "Toggle all streams",
     "merging": "Merging...",
     "cancel": "Cancel",
     "elapsed": "Elapsed",

@@ -227,6 +227,7 @@
     "title": "Titel",
     "clearTitle": "Titel löschen",
     "clearDestinationFile": "Zieldatei löschen",
+    "toggleAllStreams": "Alle Streams umschalten",
     "merging": "Zusammenführen läuft...",
     "cancel": "Abbrechen",
     "elapsed": "Vergangen",

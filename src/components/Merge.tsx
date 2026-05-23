@@ -659,6 +659,10 @@ function streamEntryFor(
   }
 }
 
+function streamEntriesForData(data: MergeData): Array<AnyStreamEntry> {
+  return [...data.videos, ...data.audios, ...data.texts, ...data.menus];
+}
+
 function enabledSetterFor(
   data: MergeData,
   stream: Protocol.StreamKind,
@@ -672,6 +676,23 @@ function enabledSetterFor(
     case Protocol.StreamKind.Menu: return data.withMenuEnabled(num, value);
     default: return data;
   }
+}
+
+function allStreamsEnabledSetter(data: MergeData, value: boolean): MergeData {
+  let next = data;
+  for (const track of data.videos) {
+    next = next.withVideoEnabled(track.num, value);
+  }
+  for (const track of data.audios) {
+    next = next.withAudioEnabled(track.num, value);
+  }
+  for (const track of data.texts) {
+    next = next.withTextEnabled(track.num, value);
+  }
+  for (const track of data.menus) {
+    next = next.withMenuEnabled(track.num, value);
+  }
+  return next;
 }
 
 function titleSetterFor(
@@ -920,6 +941,15 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
 
   const desiredExtension = useMemo(() => pickExtension(mergeData), [mergeData]);
   const canMerge = desiredExtension !== null;
+  const canCopyCommand = Boolean(mergeData.destinationFile) && canMerge;
+  const canRunMerge = canCopyCommand && !merging;
+  const streamEntries = useMemo(() => streamEntriesForData(mergeData), [mergeData]);
+  const streamCheckboxCount = streamEntries.length;
+  const enabledStreamCheckboxCount = streamEntries.filter((entry) => entry.isEnabled).length;
+  const allStreamsChecked = streamCheckboxCount > 0
+    && enabledStreamCheckboxCount === streamCheckboxCount;
+  const allStreamsIndeterminate = enabledStreamCheckboxCount > 0
+    && enabledStreamCheckboxCount < streamCheckboxCount;
 
   // Keep the destination file extension in sync with what mkvmerge can
   // actually produce: .mkv (has video), .mka (audio-only), .mks (text-only).
@@ -1031,13 +1061,13 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
   }, [progress, elapsed]);
 
   const handleCopyCommand = async () => {
-    if (!mergeData.destinationFile) { return; }
+    if (!canCopyCommand) { return; }
     const command = buildMergeCommand(mkvToolNixPath, file, mergeData, propertyMaps, config?.mkv?.priority ?? null);
     await writeText(command);
   };
 
   const handleMerge = async () => {
-    if (!mergeData.destinationFile || merging) { return; }
+    if (!canRunMerge) { return; }
     setMerging(true);
     setProgress(0);
     setCompletion(null);
@@ -1092,17 +1122,28 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
   };
 
   useEffect(() => {
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) { return; }
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && e.key === 'F2') {
+        e.preventDefault();
+        void handleCopyCommand();
+        return;
+      }
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && e.key === 'F3') {
+        e.preventDefault();
+        void handleMerge();
+        return;
+      }
       if (e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'w' || e.key === 'W')) {
         e.preventDefault();
-        handleClose();
+        void handleClose();
       }
     };
-    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [handleClose, handleCopyCommand, handleMerge]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -1134,12 +1175,20 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           />
         </Toolbar>
         <Toolbar variant="dense" sx={{ gap: 1, justifyContent: 'center' }}>
-          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile || !canMerge} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
-            {t('merge.copyCommand')}
-          </Button>
-          <Button variant="outlined" size="small" disabled={!mergeData.destinationFile || !canMerge || merging} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
-            {t('merge.merge')}
-          </Button>
+          <Tooltip title="F2">
+            <span>
+              <Button variant="outlined" size="small" disabled={!canCopyCommand} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+                {t('merge.copyCommand')}
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title="F3">
+            <span>
+              <Button variant="outlined" size="small" disabled={!canRunMerge} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
+                {t('merge.merge')}
+              </Button>
+            </span>
+          </Tooltip>
           <Tooltip title="Ctrl+W">
             <span>
               <Button variant="outlined" size="small" disabled={merging} onClick={handleClose} startIcon={<CloseIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
@@ -1148,8 +1197,29 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
             </span>
           </Tooltip>
         </Toolbar>
+        <Toolbar
+          variant="dense"
+          disableGutters
+          sx={{ minHeight: '32px !important', px: 2.5 }}
+        >
+          <Checkbox
+            size="small"
+            checked={allStreamsChecked}
+            indeterminate={allStreamsIndeterminate}
+            disabled={streamCheckboxCount === 0}
+            onChange={(e) => {
+              setMergeData((prev) => allStreamsEnabledSetter(prev, e.target.checked));
+            }}
+            slotProps={{
+              input: {
+                'aria-label': t('merge.toggleAllStreams'),
+              },
+            }}
+            sx={{ p: 0.5 }}
+          />
+        </Toolbar>
       </AppBar>
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', pt: 0.5, pb: 2, pl: 2, pr: 2 }}>
         {[...commonPropertiesMap.entries()].map(([stream, commonProperties]) => {
           const rawStreamMaps = propertyMaps.filter((map) => map.stream === stream);
           if (rawStreamMaps.length === 0) { return null; }
@@ -1157,7 +1227,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           const streamMaps = orderedStreamMaps(stream, rawStreamMaps, mergeData);
           const sortableIds = streamMaps.map((map) => rowId(map.stream, map.num));
           const tableContent = (
-            <TableContainer key={stream} sx={{ mt: 1 }}>
+            <TableContainer key={stream} sx={{ mt: 0.5 }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>

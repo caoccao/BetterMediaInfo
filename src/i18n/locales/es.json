@@ -227,6 +227,7 @@
     "title": "Título",
     "clearTitle": "Borrar título",
     "clearDestinationFile": "Borrar archivo de destino",
+    "toggleAllStreams": "Alternar todos los flujos",
     "merging": "Combinando...",
     "cancel": "Cancelar",
     "elapsed": "Transcurrido",

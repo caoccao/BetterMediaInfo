@@ -227,6 +227,7 @@
     "title": "标题",
     "clearTitle": "清除标题",
     "clearDestinationFile": "清除目标文件",
+    "toggleAllStreams": "切换所有流",
     "merging": "正在合并...",
     "cancel": "取消",
     "elapsed": "已用时间",

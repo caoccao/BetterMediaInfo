@@ -227,6 +227,7 @@
     "title": "Titre",
     "clearTitle": "Effacer le titre",
     "clearDestinationFile": "Effacer le fichier de destination",
+    "toggleAllStreams": "Activer/désactiver tous les flux",
     "merging": "Fusion en cours...",
     "cancel": "Annuler",
     "elapsed": "Écoulé",

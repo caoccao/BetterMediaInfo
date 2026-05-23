@@ -227,6 +227,7 @@
     "title": "タイトル",
     "clearTitle": "タイトルをクリア",
     "clearDestinationFile": "出力ファイルをクリア",
+    "toggleAllStreams": "すべてのストリームを切り替え",
     "merging": "結合中...",
     "cancel": "キャンセル",
     "elapsed": "経過時間",

@@ -227,6 +227,7 @@
     "title": "標題",
     "clearTitle": "清除標題",
     "clearDestinationFile": "清除目標檔案",
+    "toggleAllStreams": "切換所有串流",
     "merging": "正在合併...",
     "cancel": "取消",
     "elapsed": "已用時間",
