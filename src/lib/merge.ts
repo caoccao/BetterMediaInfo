@@ -85,19 +85,21 @@ export class MergeVideoData {
   num: number;
   isEnabled: boolean;
   title: string;
+  language: string;
   isDefault: boolean;
   isForced: boolean;
 
-  constructor(num: number, isEnabled = true, title = '', isDefault = false, isForced = false) {
+  constructor(num: number, isEnabled = true, title = '', language = '', isDefault = false, isForced = false) {
     this.num = num;
     this.isEnabled = isEnabled;
     this.title = title;
+    this.language = language;
     this.isDefault = isDefault;
     this.isForced = isForced;
   }
 
   clone(): MergeVideoData {
-    return new MergeVideoData(this.num, this.isEnabled, this.title, this.isDefault, this.isForced);
+    return new MergeVideoData(this.num, this.isEnabled, this.title, this.language, this.isDefault, this.isForced);
   }
 }
 
@@ -109,19 +111,21 @@ export class MergeAudioData {
   num: number;
   isEnabled: boolean;
   title: string;
+  language: string;
   isDefault: boolean;
   isForced: boolean;
 
-  constructor(num: number, isEnabled = true, title = '', isDefault = false, isForced = false) {
+  constructor(num: number, isEnabled = true, title = '', language = '', isDefault = false, isForced = false) {
     this.num = num;
     this.isEnabled = isEnabled;
     this.title = title;
+    this.language = language;
     this.isDefault = isDefault;
     this.isForced = isForced;
   }
 
   clone(): MergeAudioData {
-    return new MergeAudioData(this.num, this.isEnabled, this.title, this.isDefault, this.isForced);
+    return new MergeAudioData(this.num, this.isEnabled, this.title, this.language, this.isDefault, this.isForced);
   }
 }
 
@@ -133,19 +137,21 @@ export class MergeTextData {
   num: number;
   isEnabled: boolean;
   title: string;
+  language: string;
   isDefault: boolean;
   isForced: boolean;
 
-  constructor(num: number, isEnabled = true, title = '', isDefault = false, isForced = false) {
+  constructor(num: number, isEnabled = true, title = '', language = '', isDefault = false, isForced = false) {
     this.num = num;
     this.isEnabled = isEnabled;
     this.title = title;
+    this.language = language;
     this.isDefault = isDefault;
     this.isForced = isForced;
   }
 
   clone(): MergeTextData {
-    return new MergeTextData(this.num, this.isEnabled, this.title, this.isDefault, this.isForced);
+    return new MergeTextData(this.num, this.isEnabled, this.title, this.language, this.isDefault, this.isForced);
   }
 }
 
@@ -277,6 +283,13 @@ export class MergeData {
     return next;
   }
 
+  withVideoLanguage(num: number, value: string): MergeData {
+    const next = this.clone();
+    const track = next.findVideo(num);
+    if (track) { track.language = value; }
+    return next;
+  }
+
   withVideoDefault(num: number, value: boolean): MergeData {
     const next = this.clone();
     const track = next.findVideo(num);
@@ -305,6 +318,13 @@ export class MergeData {
     return next;
   }
 
+  withAudioLanguage(num: number, value: string): MergeData {
+    const next = this.clone();
+    const track = next.findAudio(num);
+    if (track) { track.language = value; }
+    return next;
+  }
+
   withAudioDefault(num: number, value: boolean): MergeData {
     const next = this.clone();
     const track = next.findAudio(num);
@@ -330,6 +350,13 @@ export class MergeData {
     const next = this.clone();
     const track = next.findText(num);
     if (track) { track.title = value; }
+    return next;
+  }
+
+  withTextLanguage(num: number, value: string): MergeData {
+    const next = this.clone();
+    const track = next.findText(num);
+    if (track) { track.language = value; }
     return next;
   }
 
@@ -362,6 +389,7 @@ export class MergeData {
     const data = new MergeData();
     for (const map of maps) {
       const titleValue = map.propertyMap['Title'] ?? '';
+      const languageValue = map.propertyMap['Language'] ?? '';
       const isDefault = parseYesNo(map.propertyMap['Default']);
       const isForced = parseYesNo(map.propertyMap['Forced']);
       switch (map.stream) {
@@ -369,13 +397,13 @@ export class MergeData {
           if (map.num === 0) { data.general.title = titleValue; }
           break;
         case Protocol.StreamKind.Video:
-          data.videos.push(new MergeVideoData(map.num, true, titleValue, isDefault, isForced));
+          data.videos.push(new MergeVideoData(map.num, true, titleValue, languageValue, isDefault, isForced));
           break;
         case Protocol.StreamKind.Audio:
-          data.audios.push(new MergeAudioData(map.num, true, titleValue, isDefault, isForced));
+          data.audios.push(new MergeAudioData(map.num, true, titleValue, languageValue, isDefault, isForced));
           break;
         case Protocol.StreamKind.Text:
-          data.texts.push(new MergeTextData(map.num, true, titleValue, isDefault, isForced));
+          data.texts.push(new MergeTextData(map.num, true, titleValue, languageValue, isDefault, isForced));
           break;
         case Protocol.StreamKind.Menu:
           data.menus.push(new MergeMenuData(map.num, true));

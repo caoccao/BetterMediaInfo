@@ -15,9 +15,21 @@
  *   limitations under the License.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type FocusEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   AppBar,
+  Autocomplete,
   Box,
   Button,
   Checkbox,
@@ -47,9 +59,12 @@ import TransformIcon from '@mui/icons-material/Transform';
 import {
   closestCenter,
   DndContext,
+  type DraggableNode,
   type DragEndEvent,
   KeyboardSensor,
+  type KeyboardSensorOptions,
   PointerSensor,
+  type PointerSensorOptions,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -87,6 +102,75 @@ import {
 } from '../lib/service';
 
 const IS_WINDOWS = typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent);
+const LANGUAGE_OPTION_ROW_HEIGHT = 34;
+const LANGUAGE_OPTION_VISIBLE_ROWS = 10;
+const LANGUAGE_DROPDOWN_MAX_HEIGHT = LANGUAGE_OPTION_ROW_HEIGHT * LANGUAGE_OPTION_VISIBLE_ROWS;
+
+function isInteractiveDragTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.closest([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    '[contenteditable="true"]',
+    '[role="button"]',
+    '[role="checkbox"]',
+    '[role="combobox"]',
+    '.MuiAutocomplete-root',
+    '.MuiCheckbox-root',
+    '.MuiInputBase-root',
+  ].join(',')) !== null;
+}
+
+class InteractiveSafePointerSensor extends PointerSensor {
+  static activators = [{
+    eventName: 'onPointerDown' as const,
+    handler: (
+      { nativeEvent: event }: ReactPointerEvent,
+      { onActivation }: PointerSensorOptions,
+    ): boolean => {
+      if (!event.isPrimary || event.button !== 0 || isInteractiveDragTarget(event.target)) {
+        return false;
+      }
+      onActivation?.({ event });
+      return true;
+    },
+  }];
+}
+
+const DEFAULT_KEYBOARD_DRAG_CODES = {
+  start: ['Space', 'Enter'],
+  cancel: ['Escape'],
+  end: ['Space', 'Enter', 'Tab'],
+};
+
+class InteractiveSafeKeyboardSensor extends KeyboardSensor {
+  static activators = [{
+    eventName: 'onKeyDown' as const,
+    handler: (
+      event: ReactKeyboardEvent,
+      { keyboardCodes = DEFAULT_KEYBOARD_DRAG_CODES, onActivation }: KeyboardSensorOptions,
+      { active }: { active: DraggableNode },
+    ): boolean => {
+      const nativeEvent = event.nativeEvent;
+      if (!keyboardCodes.start.includes(nativeEvent.code)) {
+        return false;
+      }
+      if (isInteractiveDragTarget(event.target)) {
+        return false;
+      }
+
+      const activator = active.activatorNode.current;
+      if (activator && event.target !== activator) {
+        return false;
+      }
+
+      event.preventDefault();
+      onActivation?.({ event: nativeEvent });
+      return true;
+    },
+  }];
+}
 
 /**
  * Quote a single command-line argument for safe copy-paste into the
@@ -147,19 +231,277 @@ function getMkvmergeTid(
   return id - 1;
 }
 
-function getLanguageCode(
-  stream: Protocol.StreamKind,
-  num: number,
-  propertyMaps: Array<Protocol.StreamPropertyMap>,
-): string {
-  const map = propertyMaps.find((m) => m.stream === stream && m.num === num);
-  return (map?.propertyMap['Language'] ?? '').trim();
+function shortLanguageCodeFor(code: string, label: string): string {
+  const match = label.match(/\(([a-z]{2});\s*[a-z]{3}\)$/i);
+  return match?.[1] ?? code;
+}
+
+function displayLanguageNameFor(label: string): string {
+  return label.replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
+function normalizeLanguageValue(value: string, shortCodeByCode: Map<string, string>): string {
+  const trimmed = value.trim();
+  return shortCodeByCode.get(trimmed.toLocaleLowerCase()) ?? trimmed;
+}
+
+function normalizeMergeDataLanguages(
+  data: MergeData,
+  shortCodeByCode: Map<string, string>,
+): MergeData {
+  let next = data;
+
+  for (const track of data.videos) {
+    const value = normalizeLanguageValue(track.language, shortCodeByCode);
+    if (value !== track.language) {
+      next = next.withVideoLanguage(track.num, value);
+    }
+  }
+
+  for (const track of data.audios) {
+    const value = normalizeLanguageValue(track.language, shortCodeByCode);
+    if (value !== track.language) {
+      next = next.withAudioLanguage(track.num, value);
+    }
+  }
+
+  for (const track of data.texts) {
+    const value = normalizeLanguageValue(track.language, shortCodeByCode);
+    if (value !== track.language) {
+      next = next.withTextLanguage(track.num, value);
+    }
+  }
+
+  return next;
+}
+
+function firstMatchingLanguageOptionIndex(
+  options: Array<string>,
+  languageLabelByCode: Map<string, string>,
+  shortLanguageCodeByCode: Map<string, string>,
+  inputValue: string,
+): number {
+  const query = inputValue.trim().toLocaleLowerCase();
+  if (query.length === 0) { return -1; }
+
+  const exactCodeMatch = shortLanguageCodeByCode.get(query);
+  if (exactCodeMatch) {
+    const exactCodeIndex = options.indexOf(exactCodeMatch);
+    if (exactCodeIndex >= 0) { return exactCodeIndex; }
+  }
+
+  return options.findIndex((option) => {
+    const normalizedOption = option.toLocaleLowerCase();
+    const normalizedLabel = (languageLabelByCode.get(option) ?? '').toLocaleLowerCase();
+    return normalizedOption.startsWith(query) || normalizedLabel.includes(query);
+  });
+}
+
+interface LanguageAutocompleteProps {
+  value: string;
+  options: Array<string>;
+  preferredOptionCount: number;
+  languageLabelByCode: Map<string, string>;
+  shortLanguageCodeByCode: Map<string, string>;
+  onChange: (value: string) => void;
+}
+
+function LanguageAutocomplete({
+  value,
+  options,
+  preferredOptionCount,
+  languageLabelByCode,
+  shortLanguageCodeByCode,
+  onChange,
+}: LanguageAutocompleteProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const listboxRef = useRef<HTMLUListElement | null>(null);
+  const [dropdownPlacement, setDropdownPlacement] = useState<'bottom-start' | 'top-start'>('bottom-start');
+  const [dropdownOpenVersion, setDropdownOpenVersion] = useState(0);
+  const matchingOptionIndex = useMemo(
+    () => firstMatchingLanguageOptionIndex(options, languageLabelByCode, shortLanguageCodeByCode, value),
+    [languageLabelByCode, options, shortLanguageCodeByCode, value],
+  );
+  const commitValue = useCallback((nextValue: string) => {
+    onChange(normalizeLanguageValue(nextValue, shortLanguageCodeByCode));
+  }, [onChange, shortLanguageCodeByCode]);
+  const updateDropdownPlacement = useCallback(() => {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) { return; }
+
+    const visibleRows = Math.min(options.length, LANGUAGE_OPTION_VISIBLE_ROWS);
+    const dropdownHeight = visibleRows * LANGUAGE_OPTION_ROW_HEIGHT;
+    const below = window.innerHeight - rect.bottom - 8;
+    const above = rect.top - 8;
+    setDropdownPlacement(below >= dropdownHeight || below >= above ? 'bottom-start' : 'top-start');
+  }, [options.length]);
+  const handleOpen = useCallback(() => {
+    updateDropdownPlacement();
+    setDropdownOpenVersion((version) => version + 1);
+  }, [updateDropdownPlacement]);
+  const scrollToMatchingOption = useCallback((): boolean => {
+    if (matchingOptionIndex < 0 || !listboxRef.current) { return false; }
+
+    const visibleRows = Math.min(options.length, LANGUAGE_OPTION_VISIBLE_ROWS);
+    const firstVisibleIndex = Math.max(0, matchingOptionIndex - Math.floor(visibleRows / 2));
+    listboxRef.current.scrollTop = firstVisibleIndex * LANGUAGE_OPTION_ROW_HEIGHT;
+    return true;
+  }, [matchingOptionIndex, options.length]);
+
+  useLayoutEffect(() => {
+    if (matchingOptionIndex < 0) { return; }
+
+    scrollToMatchingOption();
+    let followUpAnimationFrame = 0;
+    const animationFrame = requestAnimationFrame(() => {
+      scrollToMatchingOption();
+      followUpAnimationFrame = requestAnimationFrame(scrollToMatchingOption);
+    });
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(followUpAnimationFrame);
+    };
+  }, [dropdownOpenVersion, matchingOptionIndex, scrollToMatchingOption, value]);
+
+  return (
+    <Autocomplete<string, false, false, true>
+      ref={rootRef}
+      freeSolo
+      fullWidth
+      size="small"
+      options={options}
+      filterOptions={(allOptions) => allOptions}
+      value={value}
+      inputValue={value}
+      getOptionLabel={(option) => languageLabelByCode.get(option) ?? option}
+      renderOption={(props, option, state) => {
+        const { key, ...optionProps } = props;
+        const isFirstAvailable = state.index === preferredOptionCount
+          && preferredOptionCount > 0
+          && preferredOptionCount < options.length;
+        const isMatchedOption = state.index === matchingOptionIndex;
+
+        return (
+          <Box
+            key={key}
+            component="li"
+            {...optionProps}
+            sx={{
+              borderTop: isFirstAvailable ? 1 : 0,
+              borderColor: 'divider',
+              bgcolor: isMatchedOption ? 'action.selected' : undefined,
+              '&.Mui-focused': {
+                bgcolor: isMatchedOption ? 'action.selected' : 'action.hover',
+              },
+            }}
+          >
+            {languageLabelByCode.get(option) ?? option}
+          </Box>
+        );
+      }}
+      onChange={(_e, nextValue) => {
+        commitValue(nextValue ?? '');
+      }}
+      onInputChange={(_e, nextValue, reason) => {
+        if (reason === 'input' || reason === 'clear') {
+          onChange(nextValue);
+        }
+      }}
+      onOpen={handleOpen}
+      slotProps={{
+        popper: {
+          placement: dropdownPlacement,
+          modifiers: [
+            { name: 'flip', enabled: false },
+            {
+              name: 'preventOverflow',
+              enabled: true,
+              options: {
+                mainAxis: true,
+                altAxis: false,
+                padding: 8,
+              },
+            },
+            { name: 'offset', options: { offset: [0, 0] } },
+          ],
+          sx: {
+            width: 'max-content !important',
+            minWidth: 320,
+            maxWidth: 'calc(100vw - 32px)',
+            '& .MuiAutocomplete-paper': {
+              width: 'max-content',
+              minWidth: 320,
+              maxWidth: 'calc(100vw - 32px)',
+            },
+            '& .MuiAutocomplete-listbox': {
+              p: 0,
+              boxSizing: 'border-box',
+              maxHeight: `min(${LANGUAGE_DROPDOWN_MAX_HEIGHT}px, calc(100vh - 16px))`,
+              overflowY: options.length > LANGUAGE_OPTION_VISIBLE_ROWS ? 'auto' : 'hidden',
+            },
+            '& .MuiAutocomplete-option': {
+              boxSizing: 'border-box',
+              height: LANGUAGE_OPTION_ROW_HEIGHT,
+              minHeight: LANGUAGE_OPTION_ROW_HEIGHT,
+              minWidth: 280,
+              py: 0.5,
+              whiteSpace: 'nowrap',
+            },
+          },
+        },
+        listbox: {
+          ref: listboxRef,
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          variant="standard"
+          fullWidth
+          slotProps={{
+            ...params.slotProps,
+            htmlInput: {
+              ...params.slotProps.htmlInput,
+              onFocus: (event: FocusEvent<HTMLInputElement>) => {
+                params.slotProps.htmlInput.onFocus?.(event);
+                updateDropdownPlacement();
+                event.currentTarget.select();
+              },
+              onClick: (event: MouseEvent<HTMLInputElement>) => {
+                params.slotProps.htmlInput.onClick?.(event);
+                updateDropdownPlacement();
+                event.currentTarget.select();
+              },
+              onMouseUp: (event: MouseEvent<HTMLInputElement>) => {
+                params.slotProps.htmlInput.onMouseUp?.(event);
+                event.preventDefault();
+              },
+              onKeyDown: (event: ReactKeyboardEvent<HTMLInputElement>) => {
+                if (event.key === 'Enter') {
+                  const normalizedValue = normalizeLanguageValue(event.currentTarget.value, shortLanguageCodeByCode);
+                  if (normalizedValue !== event.currentTarget.value && options.includes(normalizedValue)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    commitValue(event.currentTarget.value);
+                    return;
+                  }
+                }
+                params.slotProps.htmlInput.onKeyDown?.(event);
+              },
+            },
+          }}
+        />
+      )}
+    />
+  );
 }
 
 interface TrackArgInput {
   num: number;
   isEnabled: boolean;
   title: string;
+  language: string;
   isDefault: boolean;
   isForced: boolean;
 }
@@ -233,7 +575,7 @@ function buildMergeArgs(
     }
     for (const { track, tid } of enabled) {
       args.push('--track-name', `${tid}:${track.title}`);
-      const lang = getLanguageCode(stream, track.num, propertyMaps);
+      const lang = track.language.trim();
       if (lang.length > 0) {
         args.push('--language', `${tid}:${lang}`);
       }
@@ -343,6 +685,20 @@ function titleSetterFor(
     case Protocol.StreamKind.Video: return data.withVideoTitle(num, value);
     case Protocol.StreamKind.Audio: return data.withAudioTitle(num, value);
     case Protocol.StreamKind.Text: return data.withTextTitle(num, value);
+    default: return data;
+  }
+}
+
+function languageSetterFor(
+  data: MergeData,
+  stream: Protocol.StreamKind,
+  num: number,
+  value: string,
+): MergeData {
+  switch (stream) {
+    case Protocol.StreamKind.Video: return data.withVideoLanguage(num, value);
+    case Protocol.StreamKind.Audio: return data.withAudioLanguage(num, value);
+    case Protocol.StreamKind.Text: return data.withTextLanguage(num, value);
     default: return data;
   }
 }
@@ -477,12 +833,90 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
   const startTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
+  const refreshConfig = useCallback(() => {
+    void getConfig().then(setConfig).catch(() => setConfig(null));
+  }, []);
+
   useEffect(() => { closeWhenDoneRef.current = closeWhenDone; }, [closeWhenDone]);
 
   const commonPropertiesMap = useMemo(
     () => buildCommonPropertiesMap(config, t),
     [config, t]
   );
+
+  const preferredLanguageCodes = useMemo(
+    () => config?.mkv?.languages?.preferred ?? [],
+    [config],
+  );
+  const [languageLabelByCode, setLanguageLabelByCode] = useState<Map<string, string>>(
+    () => new Map(),
+  );
+  const [shortLanguageCodeByCode, setShortLanguageCodeByCode] = useState<Map<string, string>>(
+    () => new Map(),
+  );
+  const [availableLanguageOptions, setAvailableLanguageOptions] = useState<Array<string>>([]);
+  const shortLanguageCodeByCodeRef = useRef<Map<string, string>>(new Map());
+  const preferredLanguageOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return preferredLanguageCodes
+      .map((code) => shortLanguageCodeByCode.get(code.toLocaleLowerCase()) ?? code)
+      .filter((code) => {
+        if (seen.has(code)) { return false; }
+        seen.add(code);
+        return true;
+      });
+  }, [preferredLanguageCodes, shortLanguageCodeByCode]);
+  const languageOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const appendUnique = (options: Array<string>) => options.filter((option) => {
+      if (seen.has(option)) { return false; }
+      seen.add(option);
+      return true;
+    });
+
+    return [
+      ...appendUnique(preferredLanguageOptions),
+      ...appendUnique(availableLanguageOptions),
+    ];
+  }, [availableLanguageOptions, preferredLanguageOptions]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void import('../lib/mkvLanguages').then(({ MKV_LANGUAGES }) => {
+      if (isMounted) {
+        const nextLabelByCode = new Map<string, string>();
+        const nextShortCodeByCode = new Map<string, string>();
+        const nextAvailableLanguageOptions: Array<string> = [];
+        const seenAvailableLanguageOptions = new Set<string>();
+
+        for (const language of MKV_LANGUAGES) {
+          const shortCode = shortLanguageCodeFor(language.code, language.label);
+          const displayName = displayLanguageNameFor(language.label);
+          nextLabelByCode.set(shortCode, language.label);
+          nextLabelByCode.set(language.code, language.label);
+          nextShortCodeByCode.set(language.code.toLocaleLowerCase(), shortCode);
+          nextShortCodeByCode.set(shortCode.toLocaleLowerCase(), shortCode);
+          nextShortCodeByCode.set(displayName.toLocaleLowerCase(), shortCode);
+          nextShortCodeByCode.set(language.label.toLocaleLowerCase(), shortCode);
+          if (!seenAvailableLanguageOptions.has(shortCode)) {
+            seenAvailableLanguageOptions.add(shortCode);
+            nextAvailableLanguageOptions.push(shortCode);
+          }
+        }
+
+        setLanguageLabelByCode(nextLabelByCode);
+        setAvailableLanguageOptions(nextAvailableLanguageOptions);
+        shortLanguageCodeByCodeRef.current = nextShortCodeByCode;
+        setShortLanguageCodeByCode(nextShortCodeByCode);
+        setMergeData((prev) => normalizeMergeDataLanguages(prev, nextShortCodeByCode));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const desiredExtension = useMemo(() => pickExtension(mergeData), [mergeData]);
   const canMerge = desiredExtension !== null;
@@ -505,8 +939,8 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
   }, [file]);
 
   useEffect(() => {
-    getConfig().then(setConfig).catch(() => setConfig(null));
-  }, []);
+    refreshConfig();
+  }, [refreshConfig]);
 
   useEffect(() => {
     if (commonPropertiesMap.size === 0) { return; }
@@ -521,7 +955,10 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
       .then((maps) => {
         setPropertyMaps(maps);
         setMergeData((prev) => {
-          const fresh = MergeData.fromPropertyMaps(maps);
+          const fresh = normalizeMergeDataLanguages(
+            MergeData.fromPropertyMaps(maps),
+            shortLanguageCodeByCodeRef.current,
+          );
           fresh.destinationFile = prev.destinationFile;
           return fresh;
         });
@@ -641,8 +1078,8 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(InteractiveSafePointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(InteractiveSafeKeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const handleDragEnd = (stream: Protocol.StreamKind) => (event: DragEndEvent) => {
@@ -751,8 +1188,12 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                     const titleValue = map.stream === Protocol.StreamKind.General
                       ? mergeData.general.title
                       : trackRefs?.title ?? '';
+                    const languageValue = trackRefs?.language ?? '';
                     const setTitleValue = (value: string) => {
                       setMergeData((prev) => titleSetterFor(prev, map.stream, map.num, value));
+                    };
+                    const setLanguageValue = (value: string) => {
+                      setMergeData((prev) => languageSetterFor(prev, map.stream, map.num, value));
                     };
                     return (
                       <SortableTableRow
@@ -764,6 +1205,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                           .filter((prop) => prop.inCardView)
                           .map((prop) => {
                             const isEditableTitle = prop.name === 'Title';
+                            const isEditableLanguage = prop.name === 'Language' && trackRefs !== null;
                             const isDefault = prop.name === 'Default';
                             const isForced = prop.name === 'Forced';
                             const isId = (prop.name === 'ID' || prop.name === 'StreamKindID')
@@ -823,6 +1265,17 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
                                           ) : null,
                                         },
                                       }}
+                                    />
+                                  </Box>
+                                ) : isEditableLanguage ? (
+                                  <Box sx={{ width: '100%' }} onPointerDown={(e) => e.stopPropagation()}>
+                                    <LanguageAutocomplete
+                                      options={languageOptions}
+                                      preferredOptionCount={preferredLanguageOptions.length}
+                                      value={languageValue}
+                                      languageLabelByCode={languageLabelByCode}
+                                      shortLanguageCodeByCode={shortLanguageCodeByCode}
+                                      onChange={setLanguageValue}
                                     />
                                   </Box>
                                 ) : isDefault && trackRefs ? (
