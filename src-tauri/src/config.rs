@@ -27,6 +27,7 @@ use crate::constants::APP_NAME;
 static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigStreamFormat {
   #[serde(rename = "bitRate", default)]
   pub bit_rate: ConfigBitRate,
@@ -44,6 +45,7 @@ impl Default for ConfigStreamFormat {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct Config {
   #[serde(rename = "appendOnFileDrop")]
   pub append_on_file_drop: bool,
@@ -160,6 +162,7 @@ pub struct ConfigTemplates {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigWindow {
   #[serde(default)]
   pub position: ConfigWindowPosition,
@@ -177,6 +180,7 @@ impl Default for ConfigWindow {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigWindowPosition {
   pub x: i32,
   pub y: i32,
@@ -189,6 +193,7 @@ impl Default for ConfigWindowPosition {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigWindowSize {
   pub width: u32,
   pub height: u32,
@@ -201,6 +206,7 @@ impl Default for ConfigWindowSize {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigUpdate {
   #[serde(rename = "checkInterval", default)]
   pub check_interval: UpdateCheckInterval,
@@ -252,6 +258,7 @@ impl Default for MkvPriority {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigMkvAdditionalParameters {
   #[serde(default)]
   pub priority: MkvPriority,
@@ -266,46 +273,60 @@ impl Default for ConfigMkvAdditionalParameters {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigMkvLanguages {
-  #[serde(default)]
+  #[serde(default = "ConfigMkvLanguages::default_preferred")]
   pub preferred: Vec<String>,
+}
+
+impl ConfigMkvLanguages {
+  fn default_preferred() -> Vec<String> {
+    vec![
+      "chi".to_owned(),
+      "eng".to_owned(),
+      "fre".to_owned(),
+      "ger".to_owned(),
+      "jpn".to_owned(),
+      "spa".to_owned(),
+    ]
+  }
 }
 
 impl Default for ConfigMkvLanguages {
   fn default() -> Self {
     Self {
-      preferred: vec![
-        "chi".to_owned(),
-        "eng".to_owned(),
-        "fre".to_owned(),
-        "ger".to_owned(),
-        "jpn".to_owned(),
-        "spa".to_owned(),
-      ],
+      preferred: Self::default_preferred(),
     }
   }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigMkvTitleAutocompletion {
-  #[serde(default)]
+  #[serde(default = "ConfigMkvTitleAutocompletion::default_titles")]
   pub titles: Vec<String>,
+}
+
+impl ConfigMkvTitleAutocompletion {
+  fn default_titles() -> Vec<String> {
+    vec![
+      "Cantonese".to_owned(),
+      "English".to_owned(),
+      "French".to_owned(),
+      "German".to_owned(),
+      "Japanese".to_owned(),
+      "Mandarin".to_owned(),
+      "Simplified Chinese".to_owned(),
+      "Spanish".to_owned(),
+      "Traditional Chinese".to_owned(),
+    ]
+  }
 }
 
 impl Default for ConfigMkvTitleAutocompletion {
   fn default() -> Self {
     Self {
-      titles: vec![
-        "Cantonese".to_owned(),
-        "English".to_owned(),
-        "French".to_owned(),
-        "German".to_owned(),
-        "Japanese".to_owned(),
-        "Mandarin".to_owned(),
-        "Simplified Chinese".to_owned(),
-        "Spanish".to_owned(),
-        "Traditional Chinese".to_owned(),
-      ],
+      titles: Self::default_titles(),
     }
   }
 }
@@ -382,6 +403,7 @@ impl Default for ConfigMkv {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigBatchMkvExtract {
   #[serde(default = "ConfigBatchMkvExtract::default_path")]
   pub path: String,
@@ -408,6 +430,7 @@ impl Default for ConfigBatchMkvExtract {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigBDMaster {
   #[serde(default = "ConfigBDMaster::default_path")]
   pub path: String,
@@ -434,6 +457,7 @@ impl Default for ConfigBDMaster {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigMpcHc {
   #[serde(default = "ConfigMpcHc::default_path")]
   pub path: String,
@@ -458,6 +482,7 @@ impl Default for ConfigMpcHc {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigView {
   #[serde(default)]
   pub card: ConfigCardView,
@@ -475,6 +500,7 @@ impl Default for ConfigView {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigCardView {
   #[serde(rename = "showGeneral", default = "default_true")]
   pub show_general: bool,
@@ -509,6 +535,7 @@ impl Default for ConfigCardView {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigDetailView {
   #[serde(rename = "showGeneral", default = "default_true")]
   pub show_general: bool,
@@ -593,6 +620,7 @@ impl Default for FormatUnit {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigBitRate {
   pub precision: FormatPrecision,
   pub unit: FormatUnit,
@@ -608,6 +636,7 @@ impl Default for ConfigBitRate {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigSize {
   pub precision: FormatPrecision,
   pub unit: FormatUnit,
@@ -776,6 +805,7 @@ impl Default for ConfigDirectoryMode {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct ConfigFileExtensions {
   pub audio: Vec<String>,
   pub image: Vec<String>,
@@ -847,4 +877,73 @@ pub fn set_config(config: Config) -> Result<()> {
     .unwrap()
     .clone_from(&config);
   result
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn config_deserialization_uses_defaults_for_missing_nodes() {
+    let config: Config = serde_json::from_str("{}").unwrap();
+
+    assert!(config.append_on_file_drop);
+    assert!(matches!(config.display_mode, DisplayMode::Auto));
+    assert!(matches!(config.directory_mode, ConfigDirectoryMode::All));
+    assert_eq!(config.file_extensions.video, ConfigFileExtensions::default().video);
+    assert_eq!(config.window.position.x, -1);
+    assert_eq!(config.window.position.y, -1);
+    assert_eq!(config.window.size.width, 1200);
+    assert_eq!(config.window.size.height, 900);
+    assert!(matches!(config.video.bit_rate.precision, FormatPrecision::Two));
+    assert!(matches!(config.video.bit_rate.unit, FormatUnit::KMGT));
+    assert_eq!(config.mkv.languages.preferred, ConfigMkvLanguages::default().preferred);
+    assert_eq!(
+      config.mkv.title_autocompletion.titles,
+      ConfigMkvTitleAutocompletion::default().titles
+    );
+  }
+
+  #[test]
+  fn config_deserialization_preserves_present_nodes_while_filling_missing_children() {
+    let config: Config = serde_json::from_str(
+      r#"{
+        "appendOnFileDrop": false,
+        "fileExtensions": {
+          "video": ["mkv"]
+        },
+        "video": {
+          "bitRate": {
+            "unit": "KMi"
+          }
+        },
+        "window": {
+          "position": {
+            "x": 10
+          }
+        },
+        "mkv": {
+          "priority": "Highest",
+          "languages": {},
+          "titleAutocompletion": {}
+        }
+      }"#,
+    )
+    .unwrap();
+
+    assert!(!config.append_on_file_drop);
+    assert_eq!(config.file_extensions.video, vec!["mkv".to_owned()]);
+    assert_eq!(config.file_extensions.audio, ConfigFileExtensions::default().audio);
+    assert_eq!(config.file_extensions.image, ConfigFileExtensions::default().image);
+    assert!(matches!(config.video.bit_rate.precision, FormatPrecision::Two));
+    assert!(matches!(config.video.bit_rate.unit, FormatUnit::KMi));
+    assert_eq!(config.window.position.x, 10);
+    assert_eq!(config.window.position.y, -1);
+    assert_eq!(config.mkv.additional_parameters.priority, MkvPriority::Highest);
+    assert_eq!(config.mkv.languages.preferred, ConfigMkvLanguages::default().preferred);
+    assert_eq!(
+      config.mkv.title_autocompletion.titles,
+      ConfigMkvTitleAutocompletion::default().titles
+    );
+  }
 }
