@@ -113,7 +113,6 @@ function isInteractiveDragTarget(target: EventTarget | null): boolean {
     'select',
     'textarea',
     '[contenteditable="true"]',
-    '[role="button"]',
     '[role="checkbox"]',
     '[role="combobox"]',
     '.MuiAutocomplete-root',
