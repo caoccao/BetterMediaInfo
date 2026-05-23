@@ -88,6 +88,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslation } from 'react-i18next';
 import * as Protocol from '../lib/protocol';
+import type { MkvLanguage } from '../lib/mkvLanguages';
 import {
   areExtensionsContextMenuRegistered,
   isBatchMkvExtractFound,
@@ -302,6 +303,7 @@ function emptyTemplates(): Protocol.ConfigTemplates {
 
 const LEFT_CONTAINER_ID = 'templates-left-container';
 const RIGHT_CONTAINER_ID = 'templates-right-container';
+const DEFAULT_MKV_PREFERRED_LANGUAGES = ['chi', 'eng', 'fre', 'ger', 'jpn', 'spa'];
 
 // Disable sortable's auto-shifting so the drop indicator is the sole visual cue.
 const noShiftStrategy = () => null;
@@ -372,12 +374,14 @@ function DropIndicator({ position }: { position: 'top' | 'bottom' }) {
 
 function SortableLeftRow({
   property,
+  label = property,
   checked,
   onCheck,
   isActive,
   showIndicator,
 }: {
   property: string;
+  label?: string;
   checked: boolean;
   onCheck: (next: boolean) => void;
   isActive: boolean;
@@ -401,18 +405,20 @@ function SortableLeftRow({
       <Box onPointerDown={(e) => e.stopPropagation()} sx={templateCheckCellSx}>
         <Checkbox size="small" checked={checked} onChange={(e) => onCheck(e.target.checked)} />
       </Box>
-      <Box sx={templatePropCellSx}>{property}</Box>
+      <Box sx={templatePropCellSx}>{label}</Box>
     </Box>
   );
 }
 
 function DraggableRightRow({
   property,
+  label = property,
   checked,
   onCheck,
   isActive,
 }: {
   property: string;
+  label?: string;
   checked: boolean;
   onCheck: (next: boolean) => void;
   isActive: boolean;
@@ -428,7 +434,7 @@ function DraggableRightRow({
       <Box onPointerDown={(e) => e.stopPropagation()} sx={templateCheckCellSx}>
         <Checkbox size="small" checked={checked} onChange={(e) => onCheck(e.target.checked)} />
       </Box>
-      <Box sx={templatePropCellSx}>{property}</Box>
+      <Box sx={templatePropCellSx}>{label}</Box>
     </Box>
   );
 }
@@ -475,6 +481,7 @@ function TemplateTableHeader({
 
 function LeftDropArea({
   leftProperties,
+  getLabel = (property: string) => property,
   leftSelection,
   onToggle,
   activeId,
@@ -482,6 +489,7 @@ function LeftDropArea({
   dragSet,
 }: {
   leftProperties: string[];
+  getLabel?: (property: string) => string;
   leftSelection: Set<string>;
   onToggle: (property: string, next: boolean) => void;
   activeId: string | null;
@@ -508,6 +516,7 @@ function LeftDropArea({
           <SortableLeftRow
             key={property}
             property={property}
+            label={getLabel(property)}
             checked={leftSelection.has(property)}
             onCheck={(next) => onToggle(property, next)}
             isActive={activeId === `L:${property}`}
@@ -975,6 +984,446 @@ function TemplatesPanelBody({
   );
 }
 
+function MkvLanguagesPanel({
+  availableLanguages,
+  preferredLanguageCodes,
+  onPreferredLanguageCodesChange,
+}: {
+  availableLanguages: readonly MkvLanguage[];
+  preferredLanguageCodes: string[];
+  onPreferredLanguageCodesChange: (languageCodes: string[]) => void;
+}) {
+  const { t } = useTranslation();
+  const labelByCode = useMemo(
+    () => new Map(availableLanguages.map((language) => [language.code, language.label])),
+    [availableLanguages],
+  );
+  const availableLanguageCodes = useMemo(
+    () => availableLanguages.map((language) => language.code),
+    [availableLanguages],
+  );
+  const getLanguageLabel = useCallback(
+    (code: string) => labelByCode.get(code) ?? code,
+    [labelByCode],
+  );
+
+  const [filter, setFilter] = useState('');
+  const [leftSelection, setLeftSelection] = useState<Set<string>>(() => new Set());
+  const [rightSelection, setRightSelection] = useState<Set<string>>(() => new Set());
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const dragSetRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    setLeftSelection((prev) => {
+      if (prev.size === 0) return prev;
+      const valid = new Set(preferredLanguageCodes);
+      const next = new Set<string>();
+      let changed = false;
+      prev.forEach((code) => {
+        if (valid.has(code)) next.add(code);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [preferredLanguageCodes]);
+
+  useEffect(() => {
+    setRightSelection((prev) => {
+      if (prev.size === 0) return prev;
+      const valid = new Set(availableLanguageCodes);
+      const next = new Set<string>();
+      let changed = false;
+      prev.forEach((code) => {
+        if (valid.has(code)) next.add(code);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [availableLanguageCodes]);
+
+  const filteredAvailableLanguageCodes = useMemo(() => {
+    const f = filter.trim().toLowerCase();
+    if (!f) return availableLanguageCodes;
+    return availableLanguages
+      .filter((language) => (
+        language.label.toLowerCase().includes(f) ||
+        language.code.toLowerCase().includes(f)
+      ))
+      .map((language) => language.code);
+  }, [availableLanguages, availableLanguageCodes, filter]);
+
+  const handleToggleLeft = useCallback((code: string, next: boolean) => {
+    setLeftSelection((prev) => {
+      const updated = new Set(prev);
+      if (next) updated.add(code);
+      else updated.delete(code);
+      return updated;
+    });
+  }, []);
+
+  const handleToggleRight = useCallback((code: string, next: boolean) => {
+    setRightSelection((prev) => {
+      const updated = new Set(prev);
+      if (next) updated.add(code);
+      else updated.delete(code);
+      return updated;
+    });
+  }, []);
+
+  const handleToggleAllLeft = useCallback(
+    (next: boolean) => {
+      setLeftSelection((prev) => {
+        const updated = new Set(prev);
+        if (next) preferredLanguageCodes.forEach((code) => updated.add(code));
+        else preferredLanguageCodes.forEach((code) => updated.delete(code));
+        return updated;
+      });
+    },
+    [preferredLanguageCodes],
+  );
+
+  const handleToggleAllRight = useCallback(
+    (next: boolean) => {
+      setRightSelection((prev) => {
+        const updated = new Set(prev);
+        if (next) filteredAvailableLanguageCodes.forEach((code) => updated.add(code));
+        else filteredAvailableLanguageCodes.forEach((code) => updated.delete(code));
+        return updated;
+      });
+    },
+    [filteredAvailableLanguageCodes],
+  );
+
+  const handleAddAll = useCallback(() => {
+    if (filteredAvailableLanguageCodes.length === 0) return;
+    const existing = new Set(preferredLanguageCodes);
+    const toAdd = filteredAvailableLanguageCodes.filter((code) => !existing.has(code));
+    if (toAdd.length === 0) return;
+    onPreferredLanguageCodesChange([...preferredLanguageCodes, ...toAdd]);
+  }, [filteredAvailableLanguageCodes, preferredLanguageCodes, onPreferredLanguageCodesChange]);
+
+  const handleRemoveAll = useCallback(() => {
+    if (preferredLanguageCodes.length === 0) return;
+    onPreferredLanguageCodesChange([]);
+  }, [preferredLanguageCodes.length, onPreferredLanguageCodesChange]);
+
+  const rightPaneRef = useRef<HTMLDivElement | null>(null);
+  const { setNodeRef: setRightDropNode } = useDroppable({ id: RIGHT_CONTAINER_ID });
+  const attachRightPaneRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      rightPaneRef.current = node;
+      setRightDropNode(node);
+    },
+    [setRightDropNode],
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const resetDrag = useCallback(() => {
+    setActiveId(null);
+    setOverId(null);
+    dragSetRef.current = [];
+  }, []);
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const id = String(event.active.id);
+      const source = id.startsWith('L:') ? 'left' : 'right';
+      const code = id.slice(2);
+      if (source === 'left') {
+        if (leftSelection.size > 0 && leftSelection.has(code)) {
+          dragSetRef.current = preferredLanguageCodes.filter((preferredCode) => leftSelection.has(preferredCode));
+        } else {
+          dragSetRef.current = [code];
+        }
+      } else {
+        if (rightSelection.size > 0 && rightSelection.has(code)) {
+          dragSetRef.current = availableLanguageCodes.filter((availableCode) => rightSelection.has(availableCode));
+        } else {
+          dragSetRef.current = [code];
+        }
+      }
+      setActiveId(id);
+    },
+    [leftSelection, rightSelection, preferredLanguageCodes, availableLanguageCodes],
+  );
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    setOverId(event.over ? String(event.over.id) : null);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over, activatorEvent, delta } = event;
+      const activeIdStr = String(active.id);
+      const source = activeIdStr.startsWith('L:') ? 'left' : 'right';
+      const dragSet = dragSetRef.current.slice();
+      const overId = over ? String(over.id) : null;
+      const overInLeft = overId === LEFT_CONTAINER_ID || (overId?.startsWith('L:') ?? false);
+
+      let droppedOnRightPane = overId === RIGHT_CONTAINER_ID;
+      if (!droppedOnRightPane && rightPaneRef.current) {
+        const evt = activatorEvent as { clientX?: number; clientY?: number } | undefined;
+        if (evt && typeof evt.clientX === 'number' && typeof evt.clientY === 'number') {
+          const dropX = evt.clientX + delta.x;
+          const dropY = evt.clientY + delta.y;
+          const rect = rightPaneRef.current.getBoundingClientRect();
+          droppedOnRightPane =
+            dropX >= rect.left &&
+            dropX <= rect.right &&
+            dropY >= rect.top &&
+            dropY <= rect.bottom;
+        }
+      }
+
+      resetDrag();
+
+      if (dragSet.length === 0) return;
+
+      if (source === 'right') {
+        if (!overInLeft || droppedOnRightPane) return;
+        let targetIndex = preferredLanguageCodes.length;
+        if (overId && overId.startsWith('L:')) {
+          const overCode = overId.slice(2);
+          const idx = preferredLanguageCodes.indexOf(overCode);
+          targetIndex = idx >= 0 ? idx : preferredLanguageCodes.length;
+        }
+        const existing = new Set(preferredLanguageCodes);
+        const toAdd = dragSet.filter((code) => !existing.has(code));
+        if (toAdd.length === 0) return;
+        onPreferredLanguageCodesChange([
+          ...preferredLanguageCodes.slice(0, targetIndex),
+          ...toAdd,
+          ...preferredLanguageCodes.slice(targetIndex),
+        ]);
+        setRightSelection(new Set());
+        return;
+      }
+
+      if (droppedOnRightPane) {
+        const remove = new Set(dragSet);
+        const next = preferredLanguageCodes.filter((code) => !remove.has(code));
+        if (next.length === preferredLanguageCodes.length) return;
+        onPreferredLanguageCodesChange(next);
+        setLeftSelection(new Set());
+        return;
+      }
+      if (!overInLeft) return;
+
+      let targetIndex = preferredLanguageCodes.length;
+      if (overId && overId.startsWith('L:')) {
+        const overCode = overId.slice(2);
+        if (dragSet.includes(overCode)) return;
+        const idx = preferredLanguageCodes.indexOf(overCode);
+        if (idx < 0) return;
+        targetIndex = idx;
+      }
+      const dragSetMembers = new Set(dragSet);
+      const remaining = preferredLanguageCodes.filter((code) => !dragSetMembers.has(code));
+      const removedBefore = preferredLanguageCodes
+        .slice(0, targetIndex)
+        .reduce((acc, code) => (dragSetMembers.has(code) ? acc + 1 : acc), 0);
+      const adjusted = targetIndex - removedBefore;
+      const next = [
+        ...remaining.slice(0, adjusted),
+        ...dragSet,
+        ...remaining.slice(adjusted),
+      ];
+      if (
+        next.length === preferredLanguageCodes.length &&
+        next.every((code, i) => code === preferredLanguageCodes[i])
+      ) {
+        return;
+      }
+      onPreferredLanguageCodesChange(next);
+    },
+    [preferredLanguageCodes, onPreferredLanguageCodesChange, resetDrag],
+  );
+
+  const leftCheckedCount = useMemo(
+    () => preferredLanguageCodes.reduce((acc, code) => (leftSelection.has(code) ? acc + 1 : acc), 0),
+    [preferredLanguageCodes, leftSelection],
+  );
+  const leftAllChecked = preferredLanguageCodes.length > 0 && leftCheckedCount === preferredLanguageCodes.length;
+  const leftSomeChecked = leftCheckedCount > 0 && leftCheckedCount < preferredLanguageCodes.length;
+
+  const filteredAvailableSize = filteredAvailableLanguageCodes.length;
+  const rightCheckedInFiltered = useMemo(
+    () => filteredAvailableLanguageCodes.reduce((acc, code) => (rightSelection.has(code) ? acc + 1 : acc), 0),
+    [filteredAvailableLanguageCodes, rightSelection],
+  );
+  const rightAllChecked = filteredAvailableSize > 0 && rightCheckedInFiltered === filteredAvailableSize;
+  const rightSomeChecked = rightCheckedInFiltered > 0 && rightCheckedInFiltered < filteredAvailableSize;
+
+  const overlayCode = activeId ? activeId.slice(2) : null;
+  const overlayCount = activeId ? dragSetRef.current.length : 0;
+
+  return (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+        <TextField
+          size="small"
+          placeholder={t('config.filter')}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          sx={{ flex: 1 }}
+          slotProps={{
+            input: {
+              endAdornment: filter ? (
+                <InputAdornment position="end">
+                  <Tooltip title={t('config.clear')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('config.clear')}
+                      onClick={() => setFilter('')}
+                      edge="end"
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ) : null,
+            },
+          }}
+        />
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleAddAll}
+          disabled={filteredAvailableLanguageCodes.length === 0}
+          sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 36 }}
+        >
+          {t('config.addAll')}
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleRemoveAll}
+          disabled={preferredLanguageCodes.length === 0}
+          sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 36 }}
+        >
+          {t('config.removeAll')}
+        </Button>
+      </Box>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={templateCollisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={resetDrag}
+      >
+        <Box sx={{ display: 'flex', gap: 1, flex: 1, minHeight: 0 }}>
+          <Box
+            ref={attachRightPaneRef}
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+              bgcolor:
+                activeId?.startsWith('L:') && overId === RIGHT_CONTAINER_ID
+                  ? 'action.selected'
+                  : undefined,
+              transition: 'background-color 120ms',
+            }}
+          >
+            <TemplateTableHeader
+              label={t('config.available')}
+              checked={rightAllChecked}
+              indeterminate={rightSomeChecked}
+              onToggle={handleToggleAllRight}
+              disabled={filteredAvailableSize === 0}
+            />
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              {filteredAvailableLanguageCodes.map((code) => (
+                <DraggableRightRow
+                  key={code}
+                  property={code}
+                  label={getLanguageLabel(code)}
+                  checked={rightSelection.has(code)}
+                  onCheck={(next) => handleToggleRight(code, next)}
+                  isActive={activeId === `R:${code}`}
+                />
+              ))}
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+            }}
+          >
+            <TemplateTableHeader
+              label={t('config.preferred')}
+              checked={leftAllChecked}
+              indeterminate={leftSomeChecked}
+              onToggle={handleToggleAllLeft}
+              disabled={preferredLanguageCodes.length === 0}
+            />
+            <LeftDropArea
+              leftProperties={preferredLanguageCodes}
+              getLabel={getLanguageLabel}
+              leftSelection={leftSelection}
+              onToggle={handleToggleLeft}
+              activeId={activeId}
+              overId={overId}
+              dragSet={dragSetRef.current}
+            />
+          </Box>
+        </Box>
+        <DragOverlay dropAnimation={null}>
+          {overlayCode ? (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 1,
+                py: 0.5,
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                boxShadow: 4,
+                fontSize: '0.8125rem',
+              }}
+            >
+              <span>{getLanguageLabel(overlayCode)}</span>
+              {overlayCount > 1 && (
+                <Typography variant="caption" color="text.secondary">
+                  +{overlayCount - 1}
+                </Typography>
+              )}
+            </Box>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: 'block', textAlign: 'center' }}
+      >
+        {t('config.languagesInstruction')}
+      </Typography>
+    </Box>
+  );
+}
+
 export default function Config() {
   const { t } = useTranslation();
   const [appendOnFileDrop, setAppendOnFileDrop] = useState(true);
@@ -992,8 +1441,13 @@ export default function Config() {
   const [subtitleFormat, setSubtitleFormat] = useState<StreamFormatState>({ ...defaultStreamFormat });
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
   const [mkvPriority, setMkvPriority] = useState<Protocol.MkvPriority>(Protocol.MkvPriority.Lowest);
+  const [mkvPreferredLanguages, setMkvPreferredLanguages] = useState<string[]>([]);
+  const [mkvDraftPriority, setMkvDraftPriority] = useState<Protocol.MkvPriority>(Protocol.MkvPriority.Lowest);
+  const [mkvDraftPreferredLanguages, setMkvDraftPreferredLanguages] = useState<string[]>([]);
+  const [mkvLanguages, setMkvLanguages] = useState<readonly MkvLanguage[]>([]);
   const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
   const [mkvOptionsDialogOpen, setMkvOptionsDialogOpen] = useState(false);
+  const [mkvOptionsSaving, setMkvOptionsSaving] = useState(false);
   const [mkvOptionsTab, setMkvOptionsTab] = useState(0);
   const [batchMkvExtractPath, setBatchMkvExtractPath] = useState('');
   const [batchMkvExtractFound, setBatchMkvExtractFound] = useState(false);
@@ -1023,6 +1477,7 @@ export default function Config() {
   const [templatesTab, setTemplatesTab] = useState(0);
   const [templates, setTemplates] = useState<Protocol.ConfigTemplates>(() => emptyTemplates());
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const skipNextAutoSaveRef = useRef(false);
   const mkvToolNixCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bdMasterCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -1050,6 +1505,9 @@ export default function Config() {
       setSubtitleFormat(initStreamFormat(config.subtitle));
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
       setMkvPriority(config.mkv?.priority ?? Protocol.MkvPriority.Lowest);
+      setMkvPreferredLanguages(config.mkv?.languages?.preferred ?? DEFAULT_MKV_PREFERRED_LANGUAGES);
+      setMkvDraftPriority(config.mkv?.priority ?? Protocol.MkvPriority.Lowest);
+      setMkvDraftPreferredLanguages(config.mkv?.languages?.preferred ?? DEFAULT_MKV_PREFERRED_LANGUAGES);
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setBdMasterPath(config.bdMaster?.path ?? '');
       setMpcHcPath(config.mpcHc?.path ?? '');
@@ -1089,7 +1547,12 @@ export default function Config() {
       .filter((extension) => extension.length > 0);
   };
 
-  const createConfig = (): Protocol.Config => ({
+  const createConfig = (
+    overrides: {
+      mkvPriority?: Protocol.MkvPriority;
+      mkvPreferredLanguages?: string[];
+    } = {},
+  ): Protocol.Config => ({
     appendOnFileDrop,
     displayMode,
     theme,
@@ -1103,7 +1566,11 @@ export default function Config() {
     video: toConfigStreamFormat(videoFormat),
     audio: toConfigStreamFormat(audioFormat),
     subtitle: toConfigStreamFormat(subtitleFormat),
-    mkv: { mkvToolNixPath, priority: mkvPriority },
+    mkv: {
+      mkvToolNixPath,
+      priority: overrides.mkvPriority ?? mkvPriority,
+      languages: { preferred: overrides.mkvPreferredLanguages ?? mkvPreferredLanguages },
+    },
     batchMkvExtract: { path: batchMkvExtractPath },
     bdMaster: { path: bdMasterPath },
     mpcHc: { path: mpcHcPath },
@@ -1298,7 +1765,11 @@ export default function Config() {
           setStoreConfig({
             ...config,
             mkv: {
-              ...(config.mkv ?? { mkvToolNixPath: status.mkvToolNixPath }),
+              ...(config.mkv ?? {
+                mkvToolNixPath: status.mkvToolNixPath,
+                priority: mkvPriority,
+                languages: { preferred: mkvPreferredLanguages },
+              }),
               mkvToolNixPath: status.mkvToolNixPath,
             },
           });
@@ -1306,6 +1777,54 @@ export default function Config() {
       }
     } catch {
       setMkvtoolnixFound(false);
+    }
+  };
+
+  const handleOpenMkvOptionsDialog = () => {
+    setMkvDraftPriority(mkvPriority);
+    setMkvDraftPreferredLanguages([...mkvPreferredLanguages]);
+    setMkvOptionsDialogOpen(true);
+  };
+
+  const handleCancelMkvOptionsDialog = () => {
+    if (mkvOptionsSaving) return;
+    setMkvDraftPriority(mkvPriority);
+    setMkvDraftPreferredLanguages([...mkvPreferredLanguages]);
+    setMkvOptionsDialogOpen(false);
+  };
+
+  const handleOkMkvOptionsDialog = async () => {
+    const nextPriority = mkvDraftPriority;
+    const nextPreferredLanguages = [...mkvDraftPreferredLanguages];
+    const hasChanges =
+      nextPriority !== mkvPriority ||
+      nextPreferredLanguages.length !== mkvPreferredLanguages.length ||
+      nextPreferredLanguages.some((language, index) => language !== mkvPreferredLanguages[index]);
+
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+    }
+
+    setMkvOptionsSaving(true);
+    try {
+      const newConfig = await saveConfig(createConfig({
+        mkvPriority: nextPriority,
+        mkvPreferredLanguages: nextPreferredLanguages,
+      }));
+      if (hasChanges) {
+        skipNextAutoSaveRef.current = true;
+      }
+      setMkvPriority(nextPriority);
+      setMkvPreferredLanguages(nextPreferredLanguages);
+      setStoreConfig(newConfig);
+      setMkvOptionsDialogOpen(false);
+    } catch (error) {
+      setDialogNotification({
+        title: error ? error.toString() : t('config.settingsSaveError'),
+        type: Protocol.DialogNotificationType.Error,
+      });
+    } finally {
+      setMkvOptionsSaving(false);
     }
   };
 
@@ -1328,6 +1847,19 @@ export default function Config() {
     changeLanguage(language);
   }, [language]);
 
+  useEffect(() => {
+    if (!mkvOptionsDialogOpen || mkvOptionsTab !== 1 || mkvLanguages.length > 0) return;
+    let isCancelled = false;
+    import('../lib/mkvLanguages').then(({ MKV_LANGUAGES }) => {
+      if (!isCancelled) {
+        setMkvLanguages(MKV_LANGUAGES);
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [mkvOptionsDialogOpen, mkvOptionsTab, mkvLanguages.length]);
+
   // Validate MKVToolNix path from backend and show mkvmerge availability.
   useEffect(() => {
     if (!isInitializedRef.current) return;
@@ -1346,7 +1878,11 @@ export default function Config() {
               setStoreConfig({
                 ...config,
                 mkv: {
-                  ...(config.mkv ?? { mkvToolNixPath: status.mkvToolNixPath }),
+                  ...(config.mkv ?? {
+                    mkvToolNixPath: status.mkvToolNixPath,
+                    priority: mkvPriority,
+                    languages: { preferred: mkvPreferredLanguages },
+                  }),
                   mkvToolNixPath: status.mkvToolNixPath,
                 },
               });
@@ -1365,7 +1901,7 @@ export default function Config() {
         clearTimeout(mkvToolNixCheckDebounceRef.current);
       }
     };
-  }, [mkvToolNixPath, config, setStoreConfig]);
+  }, [mkvToolNixPath, config, mkvPriority, mkvPreferredLanguages, setStoreConfig]);
 
   // Validate BatchMkvExtract path from backend.
   useEffect(() => {
@@ -1486,6 +2022,10 @@ export default function Config() {
   // Auto-save: persist config to disk whenever any tracked value changes (debounced)
   useEffect(() => {
     if (!isInitializedRef.current) return;
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
     if (autoSaveDebounceRef.current) {
       clearTimeout(autoSaveDebounceRef.current);
     }
@@ -1520,6 +2060,7 @@ export default function Config() {
     subtitleFormat,
     mkvToolNixPath,
     mkvPriority,
+    mkvPreferredLanguages,
     batchMkvExtractPath,
     bdMasterPath,
     mpcHcPath,
@@ -2054,7 +2595,7 @@ export default function Config() {
               variant="outlined"
               size="small"
               disabled={!mkvtoolnixFound}
-              onClick={() => setMkvOptionsDialogOpen(true)}
+              onClick={handleOpenMkvOptionsDialog}
               sx={{ minWidth: 112, height: 32, textTransform: 'none' }}
             >
               {t('config.moreOptions')}
@@ -2106,7 +2647,7 @@ export default function Config() {
 
       <Dialog
         open={mkvOptionsDialogOpen}
-        onClose={() => setMkvOptionsDialogOpen(false)}
+        onClose={handleCancelMkvOptionsDialog}
         maxWidth={false}
         slotProps={{
           paper: {
@@ -2130,6 +2671,7 @@ export default function Config() {
               sx={{ mt: 0, minHeight: '24px', '& .MuiTab-root': { textTransform: 'none' } }}
             >
               <Tab label={t('config.general')} style={{ minHeight: '24px' }} sx={{ py: 0, my: 0 }} />
+              <Tab label={t('config.languages')} style={{ minHeight: '24px' }} sx={{ py: 0, my: 0 }} />
             </Tabs>
           </Box>
           {mkvOptionsTab === 0 && (
@@ -2140,9 +2682,9 @@ export default function Config() {
                 </Typography>
                 <FormControl size="small" sx={{ minWidth: 140 }}>
                   <Select
-                    value={mkvPriority}
+                    value={mkvDraftPriority}
                     onChange={(e) => {
-                      setMkvPriority(e.target.value as Protocol.MkvPriority);
+                      setMkvDraftPriority(e.target.value as Protocol.MkvPriority);
                     }}
                   >
                     <MenuItem value={Protocol.MkvPriority.Highest}>{t('config.priorityHighest')}</MenuItem>
@@ -2155,14 +2697,29 @@ export default function Config() {
               </Box>
             </Box>
           )}
+          {mkvOptionsTab === 1 && (
+            <Box sx={{ flex: 1, minHeight: 0, p: 2, display: 'flex', flexDirection: 'column' }}>
+              <MkvLanguagesPanel
+                availableLanguages={mkvLanguages}
+                preferredLanguageCodes={mkvDraftPreferredLanguages}
+                onPreferredLanguageCodesChange={setMkvDraftPreferredLanguages}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', gap: 1, pb: 2 }}>
-          <Button variant="contained" onClick={() => {}} sx={{ minWidth: 90, textTransform: 'none' }}>
+          <Button
+            variant="contained"
+            disabled={mkvOptionsSaving}
+            onClick={handleOkMkvOptionsDialog}
+            sx={{ minWidth: 90, textTransform: 'none' }}
+          >
             {t('config.ok')}
           </Button>
           <Button
             variant="outlined"
-            onClick={() => setMkvOptionsDialogOpen(false)}
+            disabled={mkvOptionsSaving}
+            onClick={handleCancelMkvOptionsDialog}
             sx={{ minWidth: 90, textTransform: 'none' }}
           >
             {t('config.cancel')}

@@ -252,11 +252,34 @@ impl Default for MkvPriority {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigMkvLanguages {
+  #[serde(default)]
+  pub preferred: Vec<String>,
+}
+
+impl Default for ConfigMkvLanguages {
+  fn default() -> Self {
+    Self {
+      preferred: vec![
+        "chi".to_owned(),
+        "eng".to_owned(),
+        "fre".to_owned(),
+        "ger".to_owned(),
+        "jpn".to_owned(),
+        "spa".to_owned(),
+      ],
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigMkv {
   #[serde(rename = "mkvToolNixPath", default = "ConfigMkv::default_mkv_toolnix_path")]
   pub mkv_toolnix_path: String,
   #[serde(default)]
   pub priority: MkvPriority,
+  #[serde(default)]
+  pub languages: ConfigMkvLanguages,
 }
 
 impl ConfigMkv {
@@ -276,6 +299,7 @@ impl Default for ConfigMkv {
     Self {
       mkv_toolnix_path: Self::default_mkv_toolnix_path(),
       priority: MkvPriority::default(),
+      languages: ConfigMkvLanguages::default(),
     }
   }
 }

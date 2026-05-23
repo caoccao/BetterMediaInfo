@@ -71,9 +71,14 @@ export enum MkvPriority {
   Highest = "Highest",
 }
 
+export interface ConfigMkvLanguages {
+  preferred: string[];
+}
+
 export interface ConfigMkv {
   mkvToolNixPath: string;
   priority: MkvPriority;
+  languages: ConfigMkvLanguages;
 }
 
 export interface ConfigBatchMkvExtract {
