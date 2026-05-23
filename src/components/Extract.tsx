@@ -265,15 +265,20 @@ function trackKey(track: Protocol.MkvTrack): string {
   return `${track.type}:${track.id}`;
 }
 
-function indexToKey(index: number): string | null {
-  if (index >= 0 && index <= 9) { return String(index); }
-  if (index >= 10 && index <= 35) { return String.fromCharCode('a'.charCodeAt(0) + index - 10); }
-  return null;
+function isTextEntryShortcutTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.closest([
+    'input:not([type="checkbox"]):not([type="radio"])',
+    'select',
+    'textarea',
+    '[contenteditable="true"]',
+    '.MuiInputBase-root',
+  ].join(',')) !== null;
 }
 
 function codeToIndex(code: string): number | null {
-  if (code.startsWith('Digit')) { return parseInt(code.charAt(5)); }  // 'Digit0'-'Digit9' → 0-9
-  if (code.startsWith('Key')) { return code.charCodeAt(3) - 0x41 + 10; }  // 'KeyA'-'KeyZ' → 10-35
+  const digitMatch = /^(Digit|Numpad)([1-9])$/.exec(code);
+  if (digitMatch) { return Number(digitMatch[2]) - 1; }
+  if (code.startsWith('Key')) { return code.charCodeAt(3) - 0x41 + 9; }
   return null;
 }
 
@@ -440,27 +445,34 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F2' || e.key === 'F3') {
+      if (e.repeat) { return; }
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && e.key === 'F2') {
         e.preventDefault();
+        void handleCopyCommand();
+        return;
       }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && e.key === 'F3') {
+        e.preventDefault();
+        void handleExtract();
+        return;
+      }
       if (e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'w' || e.key === 'W')) {
         e.preventDefault();
-        handleClose();
-      } else if (e.key === 'F2') {
+        void handleClose();
+        return;
+      }
+      if (isTextEntryShortcutTarget(e.target)) { return; }
+      if (!e.ctrlKey && !e.altKey && (e.key === '*' || e.code === 'NumpadMultiply')) {
         e.preventDefault();
-        handleCopyCommand();
-      } else if (e.key === 'F3') {
-        e.preventDefault();
-        handleExtract();
-      } else if (e.key === '*') {
         setSelectedKeys((prev) =>
           prev.size === tracks.length ? new Set() : new Set(tracks.map(trackKey))
         );
-      } else {
+        return;
+      }
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey) {
         const index = codeToIndex(e.code);
         if (index !== null && index < tracks.length) {
+          e.preventDefault();
           const key = trackKey(tracks[index]);
           setSelectedKeys((prev) => {
             const next = new Set(prev);
@@ -475,12 +487,10 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [hasSelection, extracting, file, mkvToolNixPath, selectedTracks]);
+  }, [handleClose, handleCopyCommand, handleExtract, tracks]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -524,21 +534,21 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
           </Button>
         </Toolbar>
         <Toolbar variant="dense" sx={{ gap: 1, justifyContent: 'center' }}>
-          <Tooltip title="F2">
+          <Tooltip title={t('extract.copyCommandTooltip')}>
             <span>
               <Button variant="outlined" size="small" disabled={!hasSelection} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('extract.copyCommand')}
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="F3">
+          <Tooltip title={t('extract.extractTooltip')}>
             <span>
               <Button variant="outlined" size="small" disabled={!hasSelection || extracting} onClick={handleExtract} startIcon={<ContentCutIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('extract.extract')}
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="Ctrl+W">
+          <Tooltip title={t('extract.closeTooltip')}>
             <span>
               <Button variant="outlined" size="small" disabled={extracting} onClick={handleClose} startIcon={<CloseIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('extract.close')}
@@ -566,11 +576,16 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
-                    <Tooltip title="*">
+                    <Tooltip title={t('extract.toggleStreams')}>
                       <Checkbox
                         size="small"
                         checked={tracks.length > 0 && selectedKeys.size === tracks.length}
                         indeterminate={selectedKeys.size > 0 && selectedKeys.size < tracks.length}
+                        slotProps={{
+                          input: {
+                            'aria-label': t('extract.toggleStreams'),
+                          },
+                        }}
                         onChange={(e) => {
                           setSelectedKeys(e.target.checked ? new Set(tracks.map(trackKey)) : new Set());
                         }}
@@ -578,7 +593,6 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                     </Tooltip>
                   </TableCell>
                   <TableCell>{t('extract.header.id')}</TableCell>
-                  <TableCell>{t('extract.header.number')}</TableCell>
                   <TableCell>{t('extract.header.type')}</TableCell>
                   <TableCell>{t('extract.header.codec')}</TableCell>
                   <TableCell>{t('extract.header.trackName')}</TableCell>
@@ -586,7 +600,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tracks.map((track, index) => {
+                {tracks.map((track) => {
                   const key = trackKey(track);
                   return (
                   <TableRow
@@ -606,27 +620,24 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                     sx={{ cursor: 'pointer' }}
                   >
                     <TableCell padding="checkbox">
-                      <Tooltip title={indexToKey(index) ?? ''}>
-                        <Checkbox
-                          size="small"
-                          checked={selectedKeys.has(key)}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            setSelectedKeys((prev) => {
-                              const next = new Set(prev);
-                              if (e.target.checked) {
-                                next.add(key);
-                              } else {
-                                next.delete(key);
-                              }
-                              return next;
-                            });
-                          }}
-                        />
-                      </Tooltip>
+                      <Checkbox
+                        size="small"
+                        checked={selectedKeys.has(key)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          setSelectedKeys((prev) => {
+                            const next = new Set(prev);
+                            if (e.target.checked) {
+                              next.add(key);
+                            } else {
+                              next.delete(key);
+                            }
+                            return next;
+                          });
+                        }}
+                      />
                     </TableCell>
-                    <TableCell>{track.id}</TableCell>
-                    <TableCell>{track.number}</TableCell>
+                    <TableCell>{track.id + 1}</TableCell>
                     <TableCell><TrackTypeIcon type={track.type} /></TableCell>
                     <TableCell>{track.codec}</TableCell>
                     <TableCell>{track.trackName}</TableCell>

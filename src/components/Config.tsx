@@ -19,6 +19,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
+  Card,
+  CardContent,
+  CardHeader,
   Checkbox,
   Dialog,
   DialogActions,
@@ -35,6 +38,12 @@ import {
   Switch,
   Tab,
   Tabs,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -42,11 +51,14 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  Add as AddIcon,
   BrightnessAuto as AutoIcon,
   Clear as ClearIcon,
   ClosedCaption as SubtitleIcon,
   DarkMode as DarkIcon,
+  Delete as DeleteIcon,
   Description as TemplatesIcon,
+  Edit as EditIcon,
   Extension as IntegrationIcon,
   FolderOpen as FolderIcon,
   Image as ImageIcon,
@@ -84,6 +96,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslation } from 'react-i18next';
@@ -304,6 +317,44 @@ function emptyTemplates(): Protocol.ConfigTemplates {
 const LEFT_CONTAINER_ID = 'templates-left-container';
 const RIGHT_CONTAINER_ID = 'templates-right-container';
 const DEFAULT_MKV_PREFERRED_LANGUAGES = ['chi', 'eng', 'fre', 'ger', 'jpn', 'spa'];
+const DEFAULT_MKV_TITLE_AUTOCOMPLETION_TITLES = [
+  'English',
+  'French',
+  'German',
+  'Japanese',
+  'Simplified Chinese',
+  'Spanish',
+  'Traditional Chinese',
+  'Cantonese',
+  'Mandarin',
+];
+
+interface TitleAutocompletionRow {
+  id: string;
+  title: string;
+}
+
+let titleAutocompletionRowId = 0;
+
+function nextTitleAutocompletionRowId(): string {
+  titleAutocompletionRowId += 1;
+  return `mkv-title-autocomplete-${titleAutocompletionRowId}`;
+}
+
+function createTitleAutocompletionRows(titles: string[]): TitleAutocompletionRow[] {
+  return titles.map((title) => ({
+    id: nextTitleAutocompletionRowId(),
+    title,
+  }));
+}
+
+function moveArrayItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
+  const next = [...items];
+  const [item] = next.splice(fromIndex, 1);
+  if (item === undefined) return items;
+  next.splice(toIndex, 0, item);
+  return next;
+}
 
 // Disable sortable's auto-shifting so the drop indicator is the sole visual cue.
 const noShiftStrategy = () => null;
@@ -1424,6 +1475,172 @@ function MkvLanguagesPanel({
   );
 }
 
+function SortableTitleAutocompletionRow({
+  row,
+  isEditing,
+  onEdit,
+  onDelete,
+  onStopEditing,
+  onTitleChange,
+}: {
+  row: TitleAutocompletionRow;
+  isEditing: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  onStopEditing: () => void;
+  onTitleChange: (title: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: row.id,
+  });
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      sx={{
+        cursor: 'grab',
+        opacity: isDragging ? 0.4 : 1,
+        '&:hover': { bgcolor: 'action.hover' },
+      }}
+    >
+      <TableCell sx={{ width: '70%' }}>
+        {isEditing ? (
+          <TextField
+            autoFocus
+            fullWidth
+            size="small"
+            value={row.title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            onBlur={onStopEditing}
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter' || e.key === 'Escape') {
+                e.currentTarget.blur();
+              }
+            }}
+          />
+        ) : (
+          <Typography variant="body2">{row.title}</Typography>
+        )}
+      </TableCell>
+      <TableCell
+        align="right"
+        sx={{ whiteSpace: 'nowrap' }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <Tooltip title={t('config.edit')}>
+          <IconButton size="small" aria-label={t('config.edit')} onClick={onEdit}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('config.delete')}>
+          <IconButton size="small" aria-label={t('config.delete')} onClick={onDelete}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function MkvTitleAutocompletionPanel({
+  rows,
+  onRowsChange,
+}: {
+  rows: TitleAutocompletionRow[];
+  onRowsChange: (rows: TitleAutocompletionRow[]) => void;
+}) {
+  const { t } = useTranslation();
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  useEffect(() => {
+    if (editingRowId && !rows.some((row) => row.id === editingRowId)) {
+      setEditingRowId(null);
+    }
+  }, [editingRowId, rows]);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIndex = rows.findIndex((row) => row.id === active.id);
+      const newIndex = rows.findIndex((row) => row.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return;
+      onRowsChange(moveArrayItem(rows, oldIndex, newIndex));
+    },
+    [onRowsChange, rows],
+  );
+
+  const handleAdd = useCallback(() => {
+    const row = { id: nextTitleAutocompletionRowId(), title: '' };
+    onRowsChange([...rows, row]);
+    setEditingRowId(row.id);
+  }, [onRowsChange, rows]);
+
+  return (
+    <Box>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600 }}>{t('config.titleColumn')}</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600, width: 120 }}>
+                  {t('config.action')}
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <SortableContext items={rows.map((row) => row.id)} strategy={verticalListSortingStrategy}>
+                {rows.map((row) => (
+                  <SortableTitleAutocompletionRow
+                    key={row.id}
+                    row={row}
+                    isEditing={editingRowId === row.id}
+                    onEdit={() => setEditingRowId(row.id)}
+                    onDelete={() => onRowsChange(rows.filter((candidate) => candidate.id !== row.id))}
+                    onStopEditing={() => setEditingRowId((current) => (current === row.id ? null : current))}
+                    onTitleChange={(title) => {
+                      onRowsChange(rows.map((candidate) => (
+                        candidate.id === row.id ? { ...candidate, title } : candidate
+                      )));
+                    }}
+                  />
+                ))}
+              </SortableContext>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </DndContext>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<AddIcon />}
+        onClick={handleAdd}
+        sx={{ mt: 1, textTransform: 'none' }}
+      >
+        {t('config.add')}
+      </Button>
+    </Box>
+  );
+}
+
 export default function Config() {
   const { t } = useTranslation();
   const [appendOnFileDrop, setAppendOnFileDrop] = useState(true);
@@ -1442,8 +1659,12 @@ export default function Config() {
   const [mkvToolNixPath, setMkvToolNixPath] = useState('');
   const [mkvPriority, setMkvPriority] = useState<Protocol.MkvPriority>(Protocol.MkvPriority.Lowest);
   const [mkvPreferredLanguages, setMkvPreferredLanguages] = useState<string[]>([]);
+  const [mkvTitleAutocompletionTitles, setMkvTitleAutocompletionTitles] = useState<string[]>(DEFAULT_MKV_TITLE_AUTOCOMPLETION_TITLES);
   const [mkvDraftPriority, setMkvDraftPriority] = useState<Protocol.MkvPriority>(Protocol.MkvPriority.Lowest);
   const [mkvDraftPreferredLanguages, setMkvDraftPreferredLanguages] = useState<string[]>([]);
+  const [mkvDraftTitleAutocompletionRows, setMkvDraftTitleAutocompletionRows] = useState<TitleAutocompletionRow[]>(
+    () => createTitleAutocompletionRows(DEFAULT_MKV_TITLE_AUTOCOMPLETION_TITLES),
+  );
   const [mkvLanguages, setMkvLanguages] = useState<readonly MkvLanguage[]>([]);
   const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
   const [mkvOptionsDialogOpen, setMkvOptionsDialogOpen] = useState(false);
@@ -1504,10 +1725,14 @@ export default function Config() {
       setAudioFormat(initStreamFormat(config.audio));
       setSubtitleFormat(initStreamFormat(config.subtitle));
       setMkvToolNixPath(config.mkv?.mkvToolNixPath ?? '');
-      setMkvPriority(config.mkv?.priority ?? Protocol.MkvPriority.Lowest);
+      setMkvPriority(config.mkv?.additionalParameters?.priority ?? Protocol.MkvPriority.Lowest);
       setMkvPreferredLanguages(config.mkv?.languages?.preferred ?? DEFAULT_MKV_PREFERRED_LANGUAGES);
-      setMkvDraftPriority(config.mkv?.priority ?? Protocol.MkvPriority.Lowest);
+      setMkvTitleAutocompletionTitles(config.mkv?.titleAutocompletion?.titles ?? DEFAULT_MKV_TITLE_AUTOCOMPLETION_TITLES);
+      setMkvDraftPriority(config.mkv?.additionalParameters?.priority ?? Protocol.MkvPriority.Lowest);
       setMkvDraftPreferredLanguages(config.mkv?.languages?.preferred ?? DEFAULT_MKV_PREFERRED_LANGUAGES);
+      setMkvDraftTitleAutocompletionRows(createTitleAutocompletionRows(
+        config.mkv?.titleAutocompletion?.titles ?? DEFAULT_MKV_TITLE_AUTOCOMPLETION_TITLES,
+      ));
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setBdMasterPath(config.bdMaster?.path ?? '');
       setMpcHcPath(config.mpcHc?.path ?? '');
@@ -1551,6 +1776,7 @@ export default function Config() {
     overrides: {
       mkvPriority?: Protocol.MkvPriority;
       mkvPreferredLanguages?: string[];
+      mkvTitleAutocompletionTitles?: string[];
     } = {},
   ): Protocol.Config => ({
     appendOnFileDrop,
@@ -1568,8 +1794,9 @@ export default function Config() {
     subtitle: toConfigStreamFormat(subtitleFormat),
     mkv: {
       mkvToolNixPath,
-      priority: overrides.mkvPriority ?? mkvPriority,
+      additionalParameters: { priority: overrides.mkvPriority ?? mkvPriority },
       languages: { preferred: overrides.mkvPreferredLanguages ?? mkvPreferredLanguages },
+      titleAutocompletion: { titles: overrides.mkvTitleAutocompletionTitles ?? mkvTitleAutocompletionTitles },
     },
     batchMkvExtract: { path: batchMkvExtractPath },
     bdMaster: { path: bdMasterPath },
@@ -1767,8 +1994,9 @@ export default function Config() {
             mkv: {
               ...(config.mkv ?? {
                 mkvToolNixPath: status.mkvToolNixPath,
-                priority: mkvPriority,
+                additionalParameters: { priority: mkvPriority },
                 languages: { preferred: mkvPreferredLanguages },
+                titleAutocompletion: { titles: mkvTitleAutocompletionTitles },
               }),
               mkvToolNixPath: status.mkvToolNixPath,
             },
@@ -1783,6 +2011,7 @@ export default function Config() {
   const handleOpenMkvOptionsDialog = () => {
     setMkvDraftPriority(mkvPriority);
     setMkvDraftPreferredLanguages([...mkvPreferredLanguages]);
+    setMkvDraftTitleAutocompletionRows(createTitleAutocompletionRows(mkvTitleAutocompletionTitles));
     setMkvOptionsDialogOpen(true);
   };
 
@@ -1790,16 +2019,20 @@ export default function Config() {
     if (mkvOptionsSaving) return;
     setMkvDraftPriority(mkvPriority);
     setMkvDraftPreferredLanguages([...mkvPreferredLanguages]);
+    setMkvDraftTitleAutocompletionRows(createTitleAutocompletionRows(mkvTitleAutocompletionTitles));
     setMkvOptionsDialogOpen(false);
   };
 
   const handleOkMkvOptionsDialog = async () => {
     const nextPriority = mkvDraftPriority;
     const nextPreferredLanguages = [...mkvDraftPreferredLanguages];
+    const nextTitleAutocompletionTitles = mkvDraftTitleAutocompletionRows.map((row) => row.title);
     const hasChanges =
       nextPriority !== mkvPriority ||
       nextPreferredLanguages.length !== mkvPreferredLanguages.length ||
-      nextPreferredLanguages.some((language, index) => language !== mkvPreferredLanguages[index]);
+      nextPreferredLanguages.some((language, index) => language !== mkvPreferredLanguages[index]) ||
+      nextTitleAutocompletionTitles.length !== mkvTitleAutocompletionTitles.length ||
+      nextTitleAutocompletionTitles.some((title, index) => title !== mkvTitleAutocompletionTitles[index]);
 
     if (autoSaveDebounceRef.current) {
       clearTimeout(autoSaveDebounceRef.current);
@@ -1810,12 +2043,14 @@ export default function Config() {
       const newConfig = await saveConfig(createConfig({
         mkvPriority: nextPriority,
         mkvPreferredLanguages: nextPreferredLanguages,
+        mkvTitleAutocompletionTitles: nextTitleAutocompletionTitles,
       }));
       if (hasChanges) {
         skipNextAutoSaveRef.current = true;
       }
       setMkvPriority(nextPriority);
       setMkvPreferredLanguages(nextPreferredLanguages);
+      setMkvTitleAutocompletionTitles(nextTitleAutocompletionTitles);
       setStoreConfig(newConfig);
       setMkvOptionsDialogOpen(false);
     } catch (error) {
@@ -1880,8 +2115,9 @@ export default function Config() {
                 mkv: {
                   ...(config.mkv ?? {
                     mkvToolNixPath: status.mkvToolNixPath,
-                    priority: mkvPriority,
+                    additionalParameters: { priority: mkvPriority },
                     languages: { preferred: mkvPreferredLanguages },
+                    titleAutocompletion: { titles: mkvTitleAutocompletionTitles },
                   }),
                   mkvToolNixPath: status.mkvToolNixPath,
                 },
@@ -1901,7 +2137,7 @@ export default function Config() {
         clearTimeout(mkvToolNixCheckDebounceRef.current);
       }
     };
-  }, [mkvToolNixPath, config, mkvPriority, mkvPreferredLanguages, setStoreConfig]);
+  }, [mkvToolNixPath, config, mkvPriority, mkvPreferredLanguages, mkvTitleAutocompletionTitles, setStoreConfig]);
 
   // Validate BatchMkvExtract path from backend.
   useEffect(() => {
@@ -2061,6 +2297,7 @@ export default function Config() {
     mkvToolNixPath,
     mkvPriority,
     mkvPreferredLanguages,
+    mkvTitleAutocompletionTitles,
     batchMkvExtractPath,
     bdMasterPath,
     mpcHcPath,
@@ -2675,27 +2912,55 @@ export default function Config() {
             </Tabs>
           </Box>
           {mkvOptionsTab === 0 && (
-            <Box sx={{ p: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {t('config.priority')}
-                </Typography>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <Select
-                    value={mkvDraftPriority}
-                    onChange={(e) => {
-                      setMkvDraftPriority(e.target.value as Protocol.MkvPriority);
-                    }}
-                  >
-                    <MenuItem value={Protocol.MkvPriority.Highest}>{t('config.priorityHighest')}</MenuItem>
-                    <MenuItem value={Protocol.MkvPriority.Higher}>{t('config.priorityHigher')}</MenuItem>
-                    <MenuItem value={Protocol.MkvPriority.Normal}>{t('config.priorityNormal')}</MenuItem>
-                    <MenuItem value={Protocol.MkvPriority.Lower}>{t('config.priorityLower')}</MenuItem>
-                    <MenuItem value={Protocol.MkvPriority.Lowest}>{t('config.priorityLowest')}</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-            </Box>
+            <Stack spacing={2} sx={{ p: 2 }}>
+              <Card variant="outlined" sx={{ borderRadius: 1 }}>
+                <CardHeader
+                  title={
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {t('config.additionalParameters')}
+                    </Typography>
+                  }
+                  sx={{ p: 1.5, pb: 0.75 }}
+                />
+                <CardContent sx={{ p: 1.5, pt: 0, '&:last-child': { pb: 1.5 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('config.priority')}
+                    </Typography>
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                      <Select
+                        value={mkvDraftPriority}
+                        onChange={(e) => {
+                          setMkvDraftPriority(e.target.value as Protocol.MkvPriority);
+                        }}
+                      >
+                        <MenuItem value={Protocol.MkvPriority.Highest}>{t('config.priorityHighest')}</MenuItem>
+                        <MenuItem value={Protocol.MkvPriority.Higher}>{t('config.priorityHigher')}</MenuItem>
+                        <MenuItem value={Protocol.MkvPriority.Normal}>{t('config.priorityNormal')}</MenuItem>
+                        <MenuItem value={Protocol.MkvPriority.Lower}>{t('config.priorityLower')}</MenuItem>
+                        <MenuItem value={Protocol.MkvPriority.Lowest}>{t('config.priorityLowest')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ borderRadius: 1 }}>
+                <CardHeader
+                  title={
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {t('config.titleAutocompletion')}
+                    </Typography>
+                  }
+                  sx={{ p: 1.5, pb: 0.75 }}
+                />
+                <CardContent sx={{ p: 1.5, pt: 0, '&:last-child': { pb: 1.5 } }}>
+                  <MkvTitleAutocompletionPanel
+                    rows={mkvDraftTitleAutocompletionRows}
+                    onRowsChange={setMkvDraftTitleAutocompletionRows}
+                  />
+                </CardContent>
+              </Card>
+            </Stack>
           )}
           {mkvOptionsTab === 1 && (
             <Box sx={{ flex: 1, minHeight: 0, p: 2, display: 'flex', flexDirection: 'column' }}>

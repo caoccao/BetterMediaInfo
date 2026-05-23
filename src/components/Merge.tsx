@@ -55,6 +55,8 @@ import {
 import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import FlagIcon from '@mui/icons-material/Flag';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import TransformIcon from '@mui/icons-material/Transform';
 import {
   closestCenter,
@@ -119,6 +121,24 @@ function isInteractiveDragTarget(target: EventTarget | null): boolean {
     '.MuiCheckbox-root',
     '.MuiInputBase-root',
   ].join(',')) !== null;
+}
+
+function isTextEntryShortcutTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.closest([
+    'input:not([type="checkbox"]):not([type="radio"])',
+    'select',
+    'textarea',
+    '[contenteditable="true"]',
+    '[role="combobox"]',
+    '.MuiAutocomplete-root',
+    '.MuiInputBase-root',
+  ].join(',')) !== null;
+}
+
+function isToggleStreamsShortcut(event: KeyboardEvent): boolean {
+  return !event.ctrlKey
+    && !event.altKey
+    && (event.key === '*' || event.key === 'Multiply' || event.code === 'NumpadMultiply');
 }
 
 class InteractiveSafePointerSensor extends PointerSensor {
@@ -694,6 +714,46 @@ function allStreamsEnabledSetter(data: MergeData, value: boolean): MergeData {
   return next;
 }
 
+function defaultTracksFollowFirstTrackRule(data: MergeData): boolean {
+  return [data.videos, data.audios, data.texts].every((tracks) =>
+    tracks.every((track, index) => track.isDefault === (index === 0))
+  );
+}
+
+function resetDefaultTracks(data: MergeData): MergeData {
+  let next = data;
+  for (const [index, track] of data.videos.entries()) {
+    next = next.withVideoDefault(track.num, index === 0);
+  }
+  for (const [index, track] of data.audios.entries()) {
+    next = next.withAudioDefault(track.num, index === 0);
+  }
+  for (const [index, track] of data.texts.entries()) {
+    next = next.withTextDefault(track.num, index === 0);
+  }
+  return next;
+}
+
+function forcedTracksFollowResetRule(data: MergeData): boolean {
+  return [data.videos, data.audios, data.texts].every((tracks) =>
+    tracks.every((track) => !track.isForced)
+  );
+}
+
+function resetForcedTracks(data: MergeData): MergeData {
+  let next = data;
+  for (const track of data.videos) {
+    next = next.withVideoForced(track.num, false);
+  }
+  for (const track of data.audios) {
+    next = next.withAudioForced(track.num, false);
+  }
+  for (const track of data.texts) {
+    next = next.withTextForced(track.num, false);
+  }
+  return next;
+}
+
 function titleSetterFor(
   data: MergeData,
   stream: Protocol.StreamKind,
@@ -949,6 +1009,20 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     && enabledStreamCheckboxCount === streamCheckboxCount;
   const allStreamsIndeterminate = enabledStreamCheckboxCount > 0
     && enabledStreamCheckboxCount < streamCheckboxCount;
+  const canResetDefaultStreams = !defaultTracksFollowFirstTrackRule(mergeData);
+  const canResetForcedStreams = !forcedTracksFollowResetRule(mergeData);
+  const handleToggleAllStreams = useCallback(() => {
+    if (streamCheckboxCount === 0) { return; }
+    setMergeData((prev) => allStreamsEnabledSetter(prev, !allStreamsChecked));
+  }, [allStreamsChecked, streamCheckboxCount]);
+  const handleResetDefaultStreams = useCallback(() => {
+    if (!canResetDefaultStreams) { return; }
+    setMergeData((prev) => resetDefaultTracks(prev));
+  }, [canResetDefaultStreams]);
+  const handleResetForcedStreams = useCallback(() => {
+    if (!canResetForcedStreams) { return; }
+    setMergeData((prev) => resetForcedTracks(prev));
+  }, [canResetForcedStreams]);
 
   // Keep the destination file extension in sync with what mkvmerge can
   // actually produce: .mkv (has video), .mka (audio-only), .mks (text-only).
@@ -1061,7 +1135,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
 
   const handleCopyCommand = async () => {
     if (!canCopyCommand) { return; }
-    const command = buildMergeCommand(mkvToolNixPath, file, mergeData, propertyMaps, config?.mkv?.priority ?? null);
+    const command = buildMergeCommand(mkvToolNixPath, file, mergeData, propertyMaps, config?.mkv?.additionalParameters?.priority ?? null);
     await writeText(command);
   };
 
@@ -1072,7 +1146,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     setCompletion(null);
     setDialogOpen(true);
     try {
-      const args = buildMergeArgs(file, mergeData, propertyMaps, config?.mkv?.priority ?? null);
+      const args = buildMergeArgs(file, mergeData, propertyMaps, config?.mkv?.additionalParameters?.priority ?? null);
       await runMkvmerge(args);
     } catch (err) {
       const msg = String(err);
@@ -1133,6 +1207,21 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
         void handleMerge();
         return;
       }
+      if (isToggleStreamsShortcut(e) && !isTextEntryShortcutTarget(e.target)) {
+        e.preventDefault();
+        handleToggleAllStreams();
+        return;
+      }
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && e.key === 'F5') {
+        e.preventDefault();
+        handleResetDefaultStreams();
+        return;
+      }
+      if (!e.ctrlKey && !e.altKey && !e.shiftKey && e.key === 'F6') {
+        e.preventDefault();
+        handleResetForcedStreams();
+        return;
+      }
       if (e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'w' || e.key === 'W')) {
         e.preventDefault();
         void handleClose();
@@ -1142,7 +1231,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleClose, handleCopyCommand, handleMerge]);
+  }, [handleClose, handleCopyCommand, handleMerge, handleResetDefaultStreams, handleResetForcedStreams, handleToggleAllStreams]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -1174,21 +1263,21 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           />
         </Toolbar>
         <Toolbar variant="dense" sx={{ gap: 1, justifyContent: 'center' }}>
-          <Tooltip title="F2">
+          <Tooltip title={t('merge.copyCommandTooltip')}>
             <span>
               <Button variant="outlined" size="small" disabled={!canCopyCommand} onClick={handleCopyCommand} startIcon={<ContentCopyIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('merge.copyCommand')}
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="F3">
+          <Tooltip title={t('merge.mergeTooltip')}>
             <span>
               <Button variant="outlined" size="small" disabled={!canRunMerge} onClick={handleMerge} startIcon={<TransformIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('merge.merge')}
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="Ctrl+W">
+          <Tooltip title={t('merge.closeTooltip')}>
             <span>
               <Button variant="outlined" size="small" disabled={merging} onClick={handleClose} startIcon={<CloseIcon />} sx={{ textTransform: 'none', whiteSpace: 'nowrap', height: 32 }}>
                 {t('merge.close')}
@@ -1201,21 +1290,51 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
           disableGutters
           sx={{ minHeight: '32px !important', px: 2.5 }}
         >
-          <Checkbox
-            size="small"
-            checked={allStreamsChecked}
-            indeterminate={allStreamsIndeterminate}
-            disabled={streamCheckboxCount === 0}
-            onChange={(e) => {
-              setMergeData((prev) => allStreamsEnabledSetter(prev, e.target.checked));
-            }}
-            slotProps={{
-              input: {
-                'aria-label': t('merge.toggleAllStreams'),
-              },
-            }}
-            sx={{ p: 0.5 }}
-          />
+          <Tooltip title={t('merge.toggleAllStreams')}>
+            <span>
+              <Checkbox
+                size="small"
+                checked={allStreamsChecked}
+                indeterminate={allStreamsIndeterminate}
+                disabled={streamCheckboxCount === 0}
+                onChange={(e) => {
+                  setMergeData((prev) => allStreamsEnabledSetter(prev, e.target.checked));
+                }}
+                slotProps={{
+                  input: {
+                    'aria-label': t('merge.toggleAllStreams'),
+                  },
+                }}
+                sx={{ p: 0.5 }}
+              />
+            </span>
+          </Tooltip>
+          <Tooltip title={t('merge.resetDefaultStreams')}>
+            <span>
+              <IconButton
+                size="small"
+                disabled={!canResetDefaultStreams}
+                aria-label={t('merge.resetDefaultStreams')}
+                onClick={handleResetDefaultStreams}
+                sx={{ p: 0.5 }}
+              >
+                <RestartAltIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={t('merge.resetForcedStreams')}>
+            <span>
+              <IconButton
+                size="small"
+                disabled={!canResetForcedStreams}
+                aria-label={t('merge.resetForcedStreams')}
+                onClick={handleResetForcedStreams}
+                sx={{ p: 0.5 }}
+              >
+                <FlagIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Box sx={{ flex: 1, overflow: 'auto', pt: 0.5, pb: 2, pl: 2, pr: 2 }}>

@@ -75,10 +75,19 @@ export interface ConfigMkvLanguages {
   preferred: string[];
 }
 
+export interface ConfigMkvAdditionalParameters {
+  priority: MkvPriority;
+}
+
+export interface ConfigMkvTitleAutocompletion {
+  titles: string[];
+}
+
 export interface ConfigMkv {
   mkvToolNixPath: string;
-  priority: MkvPriority;
+  additionalParameters: ConfigMkvAdditionalParameters;
   languages: ConfigMkvLanguages;
+  titleAutocompletion: ConfigMkvTitleAutocompletion;
 }
 
 export interface ConfigBatchMkvExtract {

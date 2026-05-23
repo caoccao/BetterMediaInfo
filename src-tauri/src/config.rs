@@ -252,6 +252,20 @@ impl Default for MkvPriority {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigMkvAdditionalParameters {
+  #[serde(default)]
+  pub priority: MkvPriority,
+}
+
+impl Default for ConfigMkvAdditionalParameters {
+  fn default() -> Self {
+    Self {
+      priority: MkvPriority::default(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigMkvLanguages {
   #[serde(default)]
   pub preferred: Vec<String>,
@@ -273,13 +287,75 @@ impl Default for ConfigMkvLanguages {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigMkvTitleAutocompletion {
+  #[serde(default)]
+  pub titles: Vec<String>,
+}
+
+impl Default for ConfigMkvTitleAutocompletion {
+  fn default() -> Self {
+    Self {
+      titles: vec![
+        "Cantonese".to_owned(),
+        "English".to_owned(),
+        "French".to_owned(),
+        "German".to_owned(),
+        "Japanese".to_owned(),
+        "Mandarin".to_owned(),
+        "Simplified Chinese".to_owned(),
+        "Spanish".to_owned(),
+        "Traditional Chinese".to_owned(),
+      ],
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct ConfigMkv {
   #[serde(rename = "mkvToolNixPath", default = "ConfigMkv::default_mkv_toolnix_path")]
   pub mkv_toolnix_path: String,
-  #[serde(default)]
-  pub priority: MkvPriority,
+  #[serde(rename = "additionalParameters", default)]
+  pub additional_parameters: ConfigMkvAdditionalParameters,
   #[serde(default)]
   pub languages: ConfigMkvLanguages,
+  #[serde(rename = "titleAutocompletion", default)]
+  pub title_autocompletion: ConfigMkvTitleAutocompletion,
+}
+
+impl<'de> Deserialize<'de> for ConfigMkv {
+  fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    #[derive(Deserialize)]
+    struct ConfigMkvWire {
+      #[serde(rename = "mkvToolNixPath", default = "ConfigMkv::default_mkv_toolnix_path")]
+      mkv_toolnix_path: String,
+      #[serde(rename = "additionalParameters")]
+      additional_parameters: Option<ConfigMkvAdditionalParameters>,
+      #[serde(default)]
+      priority: Option<MkvPriority>,
+      #[serde(default)]
+      languages: ConfigMkvLanguages,
+      #[serde(rename = "titleAutocompletion", default)]
+      title_autocompletion: ConfigMkvTitleAutocompletion,
+    }
+
+    let wire = ConfigMkvWire::deserialize(deserializer)?;
+    let additional_parameters =
+      wire
+        .additional_parameters
+        .unwrap_or_else(|| ConfigMkvAdditionalParameters {
+          priority: wire.priority.unwrap_or_default(),
+        });
+
+    Ok(Self {
+      mkv_toolnix_path: wire.mkv_toolnix_path,
+      additional_parameters,
+      languages: wire.languages,
+      title_autocompletion: wire.title_autocompletion,
+    })
+  }
 }
 
 impl ConfigMkv {
@@ -298,8 +374,9 @@ impl Default for ConfigMkv {
   fn default() -> Self {
     Self {
       mkv_toolnix_path: Self::default_mkv_toolnix_path(),
-      priority: MkvPriority::default(),
+      additional_parameters: ConfigMkvAdditionalParameters::default(),
       languages: ConfigMkvLanguages::default(),
+      title_autocompletion: ConfigMkvTitleAutocompletion::default(),
     }
   }
 }
