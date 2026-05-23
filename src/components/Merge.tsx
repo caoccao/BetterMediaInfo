@@ -205,12 +205,16 @@ function buildMergeArgs(
   sourceFile: string,
   mergeData: MergeData,
   propertyMaps: Array<Protocol.StreamPropertyMap>,
+  priority: Protocol.MkvPriority | null,
 ): string[] {
   const args: string[] = [];
 
   // Global options
   args.push('-o', mergeData.destinationFile);
   args.push('--title', mergeData.general.title);
+  if (priority) {
+    args.push('--priority', priority.toLowerCase());
+  }
 
   const emitTrackType = (
     stream: Protocol.StreamKind,
@@ -269,11 +273,12 @@ function buildMergeCommand(
   sourceFile: string,
   mergeData: MergeData,
   propertyMaps: Array<Protocol.StreamPropertyMap>,
+  priority: Protocol.MkvPriority | null,
 ): string {
   const sep = getSep();
   const mkvmergeBinary = IS_WINDOWS ? 'mkvmerge.exe' : 'mkvmerge';
   const mkvmergePath = `${mkvToolNixPath}${sep}${mkvmergeBinary}`;
-  const args = buildMergeArgs(sourceFile, mergeData, propertyMaps);
+  const args = buildMergeArgs(sourceFile, mergeData, propertyMaps, priority);
   return [shellQuote(mkvmergePath), ...args.map(shellQuote)].join(' ');
 }
 
@@ -590,7 +595,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
 
   const handleCopyCommand = async () => {
     if (!mergeData.destinationFile) { return; }
-    const command = buildMergeCommand(mkvToolNixPath, file, mergeData, propertyMaps);
+    const command = buildMergeCommand(mkvToolNixPath, file, mergeData, propertyMaps, config?.mkv?.priority ?? null);
     await writeText(command);
   };
 
@@ -601,7 +606,7 @@ function Merge({ file, mkvToolNixPath }: MergeProps) {
     setCompletion(null);
     setDialogOpen(true);
     try {
-      const args = buildMergeArgs(file, mergeData, propertyMaps);
+      const args = buildMergeArgs(file, mergeData, propertyMaps, config?.mkv?.priority ?? null);
       await runMkvmerge(args);
     } catch (err) {
       const msg = String(err);
