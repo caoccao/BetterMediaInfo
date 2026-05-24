@@ -185,9 +185,9 @@ async function getFileNameWithoutExt(filePath: string): Promise<string> {
 function buildOutputFileName(fileNameWithoutExt: string, track: Protocol.MkvTrack): string {
   const ext = getTrackExtension(track.codecId, track.type);
   if (track.type === 'chapters' || track.type === 'attachment') {
-    return `${fileNameWithoutExt}.${track.id}.${ext}`;
+    return `${fileNameWithoutExt}.${track.number}.${ext}`;
   }
-  return `${fileNameWithoutExt}.${track.id}.${track.language}.${ext}`;
+  return `${fileNameWithoutExt}.${track.number}.${track.language}.${ext}`;
 }
 
 interface ModeSegments {
@@ -637,7 +637,7 @@ function Extract({ file, mkvToolNixPath }: ExtractProps) {
                         }}
                       />
                     </TableCell>
-                    <TableCell>{track.id + 1}</TableCell>
+                    <TableCell>{track.number}</TableCell>
                     <TableCell><TrackTypeIcon type={track.type} /></TableCell>
                     <TableCell>{track.codec}</TableCell>
                     <TableCell>{track.trackName}</TableCell>
