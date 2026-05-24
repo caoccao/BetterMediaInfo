@@ -3,6 +3,7 @@
 ## 0.10.0
 
 * Upgraded MediaInfoLib to v26.05
+* Upgraded Rust toolchain to v1.95.0
 * Added "Open in MkvToolNix GUI" action to the card view for video files when MKVToolNix is configured.
 * Added MKV merge with stream selection, editable track metadata, progress tracking, cancellation, and clipboard command copy.
 * Added drag-and-drop stream reordering in the MKV merge window.

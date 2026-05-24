@@ -57,14 +57,6 @@ pub struct StreamPropertyMap {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct StreamPropertyValue {
-  pub stream: media_info::MediaInfoStreamKind,
-  pub num: i32,
-  pub property: String,
-  pub value: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MkvTrack {
   pub id: i64,
   pub number: i64,

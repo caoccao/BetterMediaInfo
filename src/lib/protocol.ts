@@ -293,13 +293,6 @@ export interface StreamPropertyMap {
   propertyMap: Record<string, string>;
 }
 
-export interface StreamPropertyValue {
-  stream: StreamKind;
-  num: number;
-  property: string;
-  value: string;
-}
-
 export interface MkvTrack {
   id: number;
   number: number;
