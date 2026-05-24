@@ -18,7 +18,7 @@ on:
       - "docs/**"
 
 env:
-  BETTER_MEDIA_INFO_VERSION: 0.10.0
+  BETTER_MEDIA_INFO_VERSION: 1.0.0
   MEDIA_INFO_LIB_VERSION: v26.05
 
 jobs:
