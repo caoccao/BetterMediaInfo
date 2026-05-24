@@ -510,6 +510,8 @@ pub struct ConfigCardView {
   pub show_audio: bool,
   #[serde(rename = "showSubtitle", default = "default_true")]
   pub show_subtitle: bool,
+  #[serde(rename = "showImage", default = "default_true")]
+  pub show_image: bool,
   #[serde(rename = "showMenu", default = "default_false")]
   pub show_menu: bool,
 }
@@ -529,6 +531,7 @@ impl Default for ConfigCardView {
       show_video: true,
       show_audio: true,
       show_subtitle: true,
+      show_image: true,
       show_menu: false,
     }
   }
@@ -545,6 +548,8 @@ pub struct ConfigDetailView {
   pub show_audio: bool,
   #[serde(rename = "showSubtitle", default = "default_true")]
   pub show_subtitle: bool,
+  #[serde(rename = "showImage", default = "default_true")]
+  pub show_image: bool,
   #[serde(rename = "showMenu", default = "default_true")]
   pub show_menu: bool,
 }
@@ -556,6 +561,7 @@ impl Default for ConfigDetailView {
       show_video: true,
       show_audio: true,
       show_subtitle: true,
+      show_image: true,
       show_menu: true,
     }
   }
@@ -902,6 +908,8 @@ mod tests {
       config.mkv.title_autocompletion.titles,
       ConfigMkvTitleAutocompletion::default().titles
     );
+    assert!(config.view.card.show_image);
+    assert!(config.view.detail.show_image);
   }
 
   #[test]
@@ -926,6 +934,14 @@ mod tests {
           "priority": "Highest",
           "languages": {},
           "titleAutocompletion": {}
+        },
+        "view": {
+          "card": {
+            "showVideo": false
+          },
+          "detail": {
+            "showAudio": false
+          }
         }
       }"#,
     )
@@ -945,5 +961,9 @@ mod tests {
       config.mkv.title_autocompletion.titles,
       ConfigMkvTitleAutocompletion::default().titles
     );
+    assert!(!config.view.card.show_video);
+    assert!(!config.view.detail.show_audio);
+    assert!(config.view.card.show_image);
+    assert!(config.view.detail.show_image);
   }
 }

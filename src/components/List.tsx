@@ -889,6 +889,7 @@ export default function List() {
                   if (stream === Protocol.StreamKind.Video && cardCfg?.showVideo === false) return null;
                   if (stream === Protocol.StreamKind.Audio && cardCfg?.showAudio === false) return null;
                   if (stream === Protocol.StreamKind.Text && cardCfg?.showSubtitle === false) return null;
+                  if (stream === Protocol.StreamKind.Image && cardCfg?.showImage === false) return null;
                   if (stream === Protocol.StreamKind.Menu && cardCfg?.showMenu === false) return null;
 
                   return (

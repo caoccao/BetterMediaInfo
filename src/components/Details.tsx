@@ -128,6 +128,8 @@ export default function Details({ file }: DetailsProps) {
             return detail.showAudio;
           case Protocol.StreamKind.Text:
             return detail.showSubtitle;
+          case Protocol.StreamKind.Image:
+            return detail.showImage;
           case Protocol.StreamKind.Menu:
             return detail.showMenu;
           default:

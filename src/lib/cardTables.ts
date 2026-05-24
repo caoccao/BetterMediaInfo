@@ -91,6 +91,7 @@ export function buildCommonPropertiesMap(
   const audioSizeFormatter = createSizeFormatter(config?.audio);
   const subtitleBitRateFormatter = createBitRateFormatter(config?.subtitle);
   const subtitleSizeFormatter = createSizeFormatter(config?.subtitle);
+  const imageSizeFormatter = createSizeFormatter(undefined);
   // General uses video format settings for file size
   const general: PropertyDefinition[] = [
     { ...createPropertyDef('CompleteName'), header: t('list.header.filePath'), inListView: true },
@@ -152,6 +153,17 @@ export function buildCommonPropertiesMap(
     { ...createPropertyDef('StreamSize', subtitleSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true, inListView: true },
   ];
 
+  const image: PropertyDefinition[] = [
+    { ...createPropertyDef('StreamKindID'), header: t('list.header.id'), inCardView: true },
+    { ...createPropertyDef('Format'), header: t('list.header.format'), inCardView: true },
+    { ...createPropertyDef('Type'), header: t('list.header.type'), inCardView: true },
+    { ...createPropertyDef('Resolution', transformResolution, t('list.header.resolution')), orderByType: OrderByType.None, virtual: true, inCardView: true },
+    { ...createPropertyDef('ColorSpace'), header: t('list.header.colorSpace'), inCardView: true },
+    { ...createPropertyDef('StreamSize', imageSizeFormatter, t('list.header.size')), orderByType: OrderByType.Number, align: 'right', inCardView: true },
+    { ...createPropertyDef('Width') },
+    { ...createPropertyDef('Height') },
+  ];
+
   const menu: PropertyDefinition[] = [
     { ...createPropertyDef('StreamKindID'), header: t('list.header.id'), inCardView: true },
     { ...createPropertyDef('Inform'), header: t('list.header.menu'), inCardView: true },
@@ -162,6 +174,7 @@ export function buildCommonPropertiesMap(
     [Protocol.StreamKind.Video, video],
     [Protocol.StreamKind.Audio, audio],
     [Protocol.StreamKind.Text, text],
+    [Protocol.StreamKind.Image, image],
     [Protocol.StreamKind.Menu, menu],
   ]);
 }

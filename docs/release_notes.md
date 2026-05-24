@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.0.0
+
+* Added an Image stream table to the card view.
+
 ## 0.10.0
 
 * Upgraded MediaInfoLib to v26.05

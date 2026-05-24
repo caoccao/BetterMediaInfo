@@ -52,6 +52,8 @@
       "textCount": "T",
       "imageCount": "I",
       "menuCount": "M",
+      "type": "タイプ",
+      "colorSpace": "色空間",
       "menu": "メニュー",
       "id": "ID",
       "language": "言語",

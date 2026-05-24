@@ -1728,11 +1728,13 @@ export default function Config() {
   const [cardViewShowVideo, setCardViewShowVideo] = useState(true);
   const [cardViewShowAudio, setCardViewShowAudio] = useState(true);
   const [cardViewShowSubtitle, setCardViewShowSubtitle] = useState(true);
+  const [cardViewShowImage, setCardViewShowImage] = useState(true);
   const [cardViewShowMenu, setCardViewShowMenu] = useState(false);
   const [detailViewShowGeneral, setDetailViewShowGeneral] = useState(true);
   const [detailViewShowVideo, setDetailViewShowVideo] = useState(true);
   const [detailViewShowAudio, setDetailViewShowAudio] = useState(true);
   const [detailViewShowSubtitle, setDetailViewShowSubtitle] = useState(true);
+  const [detailViewShowImage, setDetailViewShowImage] = useState(true);
   const [detailViewShowMenu, setDetailViewShowMenu] = useState(true);
   const [videoContextMenuRegistered, setVideoContextMenuRegistered] = useState(false);
   const [audioContextMenuRegistered, setAudioContextMenuRegistered] = useState(false);
@@ -1788,11 +1790,13 @@ export default function Config() {
       setCardViewShowVideo(config.view?.card?.showVideo ?? true);
       setCardViewShowAudio(config.view?.card?.showAudio ?? true);
       setCardViewShowSubtitle(config.view?.card?.showSubtitle ?? true);
+      setCardViewShowImage(config.view?.card?.showImage ?? true);
       setCardViewShowMenu(config.view?.card?.showMenu ?? false);
       setDetailViewShowGeneral(config.view?.detail?.showGeneral ?? true);
       setDetailViewShowVideo(config.view?.detail?.showVideo ?? true);
       setDetailViewShowAudio(config.view?.detail?.showAudio ?? true);
       setDetailViewShowSubtitle(config.view?.detail?.showSubtitle ?? true);
+      setDetailViewShowImage(config.view?.detail?.showImage ?? true);
       setDetailViewShowMenu(config.view?.detail?.showMenu ?? true);
       setUpdateCheckInterval(config.update?.checkInterval ?? Protocol.UpdateCheckInterval.Weekly);
       setTemplates({
@@ -1855,6 +1859,7 @@ export default function Config() {
         showVideo: cardViewShowVideo,
         showAudio: cardViewShowAudio,
         showSubtitle: cardViewShowSubtitle,
+        showImage: cardViewShowImage,
         showMenu: cardViewShowMenu,
       },
       detail: {
@@ -1862,6 +1867,7 @@ export default function Config() {
         showVideo: detailViewShowVideo,
         showAudio: detailViewShowAudio,
         showSubtitle: detailViewShowSubtitle,
+        showImage: detailViewShowImage,
         showMenu: detailViewShowMenu,
       },
     },
@@ -2353,11 +2359,13 @@ export default function Config() {
     cardViewShowVideo,
     cardViewShowAudio,
     cardViewShowSubtitle,
+    cardViewShowImage,
     cardViewShowMenu,
     detailViewShowGeneral,
     detailViewShowVideo,
     detailViewShowAudio,
     detailViewShowSubtitle,
+    detailViewShowImage,
     detailViewShowMenu,
     updateCheckInterval,
     templates,
@@ -2474,6 +2482,16 @@ export default function Config() {
               control={
                 <Checkbox
                   size="small"
+                  checked={cardViewShowImage}
+                  onChange={(e) => setCardViewShowImage(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.image') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
                   checked={cardViewShowMenu}
                   onChange={(e) => setCardViewShowMenu(e.target.checked)}
                 />
@@ -2524,6 +2542,16 @@ export default function Config() {
                 />
               }
               label={t('config.show', { name: t('config.text') })}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={detailViewShowImage}
+                  onChange={(e) => setDetailViewShowImage(e.target.checked)}
+                />
+              }
+              label={t('config.show', { name: t('config.image') })}
             />
             <FormControlLabel
               control={

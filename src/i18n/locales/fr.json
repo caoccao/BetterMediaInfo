@@ -52,6 +52,8 @@
       "textCount": "T",
       "imageCount": "I",
       "menuCount": "M",
+      "type": "Type",
+      "colorSpace": "Espace colorimétrique",
       "menu": "Menu",
       "id": "ID",
       "language": "Langue",

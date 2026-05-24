@@ -107,6 +107,7 @@ export interface ConfigCardView {
   showVideo: boolean;
   showAudio: boolean;
   showSubtitle: boolean;
+  showImage: boolean;
   showMenu: boolean;
 }
 
@@ -115,6 +116,7 @@ export interface ConfigDetailView {
   showVideo: boolean;
   showAudio: boolean;
   showSubtitle: boolean;
+  showImage: boolean;
   showMenu: boolean;
 }
 
