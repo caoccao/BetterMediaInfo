@@ -57,7 +57,7 @@ pub struct Config {
   pub directory_mode: ConfigDirectoryMode,
   #[serde(rename = "fileExtensions")]
   pub file_extensions: ConfigFileExtensions,
-  #[serde(default)]
+  #[serde(default = "Language::detect_system")]
   pub language: Language,
   #[serde(default)]
   pub video: ConfigStreamFormat,
@@ -91,7 +91,7 @@ impl Default for Config {
       theme: Default::default(),
       directory_mode: Default::default(),
       file_extensions: Default::default(),
-      language: Default::default(),
+      language: Language::detect_system(),
       video: Default::default(),
       audio: Default::default(),
       subtitle: Default::default(),
@@ -595,6 +595,80 @@ impl Default for Language {
   }
 }
 
+impl Language {
+  fn detect_system() -> Self {
+    let locales: Vec<String> = sys_locale::get_locales().collect();
+    for locale in &locales {
+      if let Some(language) = Self::from_locale_tag(locale) {
+        log::debug!("Detected system language {:?} from locale {}.", language, locale);
+        return language;
+      }
+    }
+    if !locales.is_empty() {
+      log::debug!("No supported app language found in system locales {:?}.", locales);
+    }
+    Self::default()
+  }
+
+  fn from_locale_tag(locale: &str) -> Option<Self> {
+    let normalized = normalize_locale_tag(locale)?;
+    let mut parts = normalized.split('-');
+    let language = parts.next()?;
+    let mut script: Option<&str> = None;
+    let mut region: Option<&str> = None;
+    for part in parts {
+      if part.len() == 4 && script.is_none() {
+        script = Some(part);
+      } else if (part.len() == 2 || part.len() == 3) && region.is_none() {
+        region = Some(part);
+      }
+    }
+
+    match language {
+      "de" => Some(Self::De),
+      "en" => Some(Self::EnUS),
+      "es" => Some(Self::Es),
+      "fr" => Some(Self::Fr),
+      "it" => Some(Self::It),
+      "ja" => Some(Self::Ja),
+      "zh" => Some(match (script, region) {
+        (Some("hant"), Some("hk" | "mo")) => Self::ZhHK,
+        (Some("hant"), _) => Self::ZhTW,
+        (Some("hans"), _) => Self::ZhCN,
+        (_, Some("tw")) => Self::ZhTW,
+        (_, Some("hk" | "mo")) => Self::ZhHK,
+        _ => Self::ZhCN,
+      }),
+      _ => None,
+    }
+  }
+}
+
+fn normalize_locale_tag(locale: &str) -> Option<String> {
+  let locale = locale
+    .split(':')
+    .find(|part| !part.trim().is_empty())
+    .unwrap_or(locale)
+    .trim();
+  if locale.eq_ignore_ascii_case("c") || locale.eq_ignore_ascii_case("posix") {
+    return None;
+  }
+  let locale = locale
+    .split('.')
+    .next()
+    .unwrap_or(locale)
+    .split('@')
+    .next()
+    .unwrap_or(locale)
+    .replace('_', "-")
+    .to_ascii_lowercase();
+  if locale.is_empty() || locale == "c" || locale == "posix" {
+    None
+  } else {
+    Some(locale)
+  }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum FormatPrecision {
   Zero,
@@ -734,12 +808,25 @@ impl Config {
   }
 
   fn load(path: PathBuf) -> Self {
-    let cloned_path = path.clone();
-    let path_string = cloned_path.to_str().unwrap();
+    let path_string = path.to_str().unwrap();
     log::debug!("Loading config from {}.", path_string);
-    let file = File::open(path).expect(format!("Couldn't open config file {}.", path_string).as_str());
+    let file = File::open(&path).expect(format!("Couldn't open config file {}.", path_string).as_str());
     let buf_reader = BufReader::new(file);
-    serde_json::from_reader(buf_reader).expect(format!("Couldn't parse config file {}.", path_string).as_str())
+    let value: serde_json::Value =
+      serde_json::from_reader(buf_reader).expect(format!("Couldn't parse config file {}.", path_string).as_str());
+    let should_save_language = value
+      .as_object()
+      .map(|object| !object.contains_key("language"))
+      .unwrap_or(false);
+    let config: Self =
+      serde_json::from_value(value).expect(format!("Couldn't parse config file {}.", path_string).as_str());
+    if should_save_language {
+      log::debug!("Saving detected language to config {}.", path_string);
+      if let Err(err) = config.save(path) {
+        log::error!("Couldn't save the detected language because {}", err);
+      }
+    }
+    config
   }
 
   fn save(&self, path: PathBuf) -> Result<()> {
@@ -917,6 +1004,7 @@ mod tests {
     let config: Config = serde_json::from_str(
       r#"{
         "appendOnFileDrop": false,
+        "language": "ja",
         "fileExtensions": {
           "video": ["mkv"]
         },
@@ -948,6 +1036,7 @@ mod tests {
     .unwrap();
 
     assert!(!config.append_on_file_drop);
+    assert!(matches!(config.language, Language::Ja));
     assert_eq!(config.file_extensions.video, vec!["mkv".to_owned()]);
     assert_eq!(config.file_extensions.audio, ConfigFileExtensions::default().audio);
     assert_eq!(config.file_extensions.image, ConfigFileExtensions::default().image);
@@ -965,5 +1054,20 @@ mod tests {
     assert!(!config.view.detail.show_audio);
     assert!(config.view.card.show_image);
     assert!(config.view.detail.show_image);
+  }
+
+  #[test]
+  fn language_from_locale_tag_maps_supported_locales() {
+    assert!(matches!(Language::from_locale_tag("de-DE"), Some(Language::De)));
+    assert!(matches!(Language::from_locale_tag("en_US.UTF-8"), Some(Language::EnUS)));
+    assert!(matches!(Language::from_locale_tag("es-MX"), Some(Language::Es)));
+    assert!(matches!(Language::from_locale_tag("fr-CA"), Some(Language::Fr)));
+    assert!(matches!(Language::from_locale_tag("it-IT"), Some(Language::It)));
+    assert!(matches!(Language::from_locale_tag("ja-JP"), Some(Language::Ja)));
+    assert!(matches!(Language::from_locale_tag("zh-Hans-CN"), Some(Language::ZhCN)));
+    assert!(matches!(Language::from_locale_tag("zh-Hant-TW"), Some(Language::ZhTW)));
+    assert!(matches!(Language::from_locale_tag("zh-Hant-HK"), Some(Language::ZhHK)));
+    assert!(matches!(Language::from_locale_tag("zh-MO"), Some(Language::ZhHK)));
+    assert!(matches!(Language::from_locale_tag("C.UTF-8"), None));
   }
 }

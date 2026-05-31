@@ -192,7 +192,7 @@ function App() {
   const subWindowParams = extractParams ?? mergeParams;
   const storeDisplayMode = useAppStore((state) => state.config?.displayMode ?? Protocol.DisplayMode.Auto);
   const storeTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
-  const storeLanguage = useAppStore((state) => state.config?.language ?? Protocol.Language.EnUS);
+  const storeLanguage = useAppStore((state) => state.config?.language);
   const initConfig = useAppStore((state) => state.initConfig);
   const initAbout = useAppStore((state) => state.initAbout);
 
@@ -213,6 +213,13 @@ function App() {
     }
   }, [initConfig, initAbout, subWindowParams]);
 
+  // Main window: apply language from backend config.
+  useEffect(() => {
+    if (!subWindowParams && storeLanguage) {
+      changeLanguage(storeLanguage);
+    }
+  }, [storeLanguage, subWindowParams]);
+
   // Sub-window: apply initial language from URL params
   useEffect(() => {
     if (subWindowParams) {
@@ -222,7 +229,7 @@ function App() {
 
   // Main window: emit appearance changes to sub-windows
   useEffect(() => {
-    if (!subWindowParams) {
+    if (!subWindowParams && storeLanguage) {
       emit(CONFIG_CHANGE_EVENT, {
         displayMode: storeDisplayMode,
         theme: storeTheme,
