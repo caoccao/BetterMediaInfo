@@ -97,7 +97,9 @@ pub fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
   let command = build_command()?;
   let exe = current_exe_string()?;
   for ext in extensions {
-    if ext.trim().is_empty() { continue; }
+    if ext.trim().is_empty() {
+      continue;
+    }
     write_shell_entry(&extension_shell_path(&ext), &command, &exe)?;
   }
   Ok(())
@@ -106,7 +108,9 @@ pub fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
 #[cfg(target_os = "windows")]
 pub fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
   for ext in extensions {
-    if ext.trim().is_empty() { continue; }
+    if ext.trim().is_empty() {
+      continue;
+    }
     delete_shell_entry(&extension_shell_path(&ext))?;
   }
   Ok(())
@@ -115,7 +119,9 @@ pub fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()>
 #[cfg(target_os = "windows")]
 pub fn are_extensions_context_menu_registered(extensions: Vec<String>) -> bool {
   let filtered: Vec<String> = extensions.into_iter().filter(|e| !e.trim().is_empty()).collect();
-  if filtered.is_empty() { return false; }
+  if filtered.is_empty() {
+    return false;
+  }
   filtered.iter().all(|e| shell_entry_exists(&extension_shell_path(e)))
 }
 
@@ -144,12 +150,16 @@ pub fn is_folder_context_menu_registered() -> bool {
 
 #[cfg(not(target_os = "windows"))]
 pub fn register_extensions_context_menu(_extensions: Vec<String>) -> Result<()> {
-  Err(anyhow::anyhow!("Context menu registration is only supported on Windows."))
+  Err(anyhow::anyhow!(
+    "Context menu registration is only supported on Windows."
+  ))
 }
 
 #[cfg(not(target_os = "windows"))]
 pub fn unregister_extensions_context_menu(_extensions: Vec<String>) -> Result<()> {
-  Err(anyhow::anyhow!("Context menu registration is only supported on Windows."))
+  Err(anyhow::anyhow!(
+    "Context menu registration is only supported on Windows."
+  ))
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -159,12 +169,16 @@ pub fn are_extensions_context_menu_registered(_extensions: Vec<String>) -> bool 
 
 #[cfg(not(target_os = "windows"))]
 pub fn register_folder_context_menu() -> Result<()> {
-  Err(anyhow::anyhow!("Context menu registration is only supported on Windows."))
+  Err(anyhow::anyhow!(
+    "Context menu registration is only supported on Windows."
+  ))
 }
 
 #[cfg(not(target_os = "windows"))]
 pub fn unregister_folder_context_menu() -> Result<()> {
-  Err(anyhow::anyhow!("Context menu registration is only supported on Windows."))
+  Err(anyhow::anyhow!(
+    "Context menu registration is only supported on Windows."
+  ))
 }
 
 #[cfg(not(target_os = "windows"))]

@@ -38,8 +38,7 @@ mod streams;
 mod taskbar;
 
 use protocol::{
-  MkvextractProgressEvent, MkvextractState, MkvmergeProgressEvent, MkvmergeState,
-  UpdateCheckResult, UpdateCheckState,
+  MkvextractProgressEvent, MkvextractState, MkvmergeProgressEvent, MkvmergeState, UpdateCheckResult, UpdateCheckState,
 };
 
 fn convert_error(error: anyhow::Error) -> String {
@@ -47,10 +46,7 @@ fn convert_error(error: anyhow::Error) -> String {
 }
 
 #[tauri::command]
-async fn cancel_mkvextract(
-  window: tauri::Window,
-  state: tauri::State<'_, MkvextractState>,
-) -> Result<(), String> {
+async fn cancel_mkvextract(window: tauri::Window, state: tauri::State<'_, MkvextractState>) -> Result<(), String> {
   log::debug!("cancel_mkvextract({})", window.label());
   let label = window.label().to_owned();
   let child = state.children.lock().unwrap().remove(&label);
@@ -62,10 +58,7 @@ async fn cancel_mkvextract(
 }
 
 #[tauri::command]
-async fn cancel_mkvmerge(
-  window: tauri::Window,
-  state: tauri::State<'_, MkvmergeState>,
-) -> Result<(), String> {
+async fn cancel_mkvmerge(window: tauri::Window, state: tauri::State<'_, MkvmergeState>) -> Result<(), String> {
   log::debug!("cancel_mkvmerge({})", window.label());
   let label = window.label().to_owned();
   let child = state.children.lock().unwrap().remove(&label);
@@ -170,19 +163,28 @@ fn is_folder_context_menu_registered() -> bool {
 #[tauri::command]
 async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<protocol::MkvToolNixStatus, String> {
   log::debug!("is_mkvtoolnix_found({}, {})", path, check_running);
-  mkvtoolnix::is_mkvtoolnix_found(path, check_running).await.map_err(convert_error)
+  mkvtoolnix::is_mkvtoolnix_found(path, check_running)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
-async fn is_batchmkvextract_found(path: String, check_running: bool) -> Result<protocol::BatchMkvExtractStatus, String> {
+async fn is_batchmkvextract_found(
+  path: String,
+  check_running: bool,
+) -> Result<protocol::BatchMkvExtractStatus, String> {
   log::debug!("is_batchmkvextract_found({}, {})", path, check_running);
-  batchmkvextract::is_batchmkvextract_found(path, check_running).await.map_err(convert_error)
+  batchmkvextract::is_batchmkvextract_found(path, check_running)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
 async fn is_bdmaster_found(path: String, check_running: bool) -> Result<protocol::BDMasterStatus, String> {
   log::debug!("is_bdmaster_found({}, {})", path, check_running);
-  bdmaster::is_bdmaster_found(path, check_running).await.map_err(convert_error)
+  bdmaster::is_bdmaster_found(path, check_running)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
@@ -252,10 +254,7 @@ pub fn run() {
 
       // Restore window size and position from config
       let cfg = config::get_config();
-      let _ = window.set_size(tauri::LogicalSize::new(
-        cfg.window.size.width,
-        cfg.window.size.height,
-      ));
+      let _ = window.set_size(tauri::LogicalSize::new(cfg.window.size.width, cfg.window.size.height));
       if cfg.window.position.x < 0 || cfg.window.position.y < 0 {
         let _ = window.center();
       } else {
@@ -282,15 +281,17 @@ pub fn run() {
         .as_secs() as i64;
       if cfg.update.last_checked == 0 || now - cfg.update.last_checked > interval_seconds {
         std::thread::spawn(move || {
-          let check_result = std::panic::catch_unwind(|| {
-            controller::check_for_updates()
-          }).unwrap_or_else(|_| {
+          let check_result = std::panic::catch_unwind(|| controller::check_for_updates()).unwrap_or_else(|_| {
             log::error!("Update check panicked");
             Err(anyhow::anyhow!("Update check panicked"))
           });
           match check_result {
             Ok(result) => {
-              log::info!("Update check result: has_update={}, latest_version={:?}", result.has_update, result.latest_version);
+              log::info!(
+                "Update check result: has_update={}, latest_version={:?}",
+                result.has_update,
+                result.latest_version
+              );
               // Only update lastChecked on successful check
               let mut updated_config = config::get_config();
               updated_config.update.last_checked = std::time::SystemTime::now()
@@ -304,8 +305,12 @@ pub fn run() {
               // Suppress if this version is ignored
               let final_result = if result.has_update
                 && result.latest_version.as_deref() == Some(updated_config.update.ignore_version.as_str())
-                && !updated_config.update.ignore_version.is_empty() {
-                UpdateCheckResult { has_update: false, latest_version: None }
+                && !updated_config.update.ignore_version.is_empty()
+              {
+                UpdateCheckResult {
+                  has_update: false,
+                  latest_version: None,
+                }
               } else {
                 result
               };
@@ -313,16 +318,26 @@ pub fn run() {
             }
             Err(e) => {
               log::warn!("Update check failed: {}", e);
-              *result_arc.lock().unwrap() = Some(UpdateCheckResult { has_update: false, latest_version: None });
+              *result_arc.lock().unwrap() = Some(UpdateCheckResult {
+                has_update: false,
+                latest_version: None,
+              });
             }
           }
         });
       } else if !cfg.update.last_version.is_empty()
         && controller::is_newer_version(&cfg.update.last_version, controller::get_app_version())
-        && cfg.update.last_version != cfg.update.ignore_version {
-        *result_arc.lock().unwrap() = Some(UpdateCheckResult { has_update: true, latest_version: Some(cfg.update.last_version.clone()) });
+        && cfg.update.last_version != cfg.update.ignore_version
+      {
+        *result_arc.lock().unwrap() = Some(UpdateCheckResult {
+          has_update: true,
+          latest_version: Some(cfg.update.last_version.clone()),
+        });
       } else {
-        *result_arc.lock().unwrap() = Some(UpdateCheckResult { has_update: false, latest_version: None });
+        *result_arc.lock().unwrap() = Some(UpdateCheckResult {
+          has_update: false,
+          latest_version: None,
+        });
       }
 
       Ok(())
@@ -344,9 +359,15 @@ pub fn run() {
           if !WINDOW_READY.load(Ordering::SeqCst) {
             return;
           }
-          let Ok(scale) = window.scale_factor() else { return; };
-          let Ok(pos) = window.outer_position() else { return; };
-          let Ok(size) = window.inner_size() else { return; };
+          let Ok(scale) = window.scale_factor() else {
+            return;
+          };
+          let Ok(pos) = window.outer_position() else {
+            return;
+          };
+          let Ok(size) = window.inner_size() else {
+            return;
+          };
           let logical_pos: tauri::LogicalPosition<i32> = pos.to_logical(scale);
           let logical_size: tauri::LogicalSize<u32> = size.to_logical(scale);
           let mut cfg = config::get_config();
@@ -428,23 +449,28 @@ async fn run_mkvextract(
         if let Some(hwnd) = hwnd_raw {
           taskbar::set_progress(hwnd, percent);
         }
-        let _ = window_clone.emit_to(target.clone(), "mkvextract-progress", MkvextractProgressEvent {
-          percent,
-          done: false,
-          cancelled: false,
-          error: None,
-        });
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvextract-progress",
+          MkvextractProgressEvent {
+            percent,
+            done: false,
+            cancelled: false,
+            error: None,
+          },
+        );
       }
     });
     let child = children_arc.lock().unwrap().remove(&label);
     let (cancelled, error) = match child {
-      Some(mut c) => {
-        match c.wait() {
-          Ok(status) if status.success() => (false, None),
-          Ok(status) => (false, Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1)))),
-          Err(e) => (false, Some(e.to_string())),
-        }
-      }
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
       None => (true, None),
     };
     #[cfg(target_os = "windows")]
@@ -455,13 +481,19 @@ async fn run_mkvextract(
         taskbar::clear_progress(hwnd);
       }
     }
-    let _ = window_clone.emit_to(target, "mkvextract-progress", MkvextractProgressEvent {
-      percent: 100,
-      done: true,
-      cancelled,
-      error,
-    });
-  }).await.map_err(|e| e.to_string())?;
+    let _ = window_clone.emit_to(
+      target,
+      "mkvextract-progress",
+      MkvextractProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await
+  .map_err(|e| e.to_string())?;
   Ok(())
 }
 
@@ -492,23 +524,28 @@ async fn run_mkvmerge(
         if let Some(hwnd) = hwnd_raw {
           taskbar::set_progress(hwnd, percent);
         }
-        let _ = window_clone.emit_to(target.clone(), "mkvmerge-progress", MkvmergeProgressEvent {
-          percent,
-          done: false,
-          cancelled: false,
-          error: None,
-        });
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvmerge-progress",
+          MkvmergeProgressEvent {
+            percent,
+            done: false,
+            cancelled: false,
+            error: None,
+          },
+        );
       }
     });
     let child = children_arc.lock().unwrap().remove(&label);
     let (cancelled, error) = match child {
-      Some(mut c) => {
-        match c.wait() {
-          Ok(status) if status.success() => (false, None),
-          Ok(status) => (false, Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1)))),
-          Err(e) => (false, Some(e.to_string())),
-        }
-      }
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
       None => (true, None),
     };
     #[cfg(target_os = "windows")]
@@ -519,13 +556,19 @@ async fn run_mkvmerge(
         taskbar::clear_progress(hwnd);
       }
     }
-    let _ = window_clone.emit_to(target, "mkvmerge-progress", MkvmergeProgressEvent {
-      percent: 100,
-      done: true,
-      cancelled,
-      error,
-    });
-  }).await.map_err(|e| e.to_string())?;
+    let _ = window_clone.emit_to(
+      target,
+      "mkvmerge-progress",
+      MkvmergeProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await
+  .map_err(|e| e.to_string())?;
   Ok(())
 }
 

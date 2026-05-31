@@ -70,8 +70,5 @@ pub async fn is_bd(path: String) -> Result<BDStatus> {
   }
   let is_folder = p.is_dir();
   let is_blu_ray = if is_folder { is_blu_ray_folder(p) } else { false };
-  Ok(BDStatus {
-    is_blu_ray,
-    is_folder,
-  })
+  Ok(BDStatus { is_blu_ray, is_folder })
 }

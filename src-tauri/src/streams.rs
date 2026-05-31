@@ -25,7 +25,7 @@
 
 use std::{borrow::BorrowMut, collections::BTreeMap};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use once_cell::sync::Lazy;
 
 use crate::config::*;

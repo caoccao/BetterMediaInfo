@@ -23,7 +23,7 @@
   unused_imports
 )]
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use encoding::Encoding;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;

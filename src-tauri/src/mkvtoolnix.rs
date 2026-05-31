@@ -24,7 +24,7 @@ use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use crate::config;
-use crate::protocol::{MkvTrack, MkvToolNixStatus};
+use crate::protocol::{MkvToolNixStatus, MkvTrack};
 
 fn mkvtoolnix_gui_process_name() -> &'static str {
   if cfg!(target_os = "windows") {
@@ -258,23 +258,26 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
     let stderr = String::from_utf8_lossy(&output.stderr);
     return Err(anyhow::anyhow!("MKVMERGE_FAILED:{}", stderr));
   }
-  let json: serde_json::Value = serde_json::from_slice(&output.stdout)
-    .map_err(|e| anyhow::anyhow!("MKVMERGE_PARSE_ERROR:{}", e))?;
+  let json: serde_json::Value =
+    serde_json::from_slice(&output.stdout).map_err(|e| anyhow::anyhow!("MKVMERGE_PARSE_ERROR:{}", e))?;
   let mut tracks: Vec<MkvTrack> = json["tracks"]
     .as_array()
     .map(|arr| {
-      arr.iter().map(|t| {
-        let props = &t["properties"];
-        MkvTrack {
-          id: t["id"].as_i64().unwrap_or(0),
-          number: props["number"].as_i64().unwrap_or(0),
-          track_type: t["type"].as_str().unwrap_or("").to_owned(),
-          codec: t["codec"].as_str().unwrap_or("").to_owned(),
-          codec_id: props["codec_id"].as_str().unwrap_or("").to_owned(),
-          track_name: props["track_name"].as_str().unwrap_or("").to_owned(),
-          language: props["language"].as_str().unwrap_or("und").to_owned(),
-        }
-      }).collect()
+      arr
+        .iter()
+        .map(|t| {
+          let props = &t["properties"];
+          MkvTrack {
+            id: t["id"].as_i64().unwrap_or(0),
+            number: props["number"].as_i64().unwrap_or(0),
+            track_type: t["type"].as_str().unwrap_or("").to_owned(),
+            codec: t["codec"].as_str().unwrap_or("").to_owned(),
+            codec_id: props["codec_id"].as_str().unwrap_or("").to_owned(),
+            track_name: props["track_name"].as_str().unwrap_or("").to_owned(),
+            language: props["language"].as_str().unwrap_or("und").to_owned(),
+          }
+        })
+        .collect()
     })
     .unwrap_or_default();
 
@@ -399,7 +402,9 @@ pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Chi
   persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   let mkvextract_path = get_tool_path(&resolution.path, "mkvextract");
   let mut cmd = std::process::Command::new(&mkvextract_path);
-  cmd.arg(file).args(args)
+  cmd
+    .arg(file)
+    .args(args)
     .stdout(std::process::Stdio::piped())
     .stderr(std::process::Stdio::piped());
   #[cfg(target_os = "windows")]
@@ -407,7 +412,8 @@ pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Chi
     use std::os::windows::process::CommandExt;
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
   }
-  cmd.spawn()
+  cmd
+    .spawn()
     .map_err(|e| anyhow::anyhow!("MKVEXTRACT_NOT_AVAILABLE:{}: {}", mkvextract_path.display(), e))
 }
 
@@ -417,7 +423,8 @@ pub fn spawn_mkvmerge(args: &[String]) -> Result<std::process::Child> {
   persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   let mkvmerge_path = get_tool_path(&resolution.path, "mkvmerge");
   let mut cmd = std::process::Command::new(&mkvmerge_path);
-  cmd.args(args)
+  cmd
+    .args(args)
     .stdout(std::process::Stdio::piped())
     .stderr(std::process::Stdio::piped());
   #[cfg(target_os = "windows")]
@@ -425,7 +432,8 @@ pub fn spawn_mkvmerge(args: &[String]) -> Result<std::process::Child> {
     use std::os::windows::process::CommandExt;
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
   }
-  cmd.spawn()
+  cmd
+    .spawn()
     .map_err(|e| anyhow::anyhow!("MKVMERGE_NOT_AVAILABLE:{}: {}", mkvmerge_path.display(), e))
 }
 

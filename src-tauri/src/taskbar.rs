@@ -21,12 +21,8 @@ use anyhow::Result;
 use std::cell::Cell;
 use std::ffi::c_void;
 use windows::Win32::Foundation::HWND;
-use windows::Win32::System::Com::{
-  CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, CoCreateInstance, CoInitializeEx,
-};
-use windows::Win32::UI::Shell::{
-  ITaskbarList3, TBPF_ERROR, TBPF_NOPROGRESS, TBPF_NORMAL, TaskbarList,
-};
+use windows::Win32::System::Com::{CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, CoCreateInstance, CoInitializeEx};
+use windows::Win32::UI::Shell::{ITaskbarList3, TBPF_ERROR, TBPF_NOPROGRESS, TBPF_NORMAL, TaskbarList};
 
 thread_local! {
   static COM_INITIALIZED: Cell<bool> = const { Cell::new(false) };
@@ -48,8 +44,7 @@ fn ensure_com_initialized() {
 
 fn create_taskbar() -> Result<ITaskbarList3> {
   ensure_com_initialized();
-  let taskbar: ITaskbarList3 =
-    unsafe { CoCreateInstance(&TaskbarList, None, CLSCTX_INPROC_SERVER)? };
+  let taskbar: ITaskbarList3 = unsafe { CoCreateInstance(&TaskbarList, None, CLSCTX_INPROC_SERVER)? };
   unsafe { taskbar.HrInit()? };
   Ok(taskbar)
 }

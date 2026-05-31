@@ -58,17 +58,24 @@ pub fn check_for_updates() -> Result<UpdateCheckResult> {
     .set("User-Agent", APP_NAME)
     .call()
     .map_err(|e| anyhow::anyhow!("Failed to fetch releases: {}", e))?;
-  let json: serde_json::Value = resp.into_json()
+  let json: serde_json::Value = resp
+    .into_json()
     .map_err(|e| anyhow::anyhow!("Failed to parse releases: {}", e))?;
   if let Some(first) = json.as_array().and_then(|arr| arr.first()) {
     let tag = first["tag_name"].as_str().unwrap_or("");
     log::info!("Latest release tag: {}", tag);
     if is_newer_version(tag, app_version) {
       let version = tag.trim_start_matches('v').to_owned();
-      return Ok(UpdateCheckResult { has_update: true, latest_version: Some(version) });
+      return Ok(UpdateCheckResult {
+        has_update: true,
+        latest_version: Some(version),
+      });
     }
   }
-  Ok(UpdateCheckResult { has_update: false, latest_version: None })
+  Ok(UpdateCheckResult {
+    has_update: false,
+    latest_version: None,
+  })
 }
 
 pub async fn get_about() -> Result<About> {
@@ -227,8 +234,12 @@ pub fn is_newer_version(latest: &str, current: &str) -> bool {
   for i in 0..len {
     let l = latest_parts.get(i).copied().unwrap_or(0);
     let c = current_parts.get(i).copied().unwrap_or(0);
-    if l > c { return true; }
-    if l < c { return false; }
+    if l > c {
+      return true;
+    }
+    if l < c {
+      return false;
+    }
   }
   false
 }

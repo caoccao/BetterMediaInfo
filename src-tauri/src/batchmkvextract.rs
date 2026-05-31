@@ -94,10 +94,7 @@ fn persist_path(path: &Path) -> Result<()> {
   Ok(())
 }
 
-pub async fn is_batchmkvextract_found(
-  path: String,
-  check_running: bool,
-) -> Result<BatchMkvExtractStatus> {
+pub async fn is_batchmkvextract_found(path: String, check_running: bool) -> Result<BatchMkvExtractStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir() {
       // The directory we got back is the directory holding the running
@@ -152,12 +149,8 @@ pub fn spawn_batchmkvextract(file: &str) -> Result<()> {
   }
   let cfg = config::get_config();
   let dir = PathBuf::from(&cfg.batch_mkv_extract.path);
-  let bin = binary_path(&dir).ok_or_else(|| {
-    anyhow::anyhow!(
-      "BatchMkvExtract executable not found under {}.",
-      dir.display()
-    )
-  })?;
+  let bin = binary_path(&dir)
+    .ok_or_else(|| anyhow::anyhow!("BatchMkvExtract executable not found under {}.", dir.display()))?;
 
   // On macOS, going through `open` lets Launch Services activate the bundle
   // cleanly — spawning the bundle's Mach-O binary directly causes a brief

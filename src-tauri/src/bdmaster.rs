@@ -87,10 +87,7 @@ fn persist_path(path: &Path) -> Result<()> {
   Ok(())
 }
 
-pub async fn is_bdmaster_found(
-  path: String,
-  check_running: bool,
-) -> Result<BDMasterStatus> {
+pub async fn is_bdmaster_found(path: String, check_running: bool) -> Result<BDMasterStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir() {
       if has_executable(&dir) {
@@ -138,9 +135,8 @@ pub fn spawn_bdmaster(file: &str) -> Result<()> {
   }
   let cfg = config::get_config();
   let dir = PathBuf::from(&cfg.bd_master.path);
-  let bin = binary_path(&dir).ok_or_else(|| {
-    anyhow::anyhow!("BDMaster executable not found under {}.", dir.display())
-  })?;
+  let bin =
+    binary_path(&dir).ok_or_else(|| anyhow::anyhow!("BDMaster executable not found under {}.", dir.display()))?;
 
   #[cfg(target_os = "macos")]
   {

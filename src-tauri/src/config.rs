@@ -201,7 +201,10 @@ pub struct ConfigWindowSize {
 
 impl Default for ConfigWindowSize {
   fn default() -> Self {
-    Self { width: 1200, height: 900 }
+    Self {
+      width: 1200,
+      height: 900,
+    }
   }
 }
 
@@ -363,12 +366,11 @@ impl<'de> Deserialize<'de> for ConfigMkv {
     }
 
     let wire = ConfigMkvWire::deserialize(deserializer)?;
-    let additional_parameters =
-      wire
-        .additional_parameters
-        .unwrap_or_else(|| ConfigMkvAdditionalParameters {
-          priority: wire.priority.unwrap_or_default(),
-        });
+    let additional_parameters = wire
+      .additional_parameters
+      .unwrap_or_else(|| ConfigMkvAdditionalParameters {
+        priority: wire.priority.unwrap_or_default(),
+      });
 
     Ok(Self {
       mkv_toolnix_path: wire.mkv_toolnix_path,
@@ -794,9 +796,8 @@ impl Config {
         .map(|p| !p.is_empty() && exe_path_lc.starts_with(&p.to_ascii_lowercase()))
         .unwrap_or(false)
     };
-    let is_installed = starts_with_env("LOCALAPPDATA")
-      || starts_with_env("ProgramFiles")
-      || starts_with_env("ProgramFiles(x86)");
+    let is_installed =
+      starts_with_env("LOCALAPPDATA") || starts_with_env("ProgramFiles") || starts_with_env("ProgramFiles(x86)");
     if is_installed {
       if let Ok(appdata) = std::env::var("APPDATA") {
         if !appdata.is_empty() {

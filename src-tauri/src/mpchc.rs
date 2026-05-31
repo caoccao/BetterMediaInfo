@@ -79,9 +79,7 @@ pub fn spawn_mpchc(file: &str) -> Result<()> {
   }
   let cfg = config::get_config();
   let dir = PathBuf::from(&cfg.mpc_hc.path);
-  let bin = binary_path(&dir).ok_or_else(|| {
-    anyhow::anyhow!("MPC HC executable not found under {}.", dir.display())
-  })?;
+  let bin = binary_path(&dir).ok_or_else(|| anyhow::anyhow!("MPC HC executable not found under {}.", dir.display()))?;
 
   let mut cmd = std::process::Command::new(&bin);
   cmd
