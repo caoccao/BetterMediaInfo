@@ -23,6 +23,7 @@
     "welcomeTitle": "Bienvenido a BetterMediaInfo",
     "welcomeSubtitle": "Una GUI de escritorio moderna para inspeccionar archivos multimedia.",
     "introBetterMediaInfo": "Inspeccione cualquier archivo multimedia con una interfaz rápida y moderna. Vea flujos, propiedades y metadatos de pistas de vídeo, audio, imagen y subtítulos de un vistazo.",
+    "introBatchMkvMerge": "Procese archivos multimedia por lotes de forma sencilla. Una GUI basada en mkvmerge de MKVToolNix.",
     "introBatchMkvExtract": "Extraiga pistas, capítulos y adjuntos de muchos archivos .mkv a la vez. Una GUI por lotes sobre mkvextract de MKVToolNix.",
     "introBDMaster": "Inspeccione discos Blu-ray con una GUI moderna. Explore discos, listas de reproducción, flujos, pistas y gráficos de tasa de bits de un vistazo.",
     "viewOnGithub": "Ver en GitHub",

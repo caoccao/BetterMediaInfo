@@ -23,6 +23,7 @@
     "welcomeTitle": "Willkommen bei BetterMediaInfo",
     "welcomeSubtitle": "Eine moderne Desktop-GUI zur Analyse von Mediendateien.",
     "introBetterMediaInfo": "Analysieren Sie jede Mediendatei mit einer schnellen, modernen Oberfläche. Sehen Sie Streams, Eigenschaften und Metadaten für Video-, Audio-, Bild- und Untertitelspuren auf einen Blick.",
+    "introBatchMkvMerge": "Verarbeiten Sie Mediendateien benutzerfreundlich im Stapel. Eine GUI f\u00fcr mkvmerge aus MKVToolNix.",
     "introBatchMkvExtract": "Extrahieren Sie Spuren, Kapitel und Anhänge aus vielen .mkv-Dateien gleichzeitig. Eine stapelorientierte GUI für mkvextract aus MKVToolNix.",
     "introBDMaster": "Untersuchen Sie Blu-ray-Discs mit einer modernen GUI. Durchsuchen Sie Discs, Wiedergabelisten, Streams, Spuren und Bitratendiagramme auf einen Blick.",
     "viewOnGithub": "Auf GitHub ansehen",

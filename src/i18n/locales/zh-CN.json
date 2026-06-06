@@ -23,6 +23,7 @@
     "welcomeTitle": "欢迎使用 BetterMediaInfo",
     "welcomeSubtitle": "用于检视媒体文件的现代桌面图形界面。",
     "introBetterMediaInfo": "使用快速、现代的界面查看任何媒体文件。一目了然地浏览视频、音频、图像和字幕轨道的流、属性和元数据。",
+    "introBatchMkvMerge": "\u4ee5\u7528\u6237\u53cb\u597d\u7684\u65b9\u5f0f\u6279\u91cf\u5904\u7406\u5a92\u4f53\u6587\u4ef6\u3002\u57fa\u4e8e MKVToolNix \u7684 mkvmerge \u6784\u5efa\u7684\u56fe\u5f62\u754c\u9762\u3002",
     "introBatchMkvExtract": "一次从多个 .mkv 文件中提取轨道、章节和附件。基于 MKVToolNix 的 mkvextract 构建的批处理图形界面。",
     "introBDMaster": "使用现代图形界面检视蓝光光盘。一目了然地浏览光盘、播放列表、流、轨道和码率图表。",
     "viewOnGithub": "在 GitHub 查看",

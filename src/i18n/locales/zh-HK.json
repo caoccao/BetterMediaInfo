@@ -23,6 +23,7 @@
     "welcomeTitle": "歡迎使用 BetterMediaInfo",
     "welcomeSubtitle": "用於檢視媒體檔案的現代化桌面圖形介面。",
     "introBetterMediaInfo": "以快速、現代的介面檢視任何媒體檔案。一眼瀏覽影片、音訊、圖像和字幕軌道的串流、屬性和中繼資料。",
+    "introBatchMkvMerge": "\u4ee5\u4f7f\u7528\u8005\u53cb\u5584\u7684\u65b9\u5f0f\u6279\u6b21\u8655\u7406\u5a92\u9ad4\u6a94\u6848\u3002\u5efa\u69cb\u65bc MKVToolNix \u7684 mkvmerge \u4e4b\u4e0a\u7684\u5716\u5f62\u4ecb\u9762\u3002",
     "introBatchMkvExtract": "從多個 .mkv 檔案一次擷取軌道、章節和附件。建構於 MKVToolNix 的 mkvextract 之上的批次圖形介面。",
     "introBDMaster": "以現代圖形介面檢視藍光光碟。一眼瀏覽光碟、播放清單、串流、軌道和位元率圖表。",
     "viewOnGithub": "在 GitHub 查看",

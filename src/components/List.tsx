@@ -68,6 +68,7 @@ import {
 } from '../lib/cardTables';
 
 const BATCH_MKV_EXTRACT_URL = 'https://github.com/caoccao/BatchMkvExtract';
+const BATCH_MKV_MERGE_URL = 'https://github.com/caoccao/BatchMkvMerge';
 const BD_MASTER_URL = 'https://github.com/caoccao/BDMaster';
 
 interface AppCardProps {
@@ -211,6 +212,12 @@ function EmptyWelcome() {
             intro={t('list.introBetterMediaInfo')}
             githubUrl={GITHUB_URL}
             isPrimary
+          />
+          <AppCard
+            logo="images/batchmkvmerge.png"
+            title="BatchMkvMerge"
+            intro={t('list.introBatchMkvMerge')}
+            githubUrl={BATCH_MKV_MERGE_URL}
           />
           <AppCard
             logo="images/batchmkvextract.png"
