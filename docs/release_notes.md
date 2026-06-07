@@ -2,7 +2,12 @@
 
 ## 1.0.0
 
-* Added an Image stream table to the card view.
+* Added an Image stream table to the card view and detail view, including type, color space, resolution, and size fields.
+* Added View settings to toggle Image stream tables in card view and detail view.
+* Added BatchMkvMerge to the welcome page with localized descriptions and a GitHub link.
+* Added a portable 7z archive to the Windows release artifacts.
+* Improved first-run language selection by detecting the system language and saving it to configuration.
+* Updated Italian translations.
 
 ## 0.10.0
 
