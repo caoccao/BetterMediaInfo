@@ -46,6 +46,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import JavascriptIcon from '@mui/icons-material/Javascript';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import TransformIcon from '@mui/icons-material/Transform';
+import MovieIcon from '@mui/icons-material/Movie';
 import NotesIcon from '@mui/icons-material/Notes';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -56,10 +57,11 @@ import { AUTHOR_NAME, AUTHOR_URL, GITHUB_URL } from '../lib/constants';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isMkvtoolnixFound, isMpcHcFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui, openMpcHc } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isFfmpegFound, isMkvtoolnixFound, isMpcHcFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui, openMpcHc } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import { openMergeWindow } from '../lib/merge';
+import { openFfmpegToolsWindow } from '../lib/ffmpegTools';
 import { formatStreamCount } from '../lib/format';
 import {
   buildCommonPropertiesMap,
@@ -334,6 +336,7 @@ export default function List() {
   const [bdMasterAvailable, setBdMasterAvailable] = useState(false);
   const [mkvtoolnixGuiAvailable, setMkvtoolnixGuiAvailable] = useState(false);
   const [mpcHcAvailable, setMpcHcAvailable] = useState(false);
+  const [ffmpegAvailable, setFfmpegAvailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const autosizeDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const apiRef = useGridApiRef();
@@ -452,6 +455,26 @@ export default function List() {
       cancelled = true;
     };
   }, [config?.mpcHc?.path]);
+
+  // Track whether FFmpeg is reachable so the per-card FFmpeg Tools icon can show.
+  useEffect(() => {
+    const path = config?.ffmpeg?.path?.trim() ?? '';
+    if (!path) {
+      setFfmpegAvailable(false);
+      return;
+    }
+    let cancelled = false;
+    isFfmpegFound(path)
+      .then((status) => {
+        if (!cancelled) setFfmpegAvailable(status.found);
+      })
+      .catch(() => {
+        if (!cancelled) setFfmpegAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.ffmpeg?.path]);
 
   const videoExtensionSet = useMemo(() => {
     const exts = config?.fileExtensions?.video ?? [];
@@ -788,11 +811,13 @@ export default function List() {
                   const showBDMaster = isIso && bdMasterAvailable;
                   const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
                   const showMpcHc = isVideoFile(file) && mpcHcAvailable;
+                  const showFfmpegTools = isVideoFile(file) && ffmpegAvailable;
                   const externalToolCount =
                     (showBatchMkvExtract ? 1 : 0) +
                     (showBDMaster ? 1 : 0) +
                     (showMkvToolNixGui ? 1 : 0) +
-                    (showMpcHc ? 1 : 0);
+                    (showMpcHc ? 1 : 0) +
+                    (showFfmpegTools ? 1 : 0);
                   const internalToolCount =
                     (showMerge ? 1 : 0) +
                     (showExtract ? 1 : 0);
@@ -843,6 +868,13 @@ export default function List() {
                             alt="MPC HC"
                             sx={{ width: 18, height: 18, objectFit: 'contain' }}
                           />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {showFfmpegTools && (
+                      <Tooltip title={t('list.ffmpegTools')}>
+                        <IconButton size="small" onClick={() => openFfmpegToolsWindow(file)}>
+                          <MovieIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}

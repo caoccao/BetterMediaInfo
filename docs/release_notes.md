@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.1.0
+
+* Added an FFmpeg Tools window for video files with a seekable frame preview and screenshot capture, including capture by frame number, interval, every second, keyframes, scene changes, thumbnails, contact sheets, and de-duplicated frames.
+
 ## 1.0.0
 
 * Added an Image stream table to the card view and detail view, including type, color space, resolution, and size fields.

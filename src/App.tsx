@@ -24,6 +24,7 @@ import { changeLanguage } from './i18n';
 import Layout from './components/Layout';
 import Extract from './components/Extract';
 import Merge from './components/Merge';
+import FfmpegTools from './components/FfmpegTools';
 import NotificationSnackbar from './components/NotificationSnackbar';
 
 function getPaletteByTheme(theme: Protocol.Theme, mode: 'light' | 'dark') {
@@ -163,9 +164,10 @@ interface SubWindowParams {
   theme: Protocol.Theme;
   language: Protocol.Language;
   mkvToolNixPath: string;
+  ffmpegPath: string;
 }
 
-function getSubWindowParams(key: 'extract' | 'merge'): SubWindowParams | null {
+function getSubWindowParams(key: 'extract' | 'merge' | 'ffmpegTools'): SubWindowParams | null {
   const params = new URLSearchParams(window.location.search);
   const file = params.get(key);
   if (!file) return null;
@@ -175,6 +177,7 @@ function getSubWindowParams(key: 'extract' | 'merge'): SubWindowParams | null {
     theme: (params.get('theme') as Protocol.Theme) ?? Protocol.Theme.Ocean,
     language: (params.get('language') as Protocol.Language) ?? Protocol.Language.EnUS,
     mkvToolNixPath: params.get('mkvToolNixPath') ?? '',
+    ffmpegPath: params.get('ffmpegPath') ?? '',
   };
 }
 
@@ -189,7 +192,8 @@ interface ConfigChangeEvent {
 function App() {
   const extractParams = useMemo(() => getSubWindowParams('extract'), []);
   const mergeParams = useMemo(() => getSubWindowParams('merge'), []);
-  const subWindowParams = extractParams ?? mergeParams;
+  const ffmpegToolsParams = useMemo(() => getSubWindowParams('ffmpegTools'), []);
+  const subWindowParams = extractParams ?? mergeParams ?? ffmpegToolsParams;
   const storeDisplayMode = useAppStore((state) => state.config?.displayMode ?? Protocol.DisplayMode.Auto);
   const storeTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
   const storeLanguage = useAppStore((state) => state.config?.language);
@@ -363,6 +367,8 @@ function App() {
           <Extract file={extractParams.file} mkvToolNixPath={extractParams.mkvToolNixPath} />
         ) : mergeParams ? (
           <Merge file={mergeParams.file} mkvToolNixPath={mergeParams.mkvToolNixPath} />
+        ) : ffmpegToolsParams ? (
+          <FfmpegTools file={ffmpegToolsParams.file} ffmpegPath={ffmpegToolsParams.ffmpegPath} />
         ) : (
           <Layout />
         )}

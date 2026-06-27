@@ -133,6 +133,23 @@ pub struct MkvmergeProgressEvent {
   pub error: Option<String>,
 }
 
+pub struct FfmpegCaptureState {
+  pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct FfmpegCaptureProgressEvent {
+  pub percent: u32,
+  pub done: bool,
+  pub cancelled: bool,
+  pub error: Option<String>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct FfmpegCaptureFrameEvent {
+  pub bytes: Vec<u8>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct UpdateCheckResult {
   #[serde(rename = "hasUpdate")]

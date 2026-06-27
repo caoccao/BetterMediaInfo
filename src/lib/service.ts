@@ -126,6 +126,18 @@ export async function suggestMergeOutputPath(sourceFile: string): Promise<string
   return await invoke<string>("suggest_merge_output_path", { sourceFile });
 }
 
+export async function captureFfmpegFrame(file: string, positionSeconds: number, maxWidth: number): Promise<number[]> {
+  return await invoke<number[]>("capture_ffmpeg_frame", { file, positionSeconds, maxWidth });
+}
+
+export async function runFfmpegCapture(args: string[], outputDir: string, durationSeconds: number): Promise<void> {
+  return await invoke<void>("run_ffmpeg_capture", { args, outputDir, durationSeconds });
+}
+
+export async function cancelFfmpegCapture(): Promise<void> {
+  return await invoke<void>("cancel_ffmpeg_capture");
+}
+
 export async function getFiles(files: string[]): Promise<string[]> {
   return await invoke<string[]>("get_files", { files });
 }

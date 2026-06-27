@@ -359,6 +359,17 @@ export interface MkvmergeProgress {
   error: string | null;
 }
 
+export interface FfmpegCaptureProgress {
+  percent: number;
+  done: boolean;
+  cancelled: boolean;
+  error: string | null;
+}
+
+export interface FfmpegCaptureFrame {
+  bytes: number[];
+}
+
 export enum TabType {
   About,
   Config,
