@@ -74,6 +74,8 @@ pub struct Config {
   #[serde(rename = "mpcHc", default)]
   pub mpc_hc: ConfigMpcHc,
   #[serde(default)]
+  pub ffmpeg: ConfigFfmpeg,
+  #[serde(default)]
   pub view: ConfigView,
   #[serde(default)]
   pub update: ConfigUpdate,
@@ -99,6 +101,7 @@ impl Default for Config {
       batch_mkv_extract: Default::default(),
       bd_master: Default::default(),
       mpc_hc: Default::default(),
+      ffmpeg: Default::default(),
       view: Default::default(),
       update: Default::default(),
       window: Default::default(),
@@ -476,6 +479,37 @@ impl ConfigMpcHc {
 }
 
 impl Default for ConfigMpcHc {
+  fn default() -> Self {
+    Self {
+      path: Self::default_path(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
+pub struct ConfigFfmpeg {
+  #[serde(default = "ConfigFfmpeg::default_path")]
+  pub path: String,
+}
+
+impl ConfigFfmpeg {
+  fn default_path() -> String {
+    // FFmpeg ships as a bare CLI binary (`ffmpeg`/`ffmpeg.exe`), not a GUI app
+    // bundle, so the conventional install locations differ from the other
+    // tools: a manual unzip dir on Windows and the package-manager bin dirs
+    // on macOS/Linux.
+    if cfg!(target_os = "windows") {
+      r"C:\ffmpeg\bin".to_owned()
+    } else if cfg!(target_os = "macos") {
+      "/usr/local/bin".to_owned()
+    } else {
+      "/usr/bin".to_owned()
+    }
+  }
+}
+
+impl Default for ConfigFfmpeg {
   fn default() -> Self {
     Self {
       path: Self::default_path(),

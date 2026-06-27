@@ -61,6 +61,7 @@ import {
   Edit as EditIcon,
   Extension as IntegrationIcon,
   FolderOpen as FolderIcon,
+  GraphicEq as FfmpegIcon,
   Image as ImageIcon,
   Info as GeneralIcon,
   LightMode as LightIcon,
@@ -106,6 +107,7 @@ import {
   areExtensionsContextMenuRegistered,
   isBatchMkvExtractFound,
   isBDMasterFound,
+  isFfmpegFound,
   isMpcHcFound,
   isFolderContextMenuRegistered,
   isMkvtoolnixFound,
@@ -1724,6 +1726,8 @@ export default function Config() {
   const [bdMasterFound, setBdMasterFound] = useState(false);
   const [mpcHcPath, setMpcHcPath] = useState('');
   const [mpcHcFound, setMpcHcFound] = useState(false);
+  const [ffmpegPath, setFfmpegPath] = useState('');
+  const [ffmpegFound, setFfmpegFound] = useState(false);
   const [cardViewShowGeneral, setCardViewShowGeneral] = useState(true);
   const [cardViewShowVideo, setCardViewShowVideo] = useState(true);
   const [cardViewShowAudio, setCardViewShowAudio] = useState(true);
@@ -1753,6 +1757,7 @@ export default function Config() {
   const batchMkvExtractCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bdMasterCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mpcHcCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const ffmpegCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isInitializedRef = useRef(false);
 
   const config = useAppStore((state) => state.config);
@@ -1786,6 +1791,7 @@ export default function Config() {
       setBatchMkvExtractPath(config.batchMkvExtract?.path ?? '');
       setBdMasterPath(config.bdMaster?.path ?? '');
       setMpcHcPath(config.mpcHc?.path ?? '');
+      setFfmpegPath(config.ffmpeg?.path ?? '');
       setCardViewShowGeneral(config.view?.card?.showGeneral ?? true);
       setCardViewShowVideo(config.view?.card?.showVideo ?? true);
       setCardViewShowAudio(config.view?.card?.showAudio ?? true);
@@ -1853,6 +1859,7 @@ export default function Config() {
     batchMkvExtract: { path: batchMkvExtractPath },
     bdMaster: { path: bdMasterPath },
     mpcHc: { path: mpcHcPath },
+    ffmpeg: { path: ffmpegPath },
     view: {
       card: {
         showGeneral: cardViewShowGeneral,
@@ -2033,6 +2040,16 @@ export default function Config() {
       }
     } catch {
       setMpcHcFound(false);
+    }
+  };
+
+  const handleBrowseFfmpegPath = async () => {
+    const directory = await open({
+      directory: true,
+      defaultPath: ffmpegPath.trim() || undefined,
+    });
+    if (typeof directory === 'string' && directory.length > 0) {
+      setFfmpegPath(directory);
     }
   };
 
@@ -2274,6 +2291,34 @@ export default function Config() {
       }
     };
   }, [mpcHcPath, isWindows]);
+
+  // Validate FFmpeg path from backend. FFmpeg is a cross-platform CLI tool, so
+  // this runs on every OS (no isWindows guard like MPC-HC).
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    if (ffmpegCheckDebounceRef.current) {
+      clearTimeout(ffmpegCheckDebounceRef.current);
+    }
+    let isCancelled = false;
+    ffmpegCheckDebounceRef.current = setTimeout(async () => {
+      try {
+        const status = await isFfmpegFound(ffmpegPath.trim());
+        if (!isCancelled) {
+          setFfmpegFound(status.found);
+        }
+      } catch {
+        if (!isCancelled) {
+          setFfmpegFound(false);
+        }
+      }
+    }, 250);
+    return () => {
+      isCancelled = true;
+      if (ffmpegCheckDebounceRef.current) {
+        clearTimeout(ffmpegCheckDebounceRef.current);
+      }
+    };
+  }, [ffmpegPath]);
 
   // Update store immediately when stream format changes
   useEffect(() => {
@@ -3067,6 +3112,46 @@ export default function Config() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+        <SectionHeader
+          icon={<FfmpegIcon sx={{ fontSize: 20 }} />}
+          title={t('config.ffmpeg')}
+        />
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('config.ffmpegPath')}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              value={ffmpegPath}
+              onChange={(e) => {
+                setFfmpegPath(e.target.value);
+              }}
+              size="small"
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleBrowseFfmpegPath}
+              sx={{ minWidth: 90, height: 36, textTransform: 'none' }}
+            >
+              {t('config.browse')}
+            </Button>
+          </Box>
+          <Typography
+            variant="caption"
+            sx={{
+              mt: 0.75,
+              display: 'block',
+              color: ffmpegFound ? 'success.main' : 'error.main',
+            }}
+          >
+            {ffmpegFound ? t('config.ffmpegFound') : t('config.ffmpegNotFound')}
+          </Typography>
+        </Box>
+      </Paper>
 
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
         <SectionHeader

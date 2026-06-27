@@ -29,6 +29,7 @@ mod config;
 mod constants;
 mod context_menu;
 mod controller;
+mod ffmpeg;
 mod media_info;
 mod mkvtoolnix;
 mod mpchc;
@@ -191,6 +192,12 @@ async fn is_bdmaster_found(path: String, check_running: bool) -> Result<protocol
 async fn is_mpchc_found(path: String, check_running: bool) -> Result<protocol::MpcHcStatus, String> {
   log::debug!("is_mpchc_found({}, {})", path, check_running);
   mpchc::is_mpchc_found(path, check_running).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn is_ffmpeg_found(path: String) -> Result<protocol::FfmpegStatus, String> {
+  log::debug!("is_ffmpeg_found({})", path);
+  ffmpeg::is_ffmpeg_found(path).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -400,6 +407,7 @@ pub fn run() {
       is_batchmkvextract_found,
       is_bdmaster_found,
       is_mpchc_found,
+      is_ffmpeg_found,
       is_bd,
       open_batchmkvextract,
       open_bdmaster,

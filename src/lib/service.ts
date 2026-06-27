@@ -82,6 +82,10 @@ export async function isMpcHcFound(path: string, checkRunning: boolean = false):
   return await invoke<Protocol.MpcHcStatus>("is_mpchc_found", { path, checkRunning });
 }
 
+export async function isFfmpegFound(path: string): Promise<Protocol.FfmpegStatus> {
+  return await invoke<Protocol.FfmpegStatus>("is_ffmpeg_found", { path });
+}
+
 export async function openMpcHc(file: string): Promise<void> {
   return await invoke<void>("open_mpchc", { file });
 }
