@@ -39,6 +39,8 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 ureq = { version = "2", features = ["json"] }
 sysinfo = { version = "0.32", default-features = false, features = ["system"] }
 sys-locale = "0.3.2"
+# https://crates.io/crates/image — used to trim borders from captured frames.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg = "0.56"

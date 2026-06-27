@@ -325,6 +325,11 @@ function FfmpegTools({ file }: FfmpegToolsProps) {
   const [hwaccelEnabled, setHwaccelEnabled] = useState(false);
   const [hwaccel, setHwaccel] = useState('auto');
 
+  // Trim options (post-process each captured image to crop solid borders).
+  const [trimEnabled, setTrimEnabled] = useState(false);
+  const [trimColor, setTrimColor] = useState('#000000');
+  const [trimTolerance, setTrimTolerance] = useState(10);
+
   const collectParams = useCallback(
     (): CaptureParams => ({
       frameNumber,
@@ -356,6 +361,15 @@ function FfmpegTools({ file }: FfmpegToolsProps) {
       hwaccel,
     }),
     [outputDir, format, jpgQuality, scaleEnabled, scaleWidth, cropEnabled, cropW, cropH, cropX, cropY, hwaccelEnabled, hwaccel]
+  );
+
+  const collectTrim = useCallback(
+    (): Protocol.FfmpegTrimOptions => ({
+      enabled: trimEnabled,
+      color: trimColor,
+      tolerance: trimTolerance,
+    }),
+    [trimEnabled, trimColor, trimTolerance]
   );
 
   // Swap the preview image only once the new frame decodes, so partially
@@ -539,7 +553,7 @@ function FfmpegTools({ file }: FfmpegToolsProps) {
         for (let i = 0; i < times.length; i++) {
           if (cancelRef.current) break;
           const args = await buildTimestampArgs(file, collectOpts(), times[i], i);
-          await runFfmpegCapture(args, outputDir, durationSeconds);
+          await runFfmpegCapture(args, outputDir, durationSeconds, collectTrim(), previewWidthRef.current);
           setProgress(Math.round(((i + 1) / times.length) * 100));
         }
         if (!cancelRef.current) {
@@ -559,7 +573,7 @@ function FfmpegTools({ file }: FfmpegToolsProps) {
     setProgress(0);
     try {
       const args = await buildCaptureArgs(mode, collectParams(), collectOpts(), file);
-      await runFfmpegCapture(args, outputDir, durationSeconds);
+      await runFfmpegCapture(args, outputDir, durationSeconds, collectTrim(), previewWidthRef.current);
     } catch (e) {
       setCapturing(false);
       setNotification({ title: t('ffmpegTools.captureFailed', { detail: String(e) }), type: Protocol.DialogNotificationType.Error });
@@ -795,7 +809,70 @@ function FfmpegTools({ file }: FfmpegToolsProps) {
               <Divider />
               {renderModeParams()}
 
-              <Accordion disableGutters elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
+              <Accordion
+                disableGutters
+                elevation={0}
+                sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden', '&:before': { display: 'none' } }}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="body2">{t('ffmpegTools.trimOptions')}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={2}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox checked={trimEnabled} disabled={capturing} onChange={(e) => setTrimEnabled(e.target.checked)} />
+                      }
+                      label={<Typography variant="body2">{t('ffmpegTools.trimImage')}</Typography>}
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Typography variant="body2">{t('ffmpegTools.trimColor')}</Typography>
+                      <input
+                        type="color"
+                        value={trimColor}
+                        disabled={!trimEnabled || capturing}
+                        onChange={(e) => setTrimColor(e.target.value)}
+                        style={{
+                          width: 48,
+                          height: 32,
+                          padding: 0,
+                          border: '1px solid rgba(128, 128, 128, 0.4)',
+                          borderRadius: 4,
+                          background: 'transparent',
+                          cursor: trimEnabled && !capturing ? 'pointer' : 'default',
+                        }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {trimColor.toUpperCase()}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" gutterBottom>
+                        {t('ffmpegTools.trimTolerance')}: {trimTolerance}%
+                      </Typography>
+                      <Slider
+                        value={trimTolerance}
+                        min={0}
+                        max={100}
+                        step={1}
+                        disabled={!trimEnabled || capturing}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(v) => `${v}%`}
+                        onChange={(_, v) => setTrimTolerance(v as number)}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {t('ffmpegTools.trimToleranceHint')}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+
+              <Accordion
+                disableGutters
+                elevation={0}
+                sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden', '&:before': { display: 'none' } }}
+              >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography variant="body2">{t('ffmpegTools.outputOptions')}</Typography>
                 </AccordionSummary>

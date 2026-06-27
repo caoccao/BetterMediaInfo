@@ -335,7 +335,7 @@ fn derive_attachment_subtype(file_name: &str, content_type: &str) -> String {
   String::new()
 }
 
-pub async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
+pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir(mkvtoolnix_gui_process_name()) {
       let has_tools = ["mkvmerge", "mkvextract"].iter().all(|t| has_tool(&dir, t));

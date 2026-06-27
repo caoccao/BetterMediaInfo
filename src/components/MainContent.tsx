@@ -42,7 +42,7 @@ import Editor from '@monaco-editor/react';
 import * as Protocol from '../lib/protocol';
 import { useAppStore } from '../lib/store';
 import { scanFiles } from '../lib/fs';
-import { getUpdateResult, isBD, isBDMasterFound, openBDMaster, skipVersion, writeTextFile } from '../lib/service';
+import { getUpdateResult, getBDStatus, getBDMasterStatus, openBDMaster, skipVersion, writeTextFile } from '../lib/service';
 import { openSaveJsonCodeFileDialog } from '../lib/dialog';
 import { shrinkFileName } from '../lib/format';
 import List from './List';
@@ -260,7 +260,7 @@ export default function MainContent() {
       const bdStatuses = await Promise.all(
         paths.map(async (p) => {
           try {
-            return await isBD(p);
+            return await getBDStatus(p);
           } catch {
             return { isBluRay: false, isFolder: false };
           }
@@ -288,7 +288,7 @@ export default function MainContent() {
       const bdMasterPath = useAppStore.getState().config?.bdMaster?.path?.trim() ?? '';
       if (!bdMasterPath) return;
       try {
-        const status = await isBDMasterFound(bdMasterPath);
+        const status = await getBDMasterStatus(bdMasterPath);
         if (!status.found) return;
       } catch {
         return;

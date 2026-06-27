@@ -16,11 +16,7 @@
 */
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use tauri::{Emitter, EventTarget, Manager};
-
-static WINDOW_READY: AtomicBool = AtomicBool::new(false);
 
 mod batchmkvextract;
 mod bd;
@@ -37,58 +33,48 @@ mod protocol;
 mod streams;
 #[cfg(target_os = "windows")]
 mod taskbar;
+mod window;
 
-use protocol::{
-  FfmpegCaptureFrameEvent, FfmpegCaptureProgressEvent, FfmpegCaptureState, MkvextractProgressEvent, MkvextractState,
-  MkvmergeProgressEvent, MkvmergeState, UpdateCheckResult, UpdateCheckState,
-};
+use protocol::{FfmpegCaptureState, MkvextractState, MkvmergeState, TrimOptions, UpdateCheckResult, UpdateCheckState};
 
 fn convert_error(error: anyhow::Error) -> String {
   error.to_string()
 }
 
+// Tauri command handlers (IPC entry points). Each one is an async wrapper that
+// delegates to a `controller` method; keep them ordered alphabetically by name.
+
+#[tauri::command]
+async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool, String> {
+  controller::are_extensions_context_menu_registered(extensions).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn cancel_ffmpeg_capture(window: tauri::Window, state: tauri::State<'_, FfmpegCaptureState>) -> Result<(), String> {
+  log::debug!("cancel_ffmpeg_capture({})", window.label());
+  controller::cancel_child(&window, &state.children);
+  Ok(())
+}
+
 #[tauri::command]
 async fn cancel_mkvextract(window: tauri::Window, state: tauri::State<'_, MkvextractState>) -> Result<(), String> {
   log::debug!("cancel_mkvextract({})", window.label());
-  let label = window.label().to_owned();
-  let child = state.children.lock().unwrap().remove(&label);
-  if let Some(mut child) = child {
-    let _ = child.kill();
-    let _ = child.wait();
-  }
+  controller::cancel_child(&window, &state.children);
   Ok(())
 }
 
 #[tauri::command]
 async fn cancel_mkvmerge(window: tauri::Window, state: tauri::State<'_, MkvmergeState>) -> Result<(), String> {
   log::debug!("cancel_mkvmerge({})", window.label());
-  let label = window.label().to_owned();
-  let child = state.children.lock().unwrap().remove(&label);
-  if let Some(mut child) = child {
-    let _ = child.kill();
-    let _ = child.wait();
-  }
-  Ok(())
-}
-
-#[tauri::command]
-async fn cancel_ffmpeg_capture(window: tauri::Window, state: tauri::State<'_, FfmpegCaptureState>) -> Result<(), String> {
-  log::debug!("cancel_ffmpeg_capture({})", window.label());
-  let label = window.label().to_owned();
-  let child = state.children.lock().unwrap().remove(&label);
-  if let Some(mut child) = child {
-    let _ = child.kill();
-    let _ = child.wait();
-  }
+  controller::cancel_child(&window, &state.children);
   Ok(())
 }
 
 #[tauri::command]
 async fn capture_ffmpeg_frame(file: String, position_seconds: f64, max_width: u32) -> Result<Vec<u8>, String> {
   log::debug!("capture_ffmpeg_frame({}, {}, {})", file, position_seconds, max_width);
-  tokio::task::spawn_blocking(move || ffmpeg::capture_frame(file, position_seconds, max_width))
+  controller::capture_ffmpeg_frame(file, position_seconds, max_width)
     .await
-    .map_err(|e| e.to_string())?
     .map_err(convert_error)
 }
 
@@ -99,9 +85,40 @@ async fn get_about() -> Result<protocol::About, String> {
 }
 
 #[tauri::command]
+async fn get_batchmkvextract_status(
+  path: String,
+  check_running: bool,
+) -> Result<protocol::BatchMkvExtractStatus, String> {
+  log::debug!("get_batchmkvextract_status({}, {})", path, check_running);
+  controller::get_batchmkvextract_status(path, check_running)
+    .await
+    .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_bd_status(path: String) -> Result<protocol::BDStatus, String> {
+  log::debug!("get_bd_status({})", path);
+  controller::get_bd_status(path).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_bdmaster_status(path: String, check_running: bool) -> Result<protocol::BDMasterStatus, String> {
+  log::debug!("get_bdmaster_status({}, {})", path, check_running);
+  controller::get_bdmaster_status(path, check_running)
+    .await
+    .map_err(convert_error)
+}
+
+#[tauri::command]
 async fn get_config() -> Result<config::Config, String> {
   log::debug!("get_config");
   controller::get_config().await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_ffmpeg_status(path: String) -> Result<protocol::FfmpegStatus, String> {
+  log::debug!("get_ffmpeg_status({})", path);
+  controller::get_ffmpeg_status(path).await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -111,9 +128,30 @@ async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+async fn get_launch_args() -> Result<Vec<String>, String> {
+  controller::get_launch_args().map_err(convert_error)
+}
+
+#[tauri::command]
 async fn get_mkv_tracks(file: String) -> Result<Vec<protocol::MkvTrack>, String> {
   log::debug!("get_mkv_tracks({})", file);
-  mkvtoolnix::get_mkv_tracks(file).await.map_err(convert_error)
+  controller::get_mkv_tracks(file).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<protocol::MkvToolNixStatus, String> {
+  log::debug!("get_mkvtoolnix_status({}, {})", path, check_running);
+  controller::get_mkvtoolnix_status(path, check_running)
+    .await
+    .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_mpchc_status(path: String, check_running: bool) -> Result<protocol::MpcHcStatus, String> {
+  log::debug!("get_mpchc_status({}, {})", path, check_running);
+  controller::get_mpchc_status(path, check_running)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
@@ -140,116 +178,134 @@ async fn get_stream_count(file: String) -> Result<Vec<protocol::StreamCount>, St
 }
 
 #[tauri::command]
-fn get_update_result(state: tauri::State<'_, UpdateCheckState>) -> Option<UpdateCheckResult> {
-  state.result.lock().unwrap().clone()
+async fn get_update_result(
+  state: tauri::State<'_, UpdateCheckState>,
+) -> Result<Option<UpdateCheckResult>, String> {
+  Ok(controller::get_update_result(&state.result))
 }
 
 #[tauri::command]
-fn get_launch_args() -> Vec<String> {
-  std::env::args().skip(1).collect()
-}
-
-#[tauri::command]
-fn register_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
-  log::debug!("register_extensions_context_menu({:?})", extensions);
-  context_menu::register_extensions_context_menu(extensions).map_err(convert_error)
-}
-
-#[tauri::command]
-fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
-  log::debug!("unregister_extensions_context_menu({:?})", extensions);
-  context_menu::unregister_extensions_context_menu(extensions).map_err(convert_error)
-}
-
-#[tauri::command]
-fn are_extensions_context_menu_registered(extensions: Vec<String>) -> bool {
-  context_menu::are_extensions_context_menu_registered(extensions)
-}
-
-#[tauri::command]
-fn register_folder_context_menu() -> Result<(), String> {
-  log::debug!("register_folder_context_menu");
-  context_menu::register_folder_context_menu().map_err(convert_error)
-}
-
-#[tauri::command]
-fn unregister_folder_context_menu() -> Result<(), String> {
-  log::debug!("unregister_folder_context_menu");
-  context_menu::unregister_folder_context_menu().map_err(convert_error)
-}
-
-#[tauri::command]
-fn is_folder_context_menu_registered() -> bool {
-  context_menu::is_folder_context_menu_registered()
-}
-
-#[tauri::command]
-async fn is_mkvtoolnix_found(path: String, check_running: bool) -> Result<protocol::MkvToolNixStatus, String> {
-  log::debug!("is_mkvtoolnix_found({}, {})", path, check_running);
-  mkvtoolnix::is_mkvtoolnix_found(path, check_running)
-    .await
-    .map_err(convert_error)
-}
-
-#[tauri::command]
-async fn is_batchmkvextract_found(
-  path: String,
-  check_running: bool,
-) -> Result<protocol::BatchMkvExtractStatus, String> {
-  log::debug!("is_batchmkvextract_found({}, {})", path, check_running);
-  batchmkvextract::is_batchmkvextract_found(path, check_running)
-    .await
-    .map_err(convert_error)
-}
-
-#[tauri::command]
-async fn is_bdmaster_found(path: String, check_running: bool) -> Result<protocol::BDMasterStatus, String> {
-  log::debug!("is_bdmaster_found({}, {})", path, check_running);
-  bdmaster::is_bdmaster_found(path, check_running)
-    .await
-    .map_err(convert_error)
-}
-
-#[tauri::command]
-async fn is_mpchc_found(path: String, check_running: bool) -> Result<protocol::MpcHcStatus, String> {
-  log::debug!("is_mpchc_found({}, {})", path, check_running);
-  mpchc::is_mpchc_found(path, check_running).await.map_err(convert_error)
-}
-
-#[tauri::command]
-async fn is_ffmpeg_found(path: String) -> Result<protocol::FfmpegStatus, String> {
-  log::debug!("is_ffmpeg_found({})", path);
-  ffmpeg::is_ffmpeg_found(path).await.map_err(convert_error)
-}
-
-#[tauri::command]
-async fn open_mpchc(file: String) -> Result<(), String> {
-  log::debug!("open_mpchc({})", file);
-  mpchc::spawn_mpchc(&file).map_err(convert_error)
-}
-
-#[tauri::command]
-async fn is_bd(path: String) -> Result<protocol::BDStatus, String> {
-  log::debug!("is_bd({})", path);
-  bd::is_bd(path).await.map_err(convert_error)
-}
-
-#[tauri::command]
-async fn open_bdmaster(file: String) -> Result<(), String> {
-  log::debug!("open_bdmaster({})", file);
-  bdmaster::spawn_bdmaster(&file).map_err(convert_error)
+async fn is_folder_context_menu_registered() -> Result<bool, String> {
+  controller::is_folder_context_menu_registered().map_err(convert_error)
 }
 
 #[tauri::command]
 async fn open_batchmkvextract(file: String) -> Result<(), String> {
   log::debug!("open_batchmkvextract({})", file);
-  batchmkvextract::spawn_batchmkvextract(&file).map_err(convert_error)
+  controller::open_batchmkvextract(file).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn open_bdmaster(file: String) -> Result<(), String> {
+  log::debug!("open_bdmaster({})", file);
+  controller::open_bdmaster(file).map_err(convert_error)
 }
 
 #[tauri::command]
 async fn open_mkvtoolnix_gui(file: String) -> Result<(), String> {
   log::debug!("open_mkvtoolnix_gui({})", file);
-  mkvtoolnix::spawn_mkvtoolnix_gui(&file).map_err(convert_error)
+  controller::open_mkvtoolnix_gui(file).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn open_mpchc(file: String) -> Result<(), String> {
+  log::debug!("open_mpchc({})", file);
+  controller::open_mpchc(file).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn register_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
+  log::debug!("register_extensions_context_menu({:?})", extensions);
+  controller::register_extensions_context_menu(extensions).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn register_folder_context_menu() -> Result<(), String> {
+  log::debug!("register_folder_context_menu");
+  controller::register_folder_context_menu().map_err(convert_error)
+}
+
+#[tauri::command]
+async fn run_ffmpeg_capture(
+  window: tauri::Window,
+  args: Vec<String>,
+  output_dir: String,
+  duration_seconds: f64,
+  trim: Option<TrimOptions>,
+  preview_width: u32,
+  state: tauri::State<'_, FfmpegCaptureState>,
+) -> Result<(), String> {
+  log::debug!("run_ffmpeg_capture({:?}, {}, {})", args, output_dir, duration_seconds);
+  controller::run_ffmpeg_capture(window, args, output_dir, duration_seconds, trim, preview_width, state.children.clone())
+    .await
+    .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn run_mkvextract(
+  window: tauri::Window,
+  file: String,
+  args: Vec<String>,
+  state: tauri::State<'_, MkvextractState>,
+) -> Result<(), String> {
+  log::debug!("run_mkvextract({}, {:?})", file, args);
+  controller::run_mkvextract(window, file, args, state.children.clone())
+    .await
+    .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn run_mkvmerge(
+  window: tauri::Window,
+  args: Vec<String>,
+  state: tauri::State<'_, MkvmergeState>,
+) -> Result<(), String> {
+  log::debug!("run_mkvmerge({:?})", args);
+  controller::run_mkvmerge(window, args, state.children.clone())
+    .await
+    .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn set_config(config: config::Config) -> Result<config::Config, String> {
+  log::debug!("set_config({:?})", config);
+  controller::set_config(config).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn skip_version(version: String) -> Result<(), String> {
+  log::debug!("skip_version({})", version);
+  controller::skip_version(version).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn suggest_merge_output_path(source_file: String) -> String {
+  log::debug!("suggest_merge_output_path({})", source_file);
+  controller::suggest_merge_output_path(source_file)
+}
+
+#[tauri::command]
+async fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
+  log::debug!("unregister_extensions_context_menu({:?})", extensions);
+  controller::unregister_extensions_context_menu(extensions).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn unregister_folder_context_menu() -> Result<(), String> {
+  log::debug!("unregister_folder_context_menu");
+  controller::unregister_folder_context_menu().map_err(convert_error)
+}
+
+#[tauri::command]
+async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<(), String> {
+  log::debug!("write_binary_file({})", file);
+  controller::write_binary_file(file, bytes).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn write_text_file(file: String, text: String) -> Result<(), String> {
+  log::debug!("write_text_file({})", file);
+  controller::write_text_file(file, text).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -280,503 +336,47 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_opener::init())
-    .setup(|app| {
-      let window = app.get_webview_window("main").unwrap();
-      let _ = window.set_title(&format!("{} v{}", constants::APP_NAME, controller::get_app_version()));
-
-      // Restore window size and position from config
-      let cfg = config::get_config();
-      let _ = window.set_size(tauri::LogicalSize::new(cfg.window.size.width, cfg.window.size.height));
-      if cfg.window.position.x < 0 || cfg.window.position.y < 0 {
-        let _ = window.center();
-      } else {
-        let _ = window.set_position(tauri::LogicalPosition::new(
-          cfg.window.position.x,
-          cfg.window.position.y,
-        ));
-      }
-      let _ = window.show();
-      let _ = window.set_focus();
-      WINDOW_READY.store(true, Ordering::SeqCst);
-
-      // Check for updates in background
-      let update_state = app.state::<UpdateCheckState>();
-      let result_arc = update_state.result.clone();
-      let interval_seconds: i64 = match cfg.update.check_interval {
-        config::UpdateCheckInterval::Daily => 86400,
-        config::UpdateCheckInterval::Weekly => 604800,
-        config::UpdateCheckInterval::Monthly => 2592000,
-      };
-      let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-      if cfg.update.last_checked == 0 || now - cfg.update.last_checked > interval_seconds {
-        std::thread::spawn(move || {
-          let check_result = std::panic::catch_unwind(|| controller::check_for_updates()).unwrap_or_else(|_| {
-            log::error!("Update check panicked");
-            Err(anyhow::anyhow!("Update check panicked"))
-          });
-          match check_result {
-            Ok(result) => {
-              log::info!(
-                "Update check result: has_update={}, latest_version={:?}",
-                result.has_update,
-                result.latest_version
-              );
-              // Only update lastChecked on successful check
-              let mut updated_config = config::get_config();
-              updated_config.update.last_checked = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as i64;
-              if let Some(ref version) = result.latest_version {
-                updated_config.update.last_version = version.clone();
-              }
-              let _ = config::set_config(updated_config.clone());
-              // Suppress if this version is ignored
-              let final_result = if result.has_update
-                && result.latest_version.as_deref() == Some(updated_config.update.ignore_version.as_str())
-                && !updated_config.update.ignore_version.is_empty()
-              {
-                UpdateCheckResult {
-                  has_update: false,
-                  latest_version: None,
-                }
-              } else {
-                result
-              };
-              *result_arc.lock().unwrap() = Some(final_result);
-            }
-            Err(e) => {
-              log::warn!("Update check failed: {}", e);
-              *result_arc.lock().unwrap() = Some(UpdateCheckResult {
-                has_update: false,
-                latest_version: None,
-              });
-            }
-          }
-        });
-      } else if !cfg.update.last_version.is_empty()
-        && controller::is_newer_version(&cfg.update.last_version, controller::get_app_version())
-        && cfg.update.last_version != cfg.update.ignore_version
-      {
-        *result_arc.lock().unwrap() = Some(UpdateCheckResult {
-          has_update: true,
-          latest_version: Some(cfg.update.last_version.clone()),
-        });
-      } else {
-        *result_arc.lock().unwrap() = Some(UpdateCheckResult {
-          has_update: false,
-          latest_version: None,
-        });
-      }
-
-      Ok(())
-    })
-    .on_window_event(|window, event| {
-      if window.label() != "main" {
-        return;
-      }
-      match event {
-        tauri::WindowEvent::Destroyed => {
-          let app_handle = window.app_handle();
-          for (label, win) in app_handle.webview_windows() {
-            if label != "main" {
-              let _ = win.destroy();
-            }
-          }
-        }
-        tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => {
-          if !WINDOW_READY.load(Ordering::SeqCst) {
-            return;
-          }
-          let Ok(scale) = window.scale_factor() else {
-            return;
-          };
-          let Ok(pos) = window.outer_position() else {
-            return;
-          };
-          let Ok(size) = window.inner_size() else {
-            return;
-          };
-          let logical_pos: tauri::LogicalPosition<i32> = pos.to_logical(scale);
-          let logical_size: tauri::LogicalSize<u32> = size.to_logical(scale);
-          let mut cfg = config::get_config();
-          cfg.window.position.x = logical_pos.x;
-          cfg.window.position.y = logical_pos.y;
-          cfg.window.size.width = logical_size.width;
-          cfg.window.size.height = logical_size.height;
-          if let Err(err) = config::set_config(cfg) {
-            log::error!("Couldn't save window state because {}", err);
-          }
-        }
-        _ => {}
-      }
-    })
+    .setup(window::setup)
+    .on_window_event(window::on_window_event)
     .invoke_handler(tauri::generate_handler![
-      get_about,
-      get_config,
-      get_update_result,
-      get_launch_args,
-      register_extensions_context_menu,
-      unregister_extensions_context_menu,
       are_extensions_context_menu_registered,
-      register_folder_context_menu,
-      unregister_folder_context_menu,
-      is_folder_context_menu_registered,
-      skip_version,
+      cancel_ffmpeg_capture,
+      cancel_mkvextract,
+      cancel_mkvmerge,
+      capture_ffmpeg_frame,
+      get_about,
+      get_batchmkvextract_status,
+      get_bd_status,
+      get_bdmaster_status,
+      get_config,
+      get_ffmpeg_status,
       get_files,
+      get_launch_args,
       get_mkv_tracks,
-      is_mkvtoolnix_found,
-      is_batchmkvextract_found,
-      is_bdmaster_found,
-      is_mpchc_found,
-      is_ffmpeg_found,
-      is_bd,
+      get_mkvtoolnix_status,
+      get_mpchc_status,
+      get_parameters,
+      get_properties,
+      get_stream_count,
+      get_update_result,
+      is_folder_context_menu_registered,
       open_batchmkvextract,
       open_bdmaster,
       open_mkvtoolnix_gui,
       open_mpchc,
-      run_mkvextract,
-      cancel_mkvextract,
-      run_mkvmerge,
-      cancel_mkvmerge,
-      capture_ffmpeg_frame,
+      register_extensions_context_menu,
+      register_folder_context_menu,
       run_ffmpeg_capture,
-      cancel_ffmpeg_capture,
-      get_parameters,
-      get_properties,
-      get_stream_count,
+      run_mkvextract,
+      run_mkvmerge,
       set_config,
+      skip_version,
       suggest_merge_output_path,
+      unregister_extensions_context_menu,
+      unregister_folder_context_menu,
       write_binary_file,
       write_text_file
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
-}
-
-#[tauri::command]
-async fn run_mkvextract(
-  window: tauri::Window,
-  file: String,
-  args: Vec<String>,
-  state: tauri::State<'_, MkvextractState>,
-) -> Result<(), String> {
-  log::debug!("run_mkvextract({}, {:?})", file, args);
-  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args).map_err(convert_error)?;
-  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
-  let label = window.label().to_owned();
-  state.children.lock().unwrap().insert(label.clone(), child);
-  let children_arc = state.children.clone();
-  let window_clone = window.clone();
-  #[cfg(target_os = "windows")]
-  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-  tokio::task::spawn_blocking(move || {
-    let target = EventTarget::webview_window(&label);
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      taskbar::set_progress(hwnd, 0);
-    }
-    mkvtoolnix::read_mkvextract_output(stdout, |line| {
-      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
-        #[cfg(target_os = "windows")]
-        if let Some(hwnd) = hwnd_raw {
-          taskbar::set_progress(hwnd, percent);
-        }
-        let _ = window_clone.emit_to(
-          target.clone(),
-          "mkvextract-progress",
-          MkvextractProgressEvent {
-            percent,
-            done: false,
-            cancelled: false,
-            error: None,
-          },
-        );
-      }
-    });
-    let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, error) = match child {
-      Some(mut c) => match c.wait() {
-        Ok(status) if status.success() => (false, None),
-        Ok(status) => (
-          false,
-          Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1))),
-        ),
-        Err(e) => (false, Some(e.to_string())),
-      },
-      None => (true, None),
-    };
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      if error.is_some() {
-        taskbar::set_error(hwnd);
-      } else {
-        taskbar::clear_progress(hwnd);
-      }
-    }
-    let _ = window_clone.emit_to(
-      target,
-      "mkvextract-progress",
-      MkvextractProgressEvent {
-        percent: 100,
-        done: true,
-        cancelled,
-        error,
-      },
-    );
-  })
-  .await
-  .map_err(|e| e.to_string())?;
-  Ok(())
-}
-
-#[tauri::command]
-async fn run_mkvmerge(
-  window: tauri::Window,
-  args: Vec<String>,
-  state: tauri::State<'_, MkvmergeState>,
-) -> Result<(), String> {
-  log::debug!("run_mkvmerge({:?})", args);
-  let mut child = mkvtoolnix::spawn_mkvmerge(&args).map_err(convert_error)?;
-  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
-  let label = window.label().to_owned();
-  state.children.lock().unwrap().insert(label.clone(), child);
-  let children_arc = state.children.clone();
-  let window_clone = window.clone();
-  #[cfg(target_os = "windows")]
-  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-  tokio::task::spawn_blocking(move || {
-    let target = EventTarget::webview_window(&label);
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      taskbar::set_progress(hwnd, 0);
-    }
-    mkvtoolnix::read_mkvmerge_output(stdout, |line| {
-      if let Some(percent) = mkvtoolnix::parse_mkvmerge_progress(line) {
-        #[cfg(target_os = "windows")]
-        if let Some(hwnd) = hwnd_raw {
-          taskbar::set_progress(hwnd, percent);
-        }
-        let _ = window_clone.emit_to(
-          target.clone(),
-          "mkvmerge-progress",
-          MkvmergeProgressEvent {
-            percent,
-            done: false,
-            cancelled: false,
-            error: None,
-          },
-        );
-      }
-    });
-    let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, error) = match child {
-      Some(mut c) => match c.wait() {
-        Ok(status) if status.success() => (false, None),
-        Ok(status) => (
-          false,
-          Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1))),
-        ),
-        Err(e) => (false, Some(e.to_string())),
-      },
-      None => (true, None),
-    };
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      if error.is_some() {
-        taskbar::set_error(hwnd);
-      } else {
-        taskbar::clear_progress(hwnd);
-      }
-    }
-    let _ = window_clone.emit_to(
-      target,
-      "mkvmerge-progress",
-      MkvmergeProgressEvent {
-        percent: 100,
-        done: true,
-        cancelled,
-        error,
-      },
-    );
-  })
-  .await
-  .map_err(|e| e.to_string())?;
-  Ok(())
-}
-
-#[tauri::command]
-async fn run_ffmpeg_capture(
-  window: tauri::Window,
-  args: Vec<String>,
-  output_dir: String,
-  duration_seconds: f64,
-  state: tauri::State<'_, FfmpegCaptureState>,
-) -> Result<(), String> {
-  log::debug!("run_ffmpeg_capture({:?}, {}, {})", args, output_dir, duration_seconds);
-  // Global options first, the frontend-built capture args in the middle, and
-  // `-progress` last so ffmpeg streams machine-readable progress to stdout.
-  let mut full_args: Vec<String> = vec![
-    "-hide_banner".to_string(),
-    "-loglevel".to_string(),
-    "error".to_string(),
-    "-y".to_string(),
-  ];
-  full_args.extend(args);
-  full_args.push("-progress".to_string());
-  full_args.push("pipe:1".to_string());
-  full_args.push("-nostats".to_string());
-
-  let mut child = ffmpeg::spawn_ffmpeg(&full_args).map_err(convert_error)?;
-  let stdout = child.stdout.take().ok_or("Failed to capture stdout".to_string())?;
-  let stderr = child.stderr.take();
-  let label = window.label().to_owned();
-  state.children.lock().unwrap().insert(label.clone(), child);
-  let children_arc = state.children.clone();
-  let window_clone = window.clone();
-  let dir = std::path::PathBuf::from(&output_dir);
-  let start = std::time::SystemTime::now();
-  #[cfg(target_os = "windows")]
-  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-
-  tokio::task::spawn_blocking(move || {
-    let target = EventTarget::webview_window(&label);
-    // Drain stderr on a side thread so a chatty ffmpeg can't deadlock on a full pipe.
-    let stderr_handle = stderr.map(|mut s| {
-      std::thread::spawn(move || {
-        let mut buf = String::new();
-        let _ = std::io::Read::read_to_string(&mut s, &mut buf);
-        buf
-      })
-    });
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      taskbar::set_progress(hwnd, 0);
-    }
-    let mut last_frame_emit = std::time::Instant::now() - std::time::Duration::from_secs(1);
-    let mut last_emitted: Option<std::path::PathBuf> = None;
-    ffmpeg::read_capture_progress(stdout, |out_time| {
-      let percent = if duration_seconds > 0.0 {
-        ((out_time / duration_seconds) * 100.0).clamp(0.0, 100.0) as u32
-      } else {
-        0
-      };
-      #[cfg(target_os = "windows")]
-      if let Some(hwnd) = hwnd_raw {
-        taskbar::set_progress(hwnd, percent);
-      }
-      let _ = window_clone.emit_to(
-        target.clone(),
-        "ffmpeg-capture-progress",
-        FfmpegCaptureProgressEvent {
-          percent,
-          done: false,
-          cancelled: false,
-          error: None,
-        },
-      );
-      // Throttle the live-frame preview so we don't re-read large images every tick.
-      if last_frame_emit.elapsed() >= std::time::Duration::from_millis(400) {
-        if let Some(path) = ffmpeg::newest_image_in_dir(&dir, start) {
-          if last_emitted.as_deref() != Some(path.as_path()) {
-            if let Ok(bytes) = std::fs::read(&path) {
-              if !bytes.is_empty() {
-                let _ = window_clone.emit_to(target.clone(), "ffmpeg-capture-frame", FfmpegCaptureFrameEvent { bytes });
-                last_emitted = Some(path);
-              }
-            }
-          }
-        }
-        last_frame_emit = std::time::Instant::now();
-      }
-    });
-
-    let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, mut error) = match child {
-      Some(mut c) => match c.wait() {
-        Ok(status) if status.success() => (false, None),
-        Ok(status) => (
-          false,
-          Some(format!("ffmpeg exited with code {}", status.code().unwrap_or(-1))),
-        ),
-        Err(e) => (false, Some(e.to_string())),
-      },
-      None => (true, None),
-    };
-    let stderr_text = stderr_handle.and_then(|h| h.join().ok());
-    if error.is_some() {
-      if let Some(text) = stderr_text {
-        let text = text.trim();
-        if !text.is_empty() {
-          error = Some(text.to_string());
-        }
-      }
-    }
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      if error.is_some() {
-        taskbar::set_error(hwnd);
-      } else {
-        taskbar::clear_progress(hwnd);
-      }
-    }
-    // Emit the last produced frame so the preview lands on the final capture.
-    if !cancelled {
-      if let Some(path) = ffmpeg::newest_image_in_dir(&dir, start) {
-        if let Ok(bytes) = std::fs::read(&path) {
-          if !bytes.is_empty() {
-            let _ = window_clone.emit_to(target.clone(), "ffmpeg-capture-frame", FfmpegCaptureFrameEvent { bytes });
-          }
-        }
-      }
-    }
-    let _ = window_clone.emit_to(
-      target,
-      "ffmpeg-capture-progress",
-      FfmpegCaptureProgressEvent {
-        percent: 100,
-        done: true,
-        cancelled,
-        error,
-      },
-    );
-  })
-  .await
-  .map_err(|e| e.to_string())?;
-  Ok(())
-}
-
-#[tauri::command]
-async fn set_config(config: config::Config) -> Result<config::Config, String> {
-  log::debug!("set_config({:?})", config);
-  controller::set_config(config).await.map_err(convert_error)
-}
-
-#[tauri::command]
-fn skip_version(version: String) -> Result<(), String> {
-  log::debug!("skip_version({})", version);
-  let mut cfg = config::get_config();
-  cfg.update.ignore_version = version;
-  config::set_config(cfg).map_err(convert_error)
-}
-
-#[tauri::command]
-fn suggest_merge_output_path(source_file: String) -> String {
-  log::debug!("suggest_merge_output_path({})", source_file);
-  controller::suggest_merge_output_path(source_file)
-}
-
-#[tauri::command]
-async fn write_text_file(file: String, text: String) -> Result<(), String> {
-  log::debug!("write_text_file({})", file);
-  controller::write_text_file(file, text).await.map_err(convert_error)
-}
-
-#[tauri::command]
-async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<(), String> {
-  log::debug!("write_binary_file({})", file);
-  controller::write_binary_file(file, bytes).await.map_err(convert_error)
 }

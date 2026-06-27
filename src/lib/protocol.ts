@@ -370,6 +370,12 @@ export interface FfmpegCaptureFrame {
   bytes: number[];
 }
 
+export interface FfmpegTrimOptions {
+  enabled: boolean;
+  color: string;
+  tolerance: number;
+}
+
 export enum TabType {
   About,
   Config,

@@ -94,7 +94,7 @@ fn persist_path(path: &Path) -> Result<()> {
   Ok(())
 }
 
-pub async fn is_batchmkvextract_found(path: String, check_running: bool) -> Result<BatchMkvExtractStatus> {
+pub async fn get_batchmkvextract_status(path: String, check_running: bool) -> Result<BatchMkvExtractStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir() {
       // The directory we got back is the directory holding the running

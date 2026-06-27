@@ -87,7 +87,7 @@ fn persist_path(path: &Path) -> Result<()> {
   Ok(())
 }
 
-pub async fn is_bdmaster_found(path: String, check_running: bool) -> Result<BDMasterStatus> {
+pub async fn get_bdmaster_status(path: String, check_running: bool) -> Result<BDMasterStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir() {
       if has_executable(&dir) {

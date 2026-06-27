@@ -150,6 +150,18 @@ pub struct FfmpegCaptureFrameEvent {
   pub bytes: Vec<u8>,
 }
 
+/// Border-trim request supplied by the FFmpeg Tools window. When `enabled`, each
+/// captured image is cropped to its content area: edges whose pixels are within
+/// `tolerance` (percent) of `color` are removed, mirroring ImageMagick `-trim`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct TrimOptions {
+  pub enabled: bool,
+  /// Trim color as a `#RRGGBB` hex string (defaults to black on the frontend).
+  pub color: String,
+  /// Fuzz tolerance as a percentage (0–100); 0 trims only exact matches.
+  pub tolerance: f64,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct UpdateCheckResult {
   #[serde(rename = "hasUpdate")]

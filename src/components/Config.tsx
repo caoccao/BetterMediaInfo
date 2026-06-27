@@ -105,12 +105,12 @@ import * as Protocol from '../lib/protocol';
 import type { MkvLanguage } from '../lib/mkvLanguages';
 import {
   areExtensionsContextMenuRegistered,
-  isBatchMkvExtractFound,
-  isBDMasterFound,
-  isFfmpegFound,
-  isMpcHcFound,
+  getBatchMkvExtractStatus,
+  getBDMasterStatus,
+  getFfmpegStatus,
+  getMpcHcStatus,
   isFolderContextMenuRegistered,
-  isMkvtoolnixFound,
+  getMkvtoolnixStatus,
   registerExtensionsContextMenu,
   registerFolderContextMenu,
   setConfig as saveConfig,
@@ -1989,7 +1989,7 @@ export default function Config() {
 
   const handleDetectBatchMkvExtract = async () => {
     try {
-      const status = await isBatchMkvExtractFound(batchMkvExtractPath.trim(), true);
+      const status = await getBatchMkvExtractStatus(batchMkvExtractPath.trim(), true);
       setBatchMkvExtractFound(status.found);
       if (status.found && status.path && status.path !== batchMkvExtractPath) {
         setBatchMkvExtractPath(status.path);
@@ -2011,7 +2011,7 @@ export default function Config() {
 
   const handleDetectBdMaster = async () => {
     try {
-      const status = await isBDMasterFound(bdMasterPath.trim(), true);
+      const status = await getBDMasterStatus(bdMasterPath.trim(), true);
       setBdMasterFound(status.found);
       if (status.found && status.path && status.path !== bdMasterPath) {
         setBdMasterPath(status.path);
@@ -2033,7 +2033,7 @@ export default function Config() {
 
   const handleDetectMpcHc = async () => {
     try {
-      const status = await isMpcHcFound(mpcHcPath.trim(), true);
+      const status = await getMpcHcStatus(mpcHcPath.trim(), true);
       setMpcHcFound(status.found);
       if (status.found && status.path && status.path !== mpcHcPath) {
         setMpcHcPath(status.path);
@@ -2055,7 +2055,7 @@ export default function Config() {
 
   const handleDetectMkvToolNix = async () => {
     try {
-      const status = await isMkvtoolnixFound(mkvToolNixPath.trim(), true);
+      const status = await getMkvtoolnixStatus(mkvToolNixPath.trim(), true);
       setMkvtoolnixFound(status.found);
       if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
         setMkvToolNixPath(status.mkvToolNixPath);
@@ -2175,7 +2175,7 @@ export default function Config() {
     let isCancelled = false;
     mkvToolNixCheckDebounceRef.current = setTimeout(async () => {
       try {
-        const status = await isMkvtoolnixFound(mkvToolNixPath.trim());
+        const status = await getMkvtoolnixStatus(mkvToolNixPath.trim());
         if (!isCancelled) {
           setMkvtoolnixFound(status.found);
           if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
@@ -2219,7 +2219,7 @@ export default function Config() {
     let isCancelled = false;
     batchMkvExtractCheckDebounceRef.current = setTimeout(async () => {
       try {
-        const status = await isBatchMkvExtractFound(batchMkvExtractPath.trim());
+        const status = await getBatchMkvExtractStatus(batchMkvExtractPath.trim());
         if (!isCancelled) {
           setBatchMkvExtractFound(status.found);
         }
@@ -2246,7 +2246,7 @@ export default function Config() {
     let isCancelled = false;
     bdMasterCheckDebounceRef.current = setTimeout(async () => {
       try {
-        const status = await isBDMasterFound(bdMasterPath.trim());
+        const status = await getBDMasterStatus(bdMasterPath.trim());
         if (!isCancelled) {
           setBdMasterFound(status.found);
         }
@@ -2274,7 +2274,7 @@ export default function Config() {
     let isCancelled = false;
     mpcHcCheckDebounceRef.current = setTimeout(async () => {
       try {
-        const status = await isMpcHcFound(mpcHcPath.trim());
+        const status = await getMpcHcStatus(mpcHcPath.trim());
         if (!isCancelled) {
           setMpcHcFound(status.found);
         }
@@ -2302,7 +2302,7 @@ export default function Config() {
     let isCancelled = false;
     ffmpegCheckDebounceRef.current = setTimeout(async () => {
       try {
-        const status = await isFfmpegFound(ffmpegPath.trim());
+        const status = await getFfmpegStatus(ffmpegPath.trim());
         if (!isCancelled) {
           setFfmpegFound(status.found);
         }

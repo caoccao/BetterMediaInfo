@@ -66,32 +66,32 @@ export async function getMkvTracks(file: string): Promise<Array<Protocol.MkvTrac
   return await invoke<Array<Protocol.MkvTrack>>("get_mkv_tracks", { file });
 }
 
-export async function isMkvtoolnixFound(path: string, checkRunning: boolean = false): Promise<Protocol.MkvToolNixStatus> {
-  return await invoke<Protocol.MkvToolNixStatus>("is_mkvtoolnix_found", { path, checkRunning });
+export async function getMkvtoolnixStatus(path: string, checkRunning: boolean = false): Promise<Protocol.MkvToolNixStatus> {
+  return await invoke<Protocol.MkvToolNixStatus>("get_mkvtoolnix_status", { path, checkRunning });
 }
 
-export async function isBatchMkvExtractFound(path: string, checkRunning: boolean = false): Promise<Protocol.BatchMkvExtractStatus> {
-  return await invoke<Protocol.BatchMkvExtractStatus>("is_batchmkvextract_found", { path, checkRunning });
+export async function getBatchMkvExtractStatus(path: string, checkRunning: boolean = false): Promise<Protocol.BatchMkvExtractStatus> {
+  return await invoke<Protocol.BatchMkvExtractStatus>("get_batchmkvextract_status", { path, checkRunning });
 }
 
-export async function isBDMasterFound(path: string, checkRunning: boolean = false): Promise<Protocol.BDMasterStatus> {
-  return await invoke<Protocol.BDMasterStatus>("is_bdmaster_found", { path, checkRunning });
+export async function getBDMasterStatus(path: string, checkRunning: boolean = false): Promise<Protocol.BDMasterStatus> {
+  return await invoke<Protocol.BDMasterStatus>("get_bdmaster_status", { path, checkRunning });
 }
 
-export async function isMpcHcFound(path: string, checkRunning: boolean = false): Promise<Protocol.MpcHcStatus> {
-  return await invoke<Protocol.MpcHcStatus>("is_mpchc_found", { path, checkRunning });
+export async function getMpcHcStatus(path: string, checkRunning: boolean = false): Promise<Protocol.MpcHcStatus> {
+  return await invoke<Protocol.MpcHcStatus>("get_mpchc_status", { path, checkRunning });
 }
 
-export async function isFfmpegFound(path: string): Promise<Protocol.FfmpegStatus> {
-  return await invoke<Protocol.FfmpegStatus>("is_ffmpeg_found", { path });
+export async function getFfmpegStatus(path: string): Promise<Protocol.FfmpegStatus> {
+  return await invoke<Protocol.FfmpegStatus>("get_ffmpeg_status", { path });
 }
 
 export async function openMpcHc(file: string): Promise<void> {
   return await invoke<void>("open_mpchc", { file });
 }
 
-export async function isBD(path: string): Promise<Protocol.BDStatus> {
-  return await invoke<Protocol.BDStatus>("is_bd", { path });
+export async function getBDStatus(path: string): Promise<Protocol.BDStatus> {
+  return await invoke<Protocol.BDStatus>("get_bd_status", { path });
 }
 
 export async function openBatchMkvExtract(file: string): Promise<void> {
@@ -130,8 +130,14 @@ export async function captureFfmpegFrame(file: string, positionSeconds: number, 
   return await invoke<number[]>("capture_ffmpeg_frame", { file, positionSeconds, maxWidth });
 }
 
-export async function runFfmpegCapture(args: string[], outputDir: string, durationSeconds: number): Promise<void> {
-  return await invoke<void>("run_ffmpeg_capture", { args, outputDir, durationSeconds });
+export async function runFfmpegCapture(
+  args: string[],
+  outputDir: string,
+  durationSeconds: number,
+  trim: Protocol.FfmpegTrimOptions | null = null,
+  previewWidth: number = 0
+): Promise<void> {
+  return await invoke<void>("run_ffmpeg_capture", { args, outputDir, durationSeconds, trim, previewWidth });
 }
 
 export async function cancelFfmpegCapture(): Promise<void> {

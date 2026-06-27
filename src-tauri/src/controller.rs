@@ -22,12 +22,27 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Child;
+use std::sync::{Arc, Mutex};
+use tauri::{Emitter, EventTarget, Window};
 
+use crate::batchmkvextract;
+use crate::bd;
+use crate::bdmaster;
 use crate::config;
 use crate::constants::APP_NAME;
+use crate::context_menu;
+use crate::ffmpeg;
 use crate::media_info::*;
+use crate::mkvtoolnix;
+use crate::mpchc;
 use crate::protocol::*;
 use crate::streams::*;
+#[cfg(target_os = "windows")]
+use crate::taskbar;
+
+/// Shared map of running child processes keyed by the owning window label.
+pub type ChildMap = Arc<Mutex<HashMap<String, Child>>>;
 
 static ALL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
   let media_info = MediaInfo::new();
@@ -294,5 +309,406 @@ pub async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<()> {
   let path = Path::new(file.as_str());
   let mut file = File::create(path)?;
   file.write_all(&bytes)?;
+  Ok(())
+}
+
+pub fn get_launch_args() -> Result<Vec<String>> {
+  Ok(std::env::args().skip(1).collect())
+}
+
+pub fn get_update_result(result: &Arc<Mutex<Option<UpdateCheckResult>>>) -> Option<UpdateCheckResult> {
+  result.lock().unwrap().clone()
+}
+
+pub fn skip_version(version: String) -> Result<()> {
+  let mut cfg = config::get_config();
+  cfg.update.ignore_version = version;
+  config::set_config(cfg)?;
+  Ok(())
+}
+
+/// Kill and reap the child process owned by `window`, if any. Shared by the
+/// mkvextract, mkvmerge, and ffmpeg-capture cancel commands.
+pub fn cancel_child(window: &Window, children: &ChildMap) {
+  let label = window.label().to_owned();
+  let child = children.lock().unwrap().remove(&label);
+  if let Some(mut child) = child {
+    let _ = child.kill();
+    let _ = child.wait();
+  }
+}
+
+pub fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool> {
+  Ok(context_menu::are_extensions_context_menu_registered(extensions))
+}
+
+pub fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+  context_menu::register_extensions_context_menu(extensions)
+}
+
+pub fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+  context_menu::unregister_extensions_context_menu(extensions)
+}
+
+pub fn register_folder_context_menu() -> Result<()> {
+  context_menu::register_folder_context_menu()
+}
+
+pub fn unregister_folder_context_menu() -> Result<()> {
+  context_menu::unregister_folder_context_menu()
+}
+
+pub fn is_folder_context_menu_registered() -> Result<bool> {
+  Ok(context_menu::is_folder_context_menu_registered())
+}
+
+pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
+  mkvtoolnix::get_mkv_tracks(file).await
+}
+
+pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
+  mkvtoolnix::get_mkvtoolnix_status(path, check_running).await
+}
+
+pub async fn get_batchmkvextract_status(path: String, check_running: bool) -> Result<BatchMkvExtractStatus> {
+  batchmkvextract::get_batchmkvextract_status(path, check_running).await
+}
+
+pub async fn get_bdmaster_status(path: String, check_running: bool) -> Result<BDMasterStatus> {
+  bdmaster::get_bdmaster_status(path, check_running).await
+}
+
+pub async fn get_mpchc_status(path: String, check_running: bool) -> Result<MpcHcStatus> {
+  mpchc::get_mpchc_status(path, check_running).await
+}
+
+pub async fn get_ffmpeg_status(path: String) -> Result<FfmpegStatus> {
+  ffmpeg::get_ffmpeg_status(path).await
+}
+
+pub async fn get_bd_status(path: String) -> Result<BDStatus> {
+  bd::get_bd_status(path).await
+}
+
+pub fn open_batchmkvextract(file: String) -> Result<()> {
+  batchmkvextract::spawn_batchmkvextract(&file)
+}
+
+pub fn open_bdmaster(file: String) -> Result<()> {
+  bdmaster::spawn_bdmaster(&file)
+}
+
+pub fn open_mkvtoolnix_gui(file: String) -> Result<()> {
+  mkvtoolnix::spawn_mkvtoolnix_gui(&file)
+}
+
+pub fn open_mpchc(file: String) -> Result<()> {
+  mpchc::spawn_mpchc(&file)
+}
+
+pub async fn capture_ffmpeg_frame(file: String, position_seconds: f64, max_width: u32) -> Result<Vec<u8>> {
+  tokio::task::spawn_blocking(move || ffmpeg::capture_frame(file, position_seconds, max_width)).await?
+}
+
+pub async fn run_mkvextract(window: Window, file: String, args: Vec<String>, children: ChildMap) -> Result<()> {
+  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args)?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
+  let label = window.label().to_owned();
+  children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = children.clone();
+  let window_clone = window.clone();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+  tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
+    mkvtoolnix::read_mkvextract_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
+        #[cfg(target_os = "windows")]
+        if let Some(hwnd) = hwnd_raw {
+          taskbar::set_progress(hwnd, percent);
+        }
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvextract-progress",
+          MkvextractProgressEvent {
+            percent,
+            done: false,
+            cancelled: false,
+            error: None,
+          },
+        );
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
+      None => (true, None),
+    };
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
+    let _ = window_clone.emit_to(
+      target,
+      "mkvextract-progress",
+      MkvextractProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await?;
+  Ok(())
+}
+
+pub async fn run_mkvmerge(window: Window, args: Vec<String>, children: ChildMap) -> Result<()> {
+  let mut child = mkvtoolnix::spawn_mkvmerge(&args)?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
+  let label = window.label().to_owned();
+  children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = children.clone();
+  let window_clone = window.clone();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+  tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
+    mkvtoolnix::read_mkvmerge_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvmerge_progress(line) {
+        #[cfg(target_os = "windows")]
+        if let Some(hwnd) = hwnd_raw {
+          taskbar::set_progress(hwnd, percent);
+        }
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvmerge-progress",
+          MkvmergeProgressEvent {
+            percent,
+            done: false,
+            cancelled: false,
+            error: None,
+          },
+        );
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
+      None => (true, None),
+    };
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
+    let _ = window_clone.emit_to(
+      target,
+      "mkvmerge-progress",
+      MkvmergeProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await?;
+  Ok(())
+}
+
+pub async fn run_ffmpeg_capture(
+  window: Window,
+  args: Vec<String>,
+  output_dir: String,
+  duration_seconds: f64,
+  trim: Option<TrimOptions>,
+  preview_width: u32,
+  children: ChildMap,
+) -> Result<()> {
+  // Frames pushed to the preview panel are downscaled to the panel's actual
+  // width (the same width the seek preview uses), so high-resolution captures
+  // don't flood the IPC channel with multi-megabyte payloads. Clamped defensively.
+  let preview_width = preview_width.clamp(160, 7680);
+  // Global options first, the frontend-built capture args in the middle, and
+  // `-progress` last so ffmpeg streams machine-readable progress to stdout.
+  let mut full_args: Vec<String> = vec![
+    "-hide_banner".to_string(),
+    "-loglevel".to_string(),
+    "error".to_string(),
+    "-y".to_string(),
+  ];
+  full_args.extend(args);
+  full_args.push("-progress".to_string());
+  full_args.push("pipe:1".to_string());
+  full_args.push("-nostats".to_string());
+
+  let mut child = ffmpeg::spawn_ffmpeg(&full_args)?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
+  let stderr = child.stderr.take();
+  let label = window.label().to_owned();
+  children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = children.clone();
+  let window_clone = window.clone();
+  let dir = std::path::PathBuf::from(&output_dir);
+  let start = std::time::SystemTime::now();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+
+  tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
+    // Drain stderr on a side thread so a chatty ffmpeg can't deadlock on a full pipe.
+    let stderr_handle = stderr.map(|mut s| {
+      std::thread::spawn(move || {
+        let mut buf = String::new();
+        let _ = std::io::Read::read_to_string(&mut s, &mut buf);
+        buf
+      })
+    });
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
+    let mut last_frame_emit = std::time::Instant::now() - std::time::Duration::from_secs(1);
+    let mut last_emitted: Option<std::path::PathBuf> = None;
+    ffmpeg::read_capture_progress(stdout, |out_time| {
+      let percent = if duration_seconds > 0.0 {
+        ((out_time / duration_seconds) * 100.0).clamp(0.0, 100.0) as u32
+      } else {
+        0
+      };
+      #[cfg(target_os = "windows")]
+      if let Some(hwnd) = hwnd_raw {
+        taskbar::set_progress(hwnd, percent);
+      }
+      let _ = window_clone.emit_to(
+        target.clone(),
+        "ffmpeg-capture-progress",
+        FfmpegCaptureProgressEvent {
+          percent,
+          done: false,
+          cancelled: false,
+          error: None,
+        },
+      );
+      // Throttle the live-frame preview so we don't re-read large images every tick.
+      if last_frame_emit.elapsed() >= std::time::Duration::from_millis(400) {
+        if let Some(path) = ffmpeg::newest_image_in_dir(&dir, start) {
+          if last_emitted.as_deref() != Some(path.as_path()) {
+            if let Ok(bytes) = std::fs::read(&path) {
+              if !bytes.is_empty() {
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                let bytes = ffmpeg::downscale_for_preview(&bytes, ext, preview_width);
+                let _ = window_clone.emit_to(target.clone(), "ffmpeg-capture-frame", FfmpegCaptureFrameEvent { bytes });
+                last_emitted = Some(path);
+              }
+            }
+          }
+        }
+        last_frame_emit = std::time::Instant::now();
+      }
+    });
+
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, mut error) = match child {
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("ffmpeg exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
+      None => (true, None),
+    };
+    let stderr_text = stderr_handle.and_then(|h| h.join().ok());
+    if error.is_some() {
+      if let Some(text) = stderr_text {
+        let text = text.trim();
+        if !text.is_empty() {
+          error = Some(text.to_string());
+        }
+      }
+    }
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
+    // Trim borders from every image this run produced before emitting the final
+    // frame, so the preview lands on the trimmed result. Runs in parallel and
+    // contains per-frame panics so one bad frame can't abort the capture.
+    if !cancelled && error.is_none() {
+      if let Some(options) = trim.as_ref().filter(|t| t.enabled) {
+        if let Some(rgb) = ffmpeg::parse_hex_color(&options.color) {
+          ffmpeg::trim_images(ffmpeg::images_in_dir_since(&dir, start), rgb, options.tolerance);
+        }
+      }
+    }
+    // Emit the last produced frame so the preview lands on the final capture.
+    if !cancelled {
+      if let Some(path) = ffmpeg::newest_image_in_dir(&dir, start) {
+        if let Ok(bytes) = std::fs::read(&path) {
+          if !bytes.is_empty() {
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            let bytes = ffmpeg::downscale_for_preview(&bytes, ext, preview_width);
+            let _ = window_clone.emit_to(target.clone(), "ffmpeg-capture-frame", FfmpegCaptureFrameEvent { bytes });
+          }
+        }
+      }
+    }
+    let _ = window_clone.emit_to(
+      target,
+      "ffmpeg-capture-progress",
+      FfmpegCaptureProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await?;
   Ok(())
 }

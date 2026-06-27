@@ -57,7 +57,7 @@ import { AUTHOR_NAME, AUTHOR_URL, GITHUB_URL } from '../lib/constants';
 import { useAppStore } from '../lib/store';
 import { ViewType } from '../lib/types';
 import { openDirectoryDialog, openFileDialog } from '../lib/dialog';
-import { getLaunchArgs, getPropertiesMap, getStreamCountMap, isBatchMkvExtractFound, isBDMasterFound, isFfmpegFound, isMkvtoolnixFound, isMpcHcFound, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui, openMpcHc } from '../lib/service';
+import { getLaunchArgs, getPropertiesMap, getStreamCountMap, getBatchMkvExtractStatus, getBDMasterStatus, getFfmpegStatus, getMkvtoolnixStatus, getMpcHcStatus, openBatchMkvExtract, openBDMaster, openMkvtoolnixGui, openMpcHc } from '../lib/service';
 import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import { openMergeWindow } from '../lib/merge';
@@ -384,7 +384,7 @@ export default function List() {
       return;
     }
     let cancelled = false;
-    isBatchMkvExtractFound(path)
+    getBatchMkvExtractStatus(path)
       .then((status) => {
         if (!cancelled) setBatchMkvExtractAvailable(status.found);
       })
@@ -404,7 +404,7 @@ export default function List() {
       return;
     }
     let cancelled = false;
-    isBDMasterFound(path)
+    getBDMasterStatus(path)
       .then((status) => {
         if (!cancelled) setBdMasterAvailable(status.found);
       })
@@ -424,7 +424,7 @@ export default function List() {
       return;
     }
     let cancelled = false;
-    isMkvtoolnixFound(path)
+    getMkvtoolnixStatus(path)
       .then((status) => {
         if (!cancelled) setMkvtoolnixGuiAvailable(status.found);
       })
@@ -444,7 +444,7 @@ export default function List() {
       return;
     }
     let cancelled = false;
-    isMpcHcFound(path)
+    getMpcHcStatus(path)
       .then((status) => {
         if (!cancelled) setMpcHcAvailable(status.found);
       })
@@ -464,7 +464,7 @@ export default function List() {
       return;
     }
     let cancelled = false;
-    isFfmpegFound(path)
+    getFfmpegStatus(path)
       .then((status) => {
         if (!cancelled) setFfmpegAvailable(status.found);
       })
@@ -816,11 +816,11 @@ export default function List() {
                     (showBatchMkvExtract ? 1 : 0) +
                     (showBDMaster ? 1 : 0) +
                     (showMkvToolNixGui ? 1 : 0) +
-                    (showMpcHc ? 1 : 0) +
-                    (showFfmpegTools ? 1 : 0);
+                    (showMpcHc ? 1 : 0);
                   const internalToolCount =
                     (showMerge ? 1 : 0) +
-                    (showExtract ? 1 : 0);
+                    (showExtract ? 1 : 0) +
+                    (showFfmpegTools ? 1 : 0);
                   return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {showBDMaster && (
@@ -871,13 +871,6 @@ export default function List() {
                         </IconButton>
                       </Tooltip>
                     )}
-                    {showFfmpegTools && (
-                      <Tooltip title={t('list.ffmpegTools')}>
-                        <IconButton size="small" onClick={() => openFfmpegToolsWindow(file)}>
-                          <MovieIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
                     {externalToolCount > 0 && (
                       <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                     )}
@@ -892,6 +885,13 @@ export default function List() {
                       <Tooltip title={t('list.extract')}>
                         <IconButton size="small" onClick={() => openExtractWindow(file)}>
                           <ContentCutIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {showFfmpegTools && (
+                      <Tooltip title={t('list.ffmpegTools')}>
+                        <IconButton size="small" onClick={() => openFfmpegToolsWindow(file)}>
+                          <MovieIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}

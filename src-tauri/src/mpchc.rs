@@ -98,7 +98,7 @@ pub fn spawn_mpchc(file: &str) -> Result<()> {
   Ok(())
 }
 
-pub async fn is_mpchc_found(path: String, check_running: bool) -> Result<MpcHcStatus> {
+pub async fn get_mpchc_status(path: String, check_running: bool) -> Result<MpcHcStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir() {
       if has_executable(&dir) {

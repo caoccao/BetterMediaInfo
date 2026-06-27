@@ -60,7 +60,7 @@ fn is_blu_ray_folder(path: &Path) -> bool {
   dir_has_any_entry(&playlist) && dir_has_any_entry(&clipinf)
 }
 
-pub async fn is_bd(path: String) -> Result<BDStatus> {
+pub async fn get_bd_status(path: String) -> Result<BDStatus> {
   let p = Path::new(path.as_str());
   if !p.exists() {
     return Ok(BDStatus {
