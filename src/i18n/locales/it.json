@@ -26,7 +26,7 @@
     "introBatchMkvMerge": "Elabora file multimediali in batch in modo intuitivo. Una GUI basata su mkvmerge di MKVToolNix.",
     "introBatchMkvExtract": "Estrai tracce, capitoli e allegati da più file .mkv contemporaneamente. Una GUI intuitiva batch basata su mkvextract di MKVToolNix.",
     "introBDMaster": "Analizza i dischi Blu-ray con una GUI moderna. Sfoglia a colpo d'occhio dischi, playlist, stream, tracce e grafici bitrate.",
-    "viewOnGithub": "Visualizza su GitHub",
+    "viewOnGithub": "Info (GitHub)",
     "emptyHint": "Suggerimento: puoi anche trascinare e rilasciare in questa finestra file o cartelle.",
     "addFiles": "Aggiungi file",
     "addFolder": "Aggiungi cartella",
