@@ -25,6 +25,50 @@ use crate::protocol::{UpdateCheckResult, UpdateCheckState};
 
 pub static WINDOW_READY: AtomicBool = AtomicBool::new(false);
 
+/// Persist the main window's size/position on move/resize and tear down any
+/// secondary windows when the main window is destroyed. Wired up as the Tauri
+/// builder's `on_window_event` hook.
+pub fn on_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
+  if window.label() != "main" {
+    return;
+  }
+  match event {
+    tauri::WindowEvent::Destroyed => {
+      let app_handle = window.app_handle();
+      for (label, win) in app_handle.webview_windows() {
+        if label != "main" {
+          let _ = win.destroy();
+        }
+      }
+    }
+    tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => {
+      if !WINDOW_READY.load(Ordering::SeqCst) {
+        return;
+      }
+      let Ok(scale) = window.scale_factor() else {
+        return;
+      };
+      let Ok(pos) = window.outer_position() else {
+        return;
+      };
+      let Ok(size) = window.inner_size() else {
+        return;
+      };
+      let logical_pos: tauri::LogicalPosition<i32> = pos.to_logical(scale);
+      let logical_size: tauri::LogicalSize<u32> = size.to_logical(scale);
+      let mut cfg = config::get_config();
+      cfg.window.position.x = logical_pos.x;
+      cfg.window.position.y = logical_pos.y;
+      cfg.window.size.width = logical_size.width;
+      cfg.window.size.height = logical_size.height;
+      if let Err(err) = config::set_config(cfg) {
+        log::error!("Couldn't save window state because {}", err);
+      }
+    }
+    _ => {}
+  }
+}
+
 /// Initialize the main window: title, restored size/position, visibility, and
 /// the background update check. Wired up as the Tauri builder's `setup` hook.
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
@@ -120,48 +164,4 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
   }
 
   Ok(())
-}
-
-/// Persist the main window's size/position on move/resize and tear down any
-/// secondary windows when the main window is destroyed. Wired up as the Tauri
-/// builder's `on_window_event` hook.
-pub fn on_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
-  if window.label() != "main" {
-    return;
-  }
-  match event {
-    tauri::WindowEvent::Destroyed => {
-      let app_handle = window.app_handle();
-      for (label, win) in app_handle.webview_windows() {
-        if label != "main" {
-          let _ = win.destroy();
-        }
-      }
-    }
-    tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => {
-      if !WINDOW_READY.load(Ordering::SeqCst) {
-        return;
-      }
-      let Ok(scale) = window.scale_factor() else {
-        return;
-      };
-      let Ok(pos) = window.outer_position() else {
-        return;
-      };
-      let Ok(size) = window.inner_size() else {
-        return;
-      };
-      let logical_pos: tauri::LogicalPosition<i32> = pos.to_logical(scale);
-      let logical_size: tauri::LogicalSize<u32> = size.to_logical(scale);
-      let mut cfg = config::get_config();
-      cfg.window.position.x = logical_pos.x;
-      cfg.window.position.y = logical_pos.y;
-      cfg.window.size.width = logical_size.width;
-      cfg.window.size.height = logical_size.height;
-      if let Err(err) = config::set_config(cfg) {
-        log::error!("Couldn't save window state because {}", err);
-      }
-    }
-    _ => {}
-  }
 }

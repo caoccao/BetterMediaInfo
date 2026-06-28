@@ -51,26 +51,6 @@ pub use self::MediaInfo_fileoptions_t as MediaInfo_fileoptions_C;
 pub struct HINSTANCE__ {
   pub unused: ::std::os::raw::c_int,
 }
-#[test]
-fn bindgen_test_layout_HINSTANCE__() {
-  const UNINIT: ::std::mem::MaybeUninit<HINSTANCE__> = ::std::mem::MaybeUninit::uninit();
-  let ptr = UNINIT.as_ptr();
-  assert_eq!(
-    ::std::mem::size_of::<HINSTANCE__>(),
-    4usize,
-    concat!("Size of: ", stringify!(HINSTANCE__))
-  );
-  assert_eq!(
-    ::std::mem::align_of::<HINSTANCE__>(),
-    4usize,
-    concat!("Alignment of ", stringify!(HINSTANCE__))
-  );
-  assert_eq!(
-    unsafe { ::std::ptr::addr_of!((*ptr).unused) as usize - ptr as usize },
-    0usize,
-    concat!("Offset of field: ", stringify!(HINSTANCE__), "::", stringify!(unused))
-  );
-}
 pub type HINSTANCE = *mut HINSTANCE__;
 pub type HMODULE = HINSTANCE;
 extern "C" {
@@ -277,4 +257,25 @@ pub type MEDIAINFOLIST_Count_Get_Files =
   ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> usize>;
 extern "C" {
   pub static mut MediaInfoList_Count_Get_Files: MEDIAINFOLIST_Count_Get_Files;
+}
+
+#[test]
+fn bindgen_test_layout_HINSTANCE__() {
+  const UNINIT: ::std::mem::MaybeUninit<HINSTANCE__> = ::std::mem::MaybeUninit::uninit();
+  let ptr = UNINIT.as_ptr();
+  assert_eq!(
+    ::std::mem::size_of::<HINSTANCE__>(),
+    4usize,
+    concat!("Size of: ", stringify!(HINSTANCE__))
+  );
+  assert_eq!(
+    ::std::mem::align_of::<HINSTANCE__>(),
+    4usize,
+    concat!("Alignment of ", stringify!(HINSTANCE__))
+  );
+  assert_eq!(
+    unsafe { ::std::ptr::addr_of!((*ptr).unused) as usize - ptr as usize },
+    0usize,
+    concat!("Offset of field: ", stringify!(HINSTANCE__), "::", stringify!(unused))
+  );
 }

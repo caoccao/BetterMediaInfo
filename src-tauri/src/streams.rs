@@ -40,15 +40,6 @@ pub struct Stream {
 }
 
 impl Stream {
-  pub fn new(stream_kind: MediaInfoStreamKind, parameter: String) -> Self {
-    Self {
-      info_kind: MediaInfoPropertyKind::Text,
-      parameter,
-      search_kind: MediaInfoPropertyKind::Name,
-      stream_kind,
-    }
-  }
-
   pub fn get(&self, media_info: &MediaInfo, stream_number: usize) -> Result<String> {
     media_info.get(
       self.stream_kind,
@@ -61,6 +52,15 @@ impl Stream {
 
   pub fn get_identifier(&self) -> String {
     format!("{}/{}", self.stream_kind.get_name(), self.parameter)
+  }
+
+  pub fn new(stream_kind: MediaInfoStreamKind, parameter: String) -> Self {
+    Self {
+      info_kind: MediaInfoPropertyKind::Text,
+      parameter,
+      search_kind: MediaInfoPropertyKind::Name,
+      stream_kind,
+    }
   }
 
   pub fn parse(info_parameters: String) -> Vec<Stream> {

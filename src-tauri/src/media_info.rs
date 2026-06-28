@@ -61,6 +61,18 @@ unsafe extern "C" {
   fn MediaInfo_Option(handle: *mut mi_void, option: *const mi_wchar, value: *const mi_wchar) -> *const mi_wchar;
 }
 
+fn from_wchars(pointer: *const mi_wchar) -> String {
+  let mut current_pointer = pointer;
+  let mut length = 0;
+  while (unsafe { *current_pointer } != 0) {
+    unsafe {
+      current_pointer = current_pointer.offset(1);
+    }
+    length += 1;
+  }
+  unsafe { WideCString::from_ptr_truncate(pointer, length) }.to_string_lossy()
+}
+
 fn to_wchars(s: &str) -> Vec<mi_wchar> {
   let wchars = WideCString::from_str_truncate(s).into_vec();
   #[cfg(not(target_os = "macos"))]
@@ -78,18 +90,6 @@ fn to_wchars(s: &str) -> Vec<mi_wchar> {
   } else {
     wchars
   }
-}
-
-fn from_wchars(pointer: *const mi_wchar) -> String {
-  let mut current_pointer = pointer;
-  let mut length = 0;
-  while (unsafe { *current_pointer } != 0) {
-    unsafe {
-      current_pointer = current_pointer.offset(1);
-    }
-    length += 1;
-  }
-  unsafe { WideCString::from_ptr_truncate(pointer, length) }.to_string_lossy()
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -230,13 +230,6 @@ pub struct MediaInfo {
 }
 
 impl MediaInfo {
-  pub fn new() -> Self {
-    log::debug!("MediaInfo::new()");
-    Self {
-      handle: unsafe { MediaInfo_New() },
-    }
-  }
-
   pub fn get(
     &self,
     stream_kind: MediaInfoStreamKind,
@@ -284,6 +277,13 @@ impl MediaInfo {
     let value = to_wchars(DEFAULT_OPTION_VALUE);
     let result = unsafe { MediaInfo_Option(self.handle, option.as_ptr(), value.as_ptr()) };
     Ok(from_wchars(result))
+  }
+
+  pub fn new() -> Self {
+    log::debug!("MediaInfo::new()");
+    Self {
+      handle: unsafe { MediaInfo_New() },
+    }
   }
 
   pub fn open(&self, path: &Path) -> Result<usize> {

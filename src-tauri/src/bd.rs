@@ -20,6 +20,12 @@ use std::path::{Path, PathBuf};
 
 use crate::protocol::BDStatus;
 
+fn dir_has_any_entry(dir: &Path) -> bool {
+  std::fs::read_dir(dir)
+    .map(|mut it| it.next().is_some())
+    .unwrap_or(false)
+}
+
 // A valid Blu-ray folder has a BDMV directory with PLAYLIST and CLIPINF
 // subdirectories, each containing at least one entry. This is the minimum
 // check used by BDMaster (see BDMaster/src-tauri/src/bdrom/mod.rs validation).
@@ -41,10 +47,17 @@ fn find_child_dir_case_insensitive(parent: &Path, name: &str) -> Option<PathBuf>
   None
 }
 
-fn dir_has_any_entry(dir: &Path) -> bool {
-  std::fs::read_dir(dir)
-    .map(|mut it| it.next().is_some())
-    .unwrap_or(false)
+pub async fn get_bd_status(path: String) -> Result<BDStatus> {
+  let p = Path::new(path.as_str());
+  if !p.exists() {
+    return Ok(BDStatus {
+      is_blu_ray: false,
+      is_folder: false,
+    });
+  }
+  let is_folder = p.is_dir();
+  let is_blu_ray = if is_folder { is_blu_ray_folder(p) } else { false };
+  Ok(BDStatus { is_blu_ray, is_folder })
 }
 
 fn is_blu_ray_folder(path: &Path) -> bool {
@@ -58,17 +71,4 @@ fn is_blu_ray_folder(path: &Path) -> bool {
     return false;
   };
   dir_has_any_entry(&playlist) && dir_has_any_entry(&clipinf)
-}
-
-pub async fn get_bd_status(path: String) -> Result<BDStatus> {
-  let p = Path::new(path.as_str());
-  if !p.exists() {
-    return Ok(BDStatus {
-      is_blu_ray: false,
-      is_folder: false,
-    });
-  }
-  let is_folder = p.is_dir();
-  let is_blu_ray = if is_folder { is_blu_ray_folder(p) } else { false };
-  Ok(BDStatus { is_blu_ray, is_folder })
 }

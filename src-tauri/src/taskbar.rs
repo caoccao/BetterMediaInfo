@@ -28,6 +28,24 @@ thread_local! {
   static COM_INITIALIZED: Cell<bool> = const { Cell::new(false) };
 }
 
+pub fn clear_progress(hwnd_raw: isize) {
+  let _ = (|| -> Result<()> {
+    let hwnd = hwnd_from_raw(hwnd_raw);
+    let taskbar = create_taskbar()?;
+    unsafe {
+      taskbar.SetProgressState(hwnd, TBPF_NOPROGRESS)?;
+    }
+    Ok(())
+  })();
+}
+
+fn create_taskbar() -> Result<ITaskbarList3> {
+  ensure_com_initialized();
+  let taskbar: ITaskbarList3 = unsafe { CoCreateInstance(&TaskbarList, None, CLSCTX_INPROC_SERVER)? };
+  unsafe { taskbar.HrInit()? };
+  Ok(taskbar)
+}
+
 fn ensure_com_initialized() {
   COM_INITIALIZED.with(|init| {
     if !init.get() {
@@ -42,27 +60,8 @@ fn ensure_com_initialized() {
   });
 }
 
-fn create_taskbar() -> Result<ITaskbarList3> {
-  ensure_com_initialized();
-  let taskbar: ITaskbarList3 = unsafe { CoCreateInstance(&TaskbarList, None, CLSCTX_INPROC_SERVER)? };
-  unsafe { taskbar.HrInit()? };
-  Ok(taskbar)
-}
-
 fn hwnd_from_raw(raw: isize) -> HWND {
   HWND(raw as *mut c_void)
-}
-
-pub fn set_progress(hwnd_raw: isize, percent: u32) {
-  let _ = (|| -> Result<()> {
-    let hwnd = hwnd_from_raw(hwnd_raw);
-    let taskbar = create_taskbar()?;
-    unsafe {
-      taskbar.SetProgressState(hwnd, TBPF_NORMAL)?;
-      taskbar.SetProgressValue(hwnd, percent.min(100) as u64, 100)?;
-    }
-    Ok(())
-  })();
 }
 
 pub fn set_error(hwnd_raw: isize) {
@@ -77,12 +76,13 @@ pub fn set_error(hwnd_raw: isize) {
   })();
 }
 
-pub fn clear_progress(hwnd_raw: isize) {
+pub fn set_progress(hwnd_raw: isize, percent: u32) {
   let _ = (|| -> Result<()> {
     let hwnd = hwnd_from_raw(hwnd_raw);
     let taskbar = create_taskbar()?;
     unsafe {
-      taskbar.SetProgressState(hwnd, TBPF_NOPROGRESS)?;
+      taskbar.SetProgressState(hwnd, TBPF_NORMAL)?;
+      taskbar.SetProgressValue(hwnd, percent.min(100) as u64, 100)?;
     }
     Ok(())
   })();

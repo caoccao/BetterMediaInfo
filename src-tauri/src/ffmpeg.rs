@@ -43,78 +43,6 @@ fn binary_path(dir: &Path) -> Option<PathBuf> {
   None
 }
 
-fn has_executable(path: &Path) -> bool {
-  binary_path(path).is_some()
-}
-
-fn resolve(path: &str) -> (PathBuf, bool) {
-  let trimmed = path.trim();
-  let configured = PathBuf::from(trimmed);
-  if has_executable(&configured) {
-    return (configured, true);
-  }
-  (configured, false)
-}
-
-fn persist_path(path: &Path) -> Result<()> {
-  let new_path = path.to_string_lossy().to_string();
-  let mut cfg = config::get_config();
-  if cfg.ffmpeg.path == new_path {
-    return Ok(());
-  }
-  cfg.ffmpeg.path = new_path;
-  config::set_config(cfg)?;
-  Ok(())
-}
-
-pub async fn get_ffmpeg_status(path: String) -> Result<FfmpegStatus> {
-  let trimmed = path.trim();
-  if trimmed.is_empty() {
-    return Ok(FfmpegStatus {
-      found: false,
-      path: String::new(),
-    });
-  }
-  let (resolved, found) = resolve(trimmed);
-  if found {
-    persist_path(&resolved)?;
-  }
-  Ok(FfmpegStatus {
-    found,
-    path: resolved.to_string_lossy().to_string(),
-  })
-}
-
-/// Resolve the configured FFmpeg binary (the directory in config + `ffmpeg[.exe]`).
-fn ffmpeg_binary() -> Result<PathBuf> {
-  let cfg = config::get_config();
-  let (resolved, found) = resolve(&cfg.ffmpeg.path);
-  if !found {
-    return Err(anyhow::anyhow!("FFMPEG_NOT_AVAILABLE:{}", resolved.display()));
-  }
-  binary_path(&resolved).ok_or_else(|| anyhow::anyhow!("FFMPEG_NOT_AVAILABLE:{}", resolved.display()))
-}
-
-/// Spawn ffmpeg with the given arguments, piping stdout/stderr. Mirrors the
-/// process-spawning convention used for mkvextract (hidden window on Windows).
-pub fn spawn_ffmpeg(args: &[String]) -> Result<Child> {
-  let exe = ffmpeg_binary()?;
-  let mut cmd = Command::new(&exe);
-  cmd
-    .args(args)
-    .stdin(Stdio::null())
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped());
-  #[cfg(target_os = "windows")]
-  {
-    use std::os::windows::process::CommandExt;
-    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-  }
-  cmd
-    .spawn()
-    .map_err(|e| anyhow::anyhow!("FFMPEG_NOT_AVAILABLE:{}: {}", exe.display(), e))
-}
-
 /// Grab a single frame at `position_seconds` as PNG bytes, downscaled to at
 /// most `max_width` px wide so the IPC payload stays small. Used by the seek
 /// slider in the preview window. `-ss` before `-i` is fast keyframe seeking.
@@ -166,120 +94,6 @@ pub fn capture_frame(file: String, position_seconds: f64, max_width: u32) -> Res
     return Err(anyhow::anyhow!("FFMPEG_FRAME_FAILED:no frame produced"));
   }
   Ok(buf)
-}
-
-/// Read ffmpeg's `-progress pipe:1` stream, invoking `on_time` with the output
-/// position (in seconds) every time a progress block reports `out_time_us`.
-pub fn read_capture_progress<F: FnMut(f64)>(stdout: ChildStdout, mut on_time: F) {
-  let reader = BufReader::new(stdout);
-  for line in reader.lines() {
-    let Ok(line) = line else {
-      break;
-    };
-    let line = line.trim();
-    if let Some(rest) = line.strip_prefix("out_time_us=") {
-      if let Ok(us) = rest.trim().parse::<i64>() {
-        if us >= 0 {
-          on_time(us as f64 / 1_000_000.0);
-        }
-      }
-    }
-  }
-}
-
-/// Split an ffmpeg image2 output filename pattern around its frame-number token,
-/// returning `(prefix, suffix)`. The token is a printf integer conversion —
-/// `%d`, `%04d`, etc. (digits between `%` and `d` are the zero-pad width). For
-/// `name_shot_%04d.png` this yields `("name_shot_", ".png")`. Returns `None` when
-/// the filename has no such token (the timestamp mode writes one explicit file
-/// name per invocation, with no `%d`).
-fn split_pattern(file_pat: &str) -> Option<(String, String)> {
-  let bytes = file_pat.as_bytes();
-  let mut i = 0;
-  while i < bytes.len() {
-    if bytes[i] == b'%' {
-      let mut j = i + 1;
-      while j < bytes.len() && bytes[j].is_ascii_digit() {
-        j += 1;
-      }
-      if j < bytes.len() && bytes[j] == b'd' {
-        return Some((file_pat[..i].to_string(), file_pat[j + 1..].to_string()));
-      }
-    }
-    i += 1;
-  }
-  None
-}
-
-/// True when `name` is an instance of the `prefix`+`<digits>`+`suffix` series,
-/// i.e. it starts with `prefix`, ends with `suffix`, and the characters in
-/// between are a non-empty run of ASCII digits (the frame number).
-fn name_matches(name: &str, prefix: &str, suffix: &str) -> bool {
-  name.len() > prefix.len() + suffix.len()
-    && name.starts_with(prefix)
-    && name.ends_with(suffix)
-    && name[prefix.len()..name.len() - suffix.len()].bytes().all(|b| b.is_ascii_digit())
-}
-
-/// Collect every file a capture run produced, identified purely by the ffmpeg
-/// output filename pattern (e.g. `/dir/name_shot_%04d.png`) — not by timestamps.
-/// The pattern's directory is scanned and the numbered series it describes is
-/// returned, sorted by name (zero-padded indices sort in frame order). A pattern
-/// with no `%d` token (timestamp mode) matches its single literal filename.
-///
-/// This is deterministic regardless of filesystem mtime resolution or clock
-/// skew, since we already told ffmpeg exactly what to name the files.
-pub fn images_for_pattern(pattern: &Path) -> Vec<PathBuf> {
-  let Some(dir) = pattern.parent() else {
-    return Vec::new();
-  };
-  let Some(file_pat) = pattern.file_name().and_then(|n| n.to_str()) else {
-    return Vec::new();
-  };
-  let token = split_pattern(file_pat);
-  let mut out = Vec::new();
-  let Ok(read_dir) = std::fs::read_dir(dir) else {
-    return out;
-  };
-  for entry in read_dir.flatten() {
-    let path = entry.path();
-    if !path.is_file() {
-      continue;
-    }
-    let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-      continue;
-    };
-    let matched = match &token {
-      Some((prefix, suffix)) => name_matches(name, prefix, suffix),
-      None => name == file_pat,
-    };
-    if matched {
-      out.push(path);
-    }
-  }
-  out.sort();
-  out
-}
-
-/// Parse a `#RRGGBB` (or `#RGB`) hex color into an `(r, g, b)` triple.
-pub fn parse_hex_color(value: &str) -> Option<(u8, u8, u8)> {
-  let hex = value.trim().trim_start_matches('#');
-  match hex.len() {
-    6 => {
-      let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
-      let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
-      let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
-      Some((r, g, b))
-    }
-    3 => {
-      let r = u8::from_str_radix(&hex[0..1], 16).ok()?;
-      let g = u8::from_str_radix(&hex[1..2], 16).ok()?;
-      let b = u8::from_str_radix(&hex[2..3], 16).ok()?;
-      // Expand each nibble (e.g. #abc -> #aabbcc).
-      Some((r * 17, g * 17, b * 17))
-    }
-    _ => None,
-  }
 }
 
 /// Squared Euclidean distance between a pixel's RGB and a reference color, with
@@ -377,6 +191,208 @@ fn content_bounds(
   Some((left, top, right - left + 1, bottom - top + 1))
 }
 
+/// Shrink an encoded image to at most `max_width` (preserving aspect ratio) and
+/// re-encode it in the same family as `ext` (JPEG for jpg/jpeg, otherwise PNG),
+/// for sending to the preview window. High-resolution captures would otherwise
+/// be emitted as multi-megabyte payloads on every preview tick, which can
+/// overwhelm the webview. Falls back to the original bytes if anything fails, so
+/// a frame is always available; returns the original unchanged when already
+/// within `max_width`.
+pub fn downscale_for_preview(bytes: &[u8], ext: &str, max_width: u32) -> Vec<u8> {
+  use image::ImageEncoder;
+  let Ok(img) = image::load_from_memory(bytes) else {
+    return bytes.to_vec();
+  };
+  if img.width() <= max_width {
+    return bytes.to_vec();
+  }
+  let img = img.resize(max_width, u32::MAX, image::imageops::FilterType::Triangle);
+  let mut out = std::io::Cursor::new(Vec::new());
+  let encoded = if matches!(ext.to_ascii_lowercase().as_str(), "jpg" | "jpeg") {
+    let rgb = img.to_rgb8();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 85)
+      .write_image(rgb.as_raw(), rgb.width(), rgb.height(), image::ExtendedColorType::Rgb8)
+      .is_ok()
+  } else {
+    let rgba = img.to_rgba8();
+    image::codecs::png::PngEncoder::new_with_quality(
+      &mut out,
+      image::codecs::png::CompressionType::Fast,
+      image::codecs::png::FilterType::NoFilter,
+    )
+    .write_image(rgba.as_raw(), rgba.width(), rgba.height(), image::ExtendedColorType::Rgba8)
+    .is_ok()
+  };
+  if encoded {
+    out.into_inner()
+  } else {
+    bytes.to_vec()
+  }
+}
+
+/// Resolve the configured FFmpeg binary (the directory in config + `ffmpeg[.exe]`).
+fn ffmpeg_binary() -> Result<PathBuf> {
+  let cfg = config::get_config();
+  let (resolved, found) = resolve(&cfg.ffmpeg.path);
+  if !found {
+    return Err(anyhow::anyhow!("FFMPEG_NOT_AVAILABLE:{}", resolved.display()));
+  }
+  binary_path(&resolved).ok_or_else(|| anyhow::anyhow!("FFMPEG_NOT_AVAILABLE:{}", resolved.display()))
+}
+
+pub async fn get_ffmpeg_status(path: String) -> Result<FfmpegStatus> {
+  let trimmed = path.trim();
+  if trimmed.is_empty() {
+    return Ok(FfmpegStatus {
+      found: false,
+      path: String::new(),
+    });
+  }
+  let (resolved, found) = resolve(trimmed);
+  if found {
+    persist_path(&resolved)?;
+  }
+  Ok(FfmpegStatus {
+    found,
+    path: resolved.to_string_lossy().to_string(),
+  })
+}
+
+fn has_executable(path: &Path) -> bool {
+  binary_path(path).is_some()
+}
+
+/// Collect every file a capture run produced, identified purely by the ffmpeg
+/// output filename pattern (e.g. `/dir/name_shot_%04d.png`) — not by timestamps.
+/// The pattern's directory is scanned and the numbered series it describes is
+/// returned, sorted by name (zero-padded indices sort in frame order). A pattern
+/// with no `%d` token (timestamp mode) matches its single literal filename.
+///
+/// This is deterministic regardless of filesystem mtime resolution or clock
+/// skew, since we already told ffmpeg exactly what to name the files.
+pub fn images_for_pattern(pattern: &Path) -> Vec<PathBuf> {
+  let Some(dir) = pattern.parent() else {
+    return Vec::new();
+  };
+  let Some(file_pat) = pattern.file_name().and_then(|n| n.to_str()) else {
+    return Vec::new();
+  };
+  let token = split_pattern(file_pat);
+  let mut out = Vec::new();
+  let Ok(read_dir) = std::fs::read_dir(dir) else {
+    return out;
+  };
+  for entry in read_dir.flatten() {
+    let path = entry.path();
+    if !path.is_file() {
+      continue;
+    }
+    let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+      continue;
+    };
+    let matched = match &token {
+      Some((prefix, suffix)) => name_matches(name, prefix, suffix),
+      None => name == file_pat,
+    };
+    if matched {
+      out.push(path);
+    }
+  }
+  out.sort();
+  out
+}
+
+/// True when `name` is an instance of the `prefix`+`<digits>`+`suffix` series,
+/// i.e. it starts with `prefix`, ends with `suffix`, and the characters in
+/// between are a non-empty run of ASCII digits (the frame number).
+fn name_matches(name: &str, prefix: &str, suffix: &str) -> bool {
+  name.len() > prefix.len() + suffix.len()
+    && name.starts_with(prefix)
+    && name.ends_with(suffix)
+    && name[prefix.len()..name.len() - suffix.len()].bytes().all(|b| b.is_ascii_digit())
+}
+
+/// Find the most recently produced file for the capture pattern — the one with
+/// the highest frame number, since ffmpeg writes the numbered series in order.
+/// Used to show the frame currently being captured (and the final frame) in the
+/// preview. Indices are parsed as integers so the choice is correct past the
+/// zero-pad width (e.g. 9999 → 10000). A literal (timestamp) pattern yields its
+/// single file.
+pub fn newest_image_for_pattern(pattern: &Path) -> Option<PathBuf> {
+  let token = pattern.file_name().and_then(|n| n.to_str()).and_then(split_pattern);
+  let images = images_for_pattern(pattern);
+  match token {
+    Some((prefix, suffix)) => images.into_iter().max_by_key(|p| {
+      p.file_name()
+        .and_then(|n| n.to_str())
+        .and_then(|name| name.get(prefix.len()..name.len().saturating_sub(suffix.len())))
+        .and_then(|mid| mid.parse::<u64>().ok())
+        .unwrap_or(0)
+    }),
+    None => images.into_iter().next(),
+  }
+}
+
+/// Parse a `#RRGGBB` (or `#RGB`) hex color into an `(r, g, b)` triple.
+pub fn parse_hex_color(value: &str) -> Option<(u8, u8, u8)> {
+  let hex = value.trim().trim_start_matches('#');
+  match hex.len() {
+    6 => {
+      let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+      let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+      let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+      Some((r, g, b))
+    }
+    3 => {
+      let r = u8::from_str_radix(&hex[0..1], 16).ok()?;
+      let g = u8::from_str_radix(&hex[1..2], 16).ok()?;
+      let b = u8::from_str_radix(&hex[2..3], 16).ok()?;
+      // Expand each nibble (e.g. #abc -> #aabbcc).
+      Some((r * 17, g * 17, b * 17))
+    }
+    _ => None,
+  }
+}
+
+fn persist_path(path: &Path) -> Result<()> {
+  let new_path = path.to_string_lossy().to_string();
+  let mut cfg = config::get_config();
+  if cfg.ffmpeg.path == new_path {
+    return Ok(());
+  }
+  cfg.ffmpeg.path = new_path;
+  config::set_config(cfg)?;
+  Ok(())
+}
+
+/// Read ffmpeg's `-progress pipe:1` stream, invoking `on_time` with the output
+/// position (in seconds) every time a progress block reports `out_time_us`.
+pub fn read_capture_progress<F: FnMut(f64)>(stdout: ChildStdout, mut on_time: F) {
+  let reader = BufReader::new(stdout);
+  for line in reader.lines() {
+    let Ok(line) = line else {
+      break;
+    };
+    let line = line.trim();
+    if let Some(rest) = line.strip_prefix("out_time_us=") {
+      if let Ok(us) = rest.trim().parse::<i64>() {
+        if us >= 0 {
+          on_time(us as f64 / 1_000_000.0);
+        }
+      }
+    }
+  }
+}
+
+fn resolve(path: &str) -> (PathBuf, bool) {
+  let trimmed = path.trim();
+  let configured = PathBuf::from(trimmed);
+  if has_executable(&configured) {
+    return (configured, true);
+  }
+  (configured, false)
+}
+
 /// Outcome of trimming a single captured image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrimResult {
@@ -386,6 +402,60 @@ pub enum TrimResult {
   Unchanged,
   /// The image was entirely border (no content), so the file was deleted.
   Removed,
+}
+
+/// Spawn ffmpeg with the given arguments, piping stdout/stderr. Mirrors the
+/// process-spawning convention used for mkvextract (hidden window on Windows).
+pub fn spawn_ffmpeg(args: &[String]) -> Result<Child> {
+  let exe = ffmpeg_binary()?;
+  let mut cmd = Command::new(&exe);
+  cmd
+    .args(args)
+    .stdin(Stdio::null())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped());
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  cmd
+    .spawn()
+    .map_err(|e| anyhow::anyhow!("FFMPEG_NOT_AVAILABLE:{}: {}", exe.display(), e))
+}
+
+/// Aggregate counts from a trim pass. Tallied on the single thread that drains the
+/// worker results, so the totals are exact regardless of how many workers ran.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct TrimStats {
+  pub trimmed: usize,
+  pub unchanged: usize,
+  pub removed: usize,
+  pub failed: usize,
+}
+
+/// Split an ffmpeg image2 output filename pattern around its frame-number token,
+/// returning `(prefix, suffix)`. The token is a printf integer conversion —
+/// `%d`, `%04d`, etc. (digits between `%` and `d` are the zero-pad width). For
+/// `name_shot_%04d.png` this yields `("name_shot_", ".png")`. Returns `None` when
+/// the filename has no such token (the timestamp mode writes one explicit file
+/// name per invocation, with no `%d`).
+fn split_pattern(file_pat: &str) -> Option<(String, String)> {
+  let bytes = file_pat.as_bytes();
+  let mut i = 0;
+  while i < bytes.len() {
+    if bytes[i] == b'%' {
+      let mut j = i + 1;
+      while j < bytes.len() && bytes[j].is_ascii_digit() {
+        j += 1;
+      }
+      if j < bytes.len() && bytes[j] == b'd' {
+        return Some((file_pat[..i].to_string(), file_pat[j + 1..].to_string()));
+      }
+    }
+    i += 1;
+  }
+  None
 }
 
 /// Trim a solid-color border from an image in place, mirroring ImageMagick
@@ -435,16 +505,6 @@ pub fn trim_image_file(path: &Path, color: (u8, u8, u8), tolerance_percent: f64)
     }
   }
   Ok(TrimResult::Trimmed)
-}
-
-/// Aggregate counts from a trim pass. Tallied on the single thread that drains the
-/// worker results, so the totals are exact regardless of how many workers ran.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct TrimStats {
-  pub trimmed: usize,
-  pub unchanged: usize,
-  pub removed: usize,
-  pub failed: usize,
 }
 
 /// Trim every image in `paths` in place, spreading the work across `threads`
@@ -537,78 +597,33 @@ where
   stats
 }
 
-/// Shrink an encoded image to at most `max_width` (preserving aspect ratio) and
-/// re-encode it in the same family as `ext` (JPEG for jpg/jpeg, otherwise PNG),
-/// for sending to the preview window. High-resolution captures would otherwise
-/// be emitted as multi-megabyte payloads on every preview tick, which can
-/// overwhelm the webview. Falls back to the original bytes if anything fails, so
-/// a frame is always available; returns the original unchanged when already
-/// within `max_width`.
-pub fn downscale_for_preview(bytes: &[u8], ext: &str, max_width: u32) -> Vec<u8> {
-  use image::ImageEncoder;
-  let Ok(img) = image::load_from_memory(bytes) else {
-    return bytes.to_vec();
-  };
-  if img.width() <= max_width {
-    return bytes.to_vec();
-  }
-  let img = img.resize(max_width, u32::MAX, image::imageops::FilterType::Triangle);
-  let mut out = std::io::Cursor::new(Vec::new());
-  let encoded = if matches!(ext.to_ascii_lowercase().as_str(), "jpg" | "jpeg") {
-    let rgb = img.to_rgb8();
-    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 85)
-      .write_image(rgb.as_raw(), rgb.width(), rgb.height(), image::ExtendedColorType::Rgb8)
-      .is_ok()
-  } else {
-    let rgba = img.to_rgba8();
-    image::codecs::png::PngEncoder::new_with_quality(
-      &mut out,
-      image::codecs::png::CompressionType::Fast,
-      image::codecs::png::FilterType::NoFilter,
-    )
-    .write_image(rgba.as_raw(), rgba.width(), rgba.height(), image::ExtendedColorType::Rgba8)
-    .is_ok()
-  };
-  if encoded {
-    out.into_inner()
-  } else {
-    bytes.to_vec()
-  }
-}
-
-/// Find the most recently produced file for the capture pattern — the one with
-/// the highest frame number, since ffmpeg writes the numbered series in order.
-/// Used to show the frame currently being captured (and the final frame) in the
-/// preview. Indices are parsed as integers so the choice is correct past the
-/// zero-pad width (e.g. 9999 → 10000). A literal (timestamp) pattern yields its
-/// single file.
-pub fn newest_image_for_pattern(pattern: &Path) -> Option<PathBuf> {
-  let token = pattern.file_name().and_then(|n| n.to_str()).and_then(split_pattern);
-  let images = images_for_pattern(pattern);
-  match token {
-    Some((prefix, suffix)) => images.into_iter().max_by_key(|p| {
-      p.file_name()
-        .and_then(|n| n.to_str())
-        .and_then(|name| name.get(prefix.len()..name.len().saturating_sub(suffix.len())))
-        .and_then(|mid| mid.parse::<u64>().ok())
-        .unwrap_or(0)
-    }),
-    None => images.into_iter().next(),
-  }
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
 
+  fn bordered_rgba(w: u32, h: u32, content: (u32, u32, u32, u32)) -> image::RgbaImage {
+    let (cx, cy, cw, ch) = content;
+    let mut img = image::RgbaImage::from_pixel(w, h, image::Rgba([0, 0, 0, 255]));
+    for y in cy..cy + ch {
+      for x in cx..cx + cw {
+        img.put_pixel(x, y, image::Rgba([255, 255, 255, 255]));
+      }
+    }
+    img
+  }
+
   #[test]
-  fn parse_hex_color_variants() {
-    assert_eq!(parse_hex_color("#000000"), Some((0, 0, 0)));
-    assert_eq!(parse_hex_color("ffffff"), Some((255, 255, 255)));
-    assert_eq!(parse_hex_color("#FF8800"), Some((255, 136, 0)));
-    assert_eq!(parse_hex_color("#abc"), Some((0xaa, 0xbb, 0xcc)));
-    assert_eq!(parse_hex_color("#12345"), None);
-    assert_eq!(parse_hex_color("not-a-color"), None);
+  fn content_bounds_all_background_is_none() {
+    let img = image::RgbaImage::from_pixel(8, 8, image::Rgba([0, 0, 0, 255]));
+    assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), None);
+  }
+
+  #[test]
+  fn content_bounds_finds_sparse_extents() {
+    let mut img = image::RgbaImage::from_pixel(12, 10, image::Rgba([0, 0, 0, 255]));
+    img.put_pixel(9, 1, image::Rgba([255, 255, 255, 255]));
+    img.put_pixel(2, 8, image::Rgba([255, 255, 255, 255]));
+    assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), Some((2, 1, 8, 8)));
   }
 
   #[test]
@@ -621,20 +636,6 @@ mod tests {
       }
     }
     assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), Some((3, 2, 2, 3)));
-  }
-
-  #[test]
-  fn content_bounds_finds_sparse_extents() {
-    let mut img = image::RgbaImage::from_pixel(12, 10, image::Rgba([0, 0, 0, 255]));
-    img.put_pixel(9, 1, image::Rgba([255, 255, 255, 255]));
-    img.put_pixel(2, 8, image::Rgba([255, 255, 255, 255]));
-    assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), Some((2, 1, 8, 8)));
-  }
-
-  #[test]
-  fn content_bounds_all_background_is_none() {
-    let img = image::RgbaImage::from_pixel(8, 8, image::Rgba([0, 0, 0, 255]));
-    assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), None);
   }
 
   #[test]
@@ -670,60 +671,6 @@ mod tests {
     assert_eq!(content_bounds(&img, (255, 255, 255), 0.0), Some((2, 1, 1, 1)));
   }
 
-  fn temp_path(name: &str) -> PathBuf {
-    std::env::temp_dir().join(format!("bmi_trim_{}_{}", std::process::id(), name))
-  }
-
-  fn bordered_rgba(w: u32, h: u32, content: (u32, u32, u32, u32)) -> image::RgbaImage {
-    let (cx, cy, cw, ch) = content;
-    let mut img = image::RgbaImage::from_pixel(w, h, image::Rgba([0, 0, 0, 255]));
-    for y in cy..cy + ch {
-      for x in cx..cx + cw {
-        img.put_pixel(x, y, image::Rgba([255, 255, 255, 255]));
-      }
-    }
-    img
-  }
-
-  #[test]
-  fn trim_image_file_png_crops_to_content() {
-    let path = temp_path("crop.png");
-    bordered_rgba(30, 20, (5, 4, 10, 6))
-      .save_with_format(&path, image::ImageFormat::Png)
-      .unwrap();
-    assert_eq!(trim_image_file(&path, (0, 0, 0), 10.0).unwrap(), TrimResult::Trimmed);
-    assert_eq!(image::open(&path).unwrap().to_rgba8().dimensions(), (10, 6));
-    let _ = std::fs::remove_file(&path);
-  }
-
-  #[test]
-  fn trim_image_file_removes_blank_capture() {
-    let path = temp_path("blank.png");
-    image::RgbaImage::from_pixel(16, 16, image::Rgba([0, 0, 0, 255]))
-      .save_with_format(&path, image::ImageFormat::Png)
-      .unwrap();
-    assert_eq!(trim_image_file(&path, (0, 0, 0), 10.0).unwrap(), TrimResult::Removed);
-    assert!(!path.exists(), "blank image should have been deleted");
-  }
-
-  #[test]
-  fn trim_image_file_unchanged_when_already_tight() {
-    let path = temp_path("tight.png");
-    // Horizontal gradient: corners disagree (no uniform border) and the trim
-    // color is absent, so there is nothing to trim.
-    let mut img = image::RgbaImage::new(12, 12);
-    for y in 0..12 {
-      for x in 0..12 {
-        let v = (x * 255 / 11) as u8;
-        img.put_pixel(x, y, image::Rgba([v, v, v, 255]));
-      }
-    }
-    img.save_with_format(&path, image::ImageFormat::Png).unwrap();
-    assert_eq!(trim_image_file(&path, (255, 0, 255), 10.0).unwrap(), TrimResult::Unchanged);
-    assert!(path.exists());
-    let _ = std::fs::remove_file(&path);
-  }
-
   #[test]
   fn downscale_for_preview_shrinks_large_and_keeps_small() {
     // Encode a 2000x1000 PNG, then downscale to <=1280 wide.
@@ -737,79 +684,6 @@ mod tests {
     // An image already within the cap is returned unchanged (no re-encode).
     let already = downscale_for_preview(&original, "png", 4096);
     assert_eq!(already, original);
-  }
-
-  #[test]
-  fn trim_images_processes_batch() {
-    // One letterboxed frame (trim) and one limited-range blank frame (remove),
-    // handled together in a single parallel pass.
-    let crop = temp_path("batch_crop.png");
-    let blank = temp_path("batch_blank.png");
-    bordered_rgba(20, 16, (4, 3, 12, 10))
-      .save_with_format(&crop, image::ImageFormat::Png)
-      .unwrap();
-    image::RgbaImage::from_pixel(10, 10, image::Rgba([16, 16, 16, 255]))
-      .save_with_format(&blank, image::ImageFormat::Png)
-      .unwrap();
-    let mut progressed = Vec::new();
-    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let stats = trim_images(
-      vec![crop.clone(), blank.clone()],
-      (0, 0, 0),
-      10.0,
-      2,
-      cancel,
-      |completed, total, _, result| progressed.push((completed, total, result)),
-    );
-    assert_eq!(image::open(&crop).unwrap().to_rgba8().dimensions(), (12, 10));
-    assert!(!blank.exists(), "blank frame should have been removed");
-    // The callback fires once per image with a monotonically increasing count.
-    assert_eq!(progressed.len(), 2);
-    assert_eq!(progressed[0].0, 1);
-    assert_eq!(progressed[1].0, 2);
-    assert!(progressed.iter().all(|(_, total, _)| *total == 2));
-    assert_eq!(stats.trimmed, 1);
-    assert_eq!(stats.removed, 1);
-    let _ = std::fs::remove_file(&crop);
-  }
-
-  #[test]
-  fn trim_images_honors_cancel_flag() {
-    // A flag set before the pass starts means no image is ever picked up: the
-    // file is left untouched, the callback never fires, and the stats stay zero.
-    let crop = temp_path("cancel_crop.png");
-    bordered_rgba(20, 16, (4, 3, 12, 10))
-      .save_with_format(&crop, image::ImageFormat::Png)
-      .unwrap();
-    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
-    let mut progressed = 0usize;
-    let stats = trim_images(vec![crop.clone()], (0, 0, 0), 10.0, 2, cancel, |_, _, _, _| progressed += 1);
-    assert_eq!(progressed, 0);
-    assert_eq!(stats, TrimStats::default());
-    // Untouched: still the original 20x16 dimensions.
-    assert_eq!(image::open(&crop).unwrap().to_rgba8().dimensions(), (20, 16));
-    let _ = std::fs::remove_file(&crop);
-  }
-
-  #[test]
-  fn split_pattern_parses_frame_token() {
-    assert_eq!(
-      split_pattern("clip_shot_%04d.png"),
-      Some(("clip_shot_".to_string(), ".png".to_string()))
-    );
-    assert_eq!(split_pattern("a_%d.jpg"), Some(("a_".to_string(), ".jpg".to_string())));
-    // Literal name (timestamp mode) — no token.
-    assert_eq!(split_pattern("clip_ts_0001.png"), None);
-  }
-
-  #[test]
-  fn name_matches_only_the_numbered_series() {
-    assert!(name_matches("clip_shot_0001.png", "clip_shot_", ".png"));
-    assert!(name_matches("clip_shot_10000.png", "clip_shot_", ".png"));
-    assert!(!name_matches("clip_shot_.png", "clip_shot_", ".png")); // empty index
-    assert!(!name_matches("clip_shot_xx.png", "clip_shot_", ".png")); // non-digit
-    assert!(!name_matches("other_shot_0001.png", "clip_shot_", ".png")); // wrong prefix
-    assert!(!name_matches("clip_shot_0001.jpg", "clip_shot_", ".png")); // wrong suffix
   }
 
   #[test]
@@ -861,6 +735,41 @@ mod tests {
   }
 
   #[test]
+  fn name_matches_only_the_numbered_series() {
+    assert!(name_matches("clip_shot_0001.png", "clip_shot_", ".png"));
+    assert!(name_matches("clip_shot_10000.png", "clip_shot_", ".png"));
+    assert!(!name_matches("clip_shot_.png", "clip_shot_", ".png")); // empty index
+    assert!(!name_matches("clip_shot_xx.png", "clip_shot_", ".png")); // non-digit
+    assert!(!name_matches("other_shot_0001.png", "clip_shot_", ".png")); // wrong prefix
+    assert!(!name_matches("clip_shot_0001.jpg", "clip_shot_", ".png")); // wrong suffix
+  }
+
+  #[test]
+  fn parse_hex_color_variants() {
+    assert_eq!(parse_hex_color("#000000"), Some((0, 0, 0)));
+    assert_eq!(parse_hex_color("ffffff"), Some((255, 255, 255)));
+    assert_eq!(parse_hex_color("#FF8800"), Some((255, 136, 0)));
+    assert_eq!(parse_hex_color("#abc"), Some((0xaa, 0xbb, 0xcc)));
+    assert_eq!(parse_hex_color("#12345"), None);
+    assert_eq!(parse_hex_color("not-a-color"), None);
+  }
+
+  #[test]
+  fn split_pattern_parses_frame_token() {
+    assert_eq!(
+      split_pattern("clip_shot_%04d.png"),
+      Some(("clip_shot_".to_string(), ".png".to_string()))
+    );
+    assert_eq!(split_pattern("a_%d.jpg"), Some(("a_".to_string(), ".jpg".to_string())));
+    // Literal name (timestamp mode) — no token.
+    assert_eq!(split_pattern("clip_ts_0001.png"), None);
+  }
+
+  fn temp_path(name: &str) -> PathBuf {
+    std::env::temp_dir().join(format!("bmi_trim_{}_{}", std::process::id(), name))
+  }
+
+  #[test]
   fn trim_image_file_jpeg_round_trip() {
     let path = temp_path("crop.jpg");
     let rgb = image::DynamicImage::ImageRgba8(bordered_rgba(40, 30, (10, 8, 20, 14))).into_rgb8();
@@ -874,5 +783,96 @@ mod tests {
     let (tw, th) = image::open(&path).unwrap().to_rgba8().dimensions();
     assert!(tw < 40 && th < 30, "expected a smaller image, got {tw}x{th}");
     let _ = std::fs::remove_file(&path);
+  }
+
+  #[test]
+  fn trim_image_file_png_crops_to_content() {
+    let path = temp_path("crop.png");
+    bordered_rgba(30, 20, (5, 4, 10, 6))
+      .save_with_format(&path, image::ImageFormat::Png)
+      .unwrap();
+    assert_eq!(trim_image_file(&path, (0, 0, 0), 10.0).unwrap(), TrimResult::Trimmed);
+    assert_eq!(image::open(&path).unwrap().to_rgba8().dimensions(), (10, 6));
+    let _ = std::fs::remove_file(&path);
+  }
+
+  #[test]
+  fn trim_image_file_removes_blank_capture() {
+    let path = temp_path("blank.png");
+    image::RgbaImage::from_pixel(16, 16, image::Rgba([0, 0, 0, 255]))
+      .save_with_format(&path, image::ImageFormat::Png)
+      .unwrap();
+    assert_eq!(trim_image_file(&path, (0, 0, 0), 10.0).unwrap(), TrimResult::Removed);
+    assert!(!path.exists(), "blank image should have been deleted");
+  }
+
+  #[test]
+  fn trim_image_file_unchanged_when_already_tight() {
+    let path = temp_path("tight.png");
+    // Horizontal gradient: corners disagree (no uniform border) and the trim
+    // color is absent, so there is nothing to trim.
+    let mut img = image::RgbaImage::new(12, 12);
+    for y in 0..12 {
+      for x in 0..12 {
+        let v = (x * 255 / 11) as u8;
+        img.put_pixel(x, y, image::Rgba([v, v, v, 255]));
+      }
+    }
+    img.save_with_format(&path, image::ImageFormat::Png).unwrap();
+    assert_eq!(trim_image_file(&path, (255, 0, 255), 10.0).unwrap(), TrimResult::Unchanged);
+    assert!(path.exists());
+    let _ = std::fs::remove_file(&path);
+  }
+
+  #[test]
+  fn trim_images_honors_cancel_flag() {
+    // A flag set before the pass starts means no image is ever picked up: the
+    // file is left untouched, the callback never fires, and the stats stay zero.
+    let crop = temp_path("cancel_crop.png");
+    bordered_rgba(20, 16, (4, 3, 12, 10))
+      .save_with_format(&crop, image::ImageFormat::Png)
+      .unwrap();
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let mut progressed = 0usize;
+    let stats = trim_images(vec![crop.clone()], (0, 0, 0), 10.0, 2, cancel, |_, _, _, _| progressed += 1);
+    assert_eq!(progressed, 0);
+    assert_eq!(stats, TrimStats::default());
+    // Untouched: still the original 20x16 dimensions.
+    assert_eq!(image::open(&crop).unwrap().to_rgba8().dimensions(), (20, 16));
+    let _ = std::fs::remove_file(&crop);
+  }
+
+  #[test]
+  fn trim_images_processes_batch() {
+    // One letterboxed frame (trim) and one limited-range blank frame (remove),
+    // handled together in a single parallel pass.
+    let crop = temp_path("batch_crop.png");
+    let blank = temp_path("batch_blank.png");
+    bordered_rgba(20, 16, (4, 3, 12, 10))
+      .save_with_format(&crop, image::ImageFormat::Png)
+      .unwrap();
+    image::RgbaImage::from_pixel(10, 10, image::Rgba([16, 16, 16, 255]))
+      .save_with_format(&blank, image::ImageFormat::Png)
+      .unwrap();
+    let mut progressed = Vec::new();
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let stats = trim_images(
+      vec![crop.clone(), blank.clone()],
+      (0, 0, 0),
+      10.0,
+      2,
+      cancel,
+      |completed, total, _, result| progressed.push((completed, total, result)),
+    );
+    assert_eq!(image::open(&crop).unwrap().to_rgba8().dimensions(), (12, 10));
+    assert!(!blank.exists(), "blank frame should have been removed");
+    // The callback fires once per image with a monotonically increasing count.
+    assert_eq!(progressed.len(), 2);
+    assert_eq!(progressed[0].0, 1);
+    assert_eq!(progressed[1].0, 2);
+    assert!(progressed.iter().all(|(_, total, _)| *total == 2));
+    assert_eq!(stats.trimmed, 1);
+    assert_eq!(stats.removed, 1);
+    let _ = std::fs::remove_file(&crop);
   }
 }

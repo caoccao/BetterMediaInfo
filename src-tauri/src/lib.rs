@@ -37,13 +37,6 @@ mod window;
 
 use protocol::{FfmpegCaptureState, MkvextractState, MkvmergeState, TrimOptions, UpdateCheckResult, UpdateCheckState};
 
-fn convert_error(error: anyhow::Error) -> String {
-  error.to_string()
-}
-
-// Tauri command handlers (IPC entry points). Each one is an async wrapper that
-// delegates to a `controller` method; keep them ordered alphabetically by name.
-
 #[tauri::command]
 async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool, String> {
   log::debug!("are_extensions_context_menu_registered({:?})", extensions);
@@ -51,6 +44,9 @@ async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Resu
     .await
     .map_err(convert_error)
 }
+
+// Tauri command handlers (IPC entry points). Each one is an async wrapper that
+// delegates to a `controller` method; keep them ordered alphabetically by name.
 
 #[tauri::command]
 async fn cancel_ffmpeg_capture(window: tauri::Window, state: tauri::State<'_, FfmpegCaptureState>) -> Result<(), String> {
@@ -79,6 +75,10 @@ async fn capture_ffmpeg_frame(file: String, position_seconds: f64, max_width: u3
   controller::capture_ffmpeg_frame(file, position_seconds, max_width)
     .await
     .map_err(convert_error)
+}
+
+fn convert_error(error: anyhow::Error) -> String {
+  error.to_string()
 }
 
 #[tauri::command]
@@ -233,6 +233,80 @@ async fn register_folder_context_menu() -> Result<(), String> {
   controller::register_folder_context_menu().await.map_err(convert_error)
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+  env_logger::init();
+
+  let runtime = tokio::runtime::Builder::new_multi_thread()
+    .worker_threads(4)
+    .enable_all()
+    .build()
+    .expect("Failed to build Tokio runtime");
+
+  tauri::async_runtime::set(runtime.handle().clone());
+
+  tauri::Builder::default()
+    .manage(MkvextractState {
+      children: Arc::new(Mutex::new(HashMap::new())),
+    })
+    .manage(MkvmergeState {
+      children: Arc::new(Mutex::new(HashMap::new())),
+    })
+    .manage(FfmpegCaptureState {
+      children: Arc::new(Mutex::new(HashMap::new())),
+      cancels: Arc::new(Mutex::new(HashMap::new())),
+    })
+    .manage(UpdateCheckState {
+      result: Arc::new(Mutex::new(None)),
+    })
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_clipboard_manager::init())
+    .plugin(tauri_plugin_opener::init())
+    .setup(window::setup)
+    .on_window_event(window::on_window_event)
+    .invoke_handler(tauri::generate_handler![
+      are_extensions_context_menu_registered,
+      cancel_ffmpeg_capture,
+      cancel_mkvextract,
+      cancel_mkvmerge,
+      capture_ffmpeg_frame,
+      get_about,
+      get_batchmkvextract_status,
+      get_bd_status,
+      get_bdmaster_status,
+      get_config,
+      get_ffmpeg_status,
+      get_files,
+      get_launch_args,
+      get_mkv_tracks,
+      get_mkvtoolnix_status,
+      get_mpchc_status,
+      get_parameters,
+      get_properties,
+      get_stream_count,
+      get_update_result,
+      is_folder_context_menu_registered,
+      open_batchmkvextract,
+      open_bdmaster,
+      open_mkvtoolnix_gui,
+      open_mpchc,
+      register_extensions_context_menu,
+      register_folder_context_menu,
+      run_ffmpeg_capture,
+      run_mkvextract,
+      run_mkvmerge,
+      set_config,
+      skip_version,
+      suggest_merge_output_path,
+      unregister_extensions_context_menu,
+      unregister_folder_context_menu,
+      write_binary_file,
+      write_text_file
+    ])
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
+}
+
 #[tauri::command]
 async fn run_ffmpeg_capture(
   window: tauri::Window,
@@ -325,78 +399,4 @@ async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<(), String> {
 async fn write_text_file(file: String, text: String) -> Result<(), String> {
   log::debug!("write_text_file({})", file);
   controller::write_text_file(file, text).await.map_err(convert_error)
-}
-
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-  env_logger::init();
-
-  let runtime = tokio::runtime::Builder::new_multi_thread()
-    .worker_threads(4)
-    .enable_all()
-    .build()
-    .expect("Failed to build Tokio runtime");
-
-  tauri::async_runtime::set(runtime.handle().clone());
-
-  tauri::Builder::default()
-    .manage(MkvextractState {
-      children: Arc::new(Mutex::new(HashMap::new())),
-    })
-    .manage(MkvmergeState {
-      children: Arc::new(Mutex::new(HashMap::new())),
-    })
-    .manage(FfmpegCaptureState {
-      children: Arc::new(Mutex::new(HashMap::new())),
-      cancels: Arc::new(Mutex::new(HashMap::new())),
-    })
-    .manage(UpdateCheckState {
-      result: Arc::new(Mutex::new(None)),
-    })
-    .plugin(tauri_plugin_dialog::init())
-    .plugin(tauri_plugin_clipboard_manager::init())
-    .plugin(tauri_plugin_opener::init())
-    .setup(window::setup)
-    .on_window_event(window::on_window_event)
-    .invoke_handler(tauri::generate_handler![
-      are_extensions_context_menu_registered,
-      cancel_ffmpeg_capture,
-      cancel_mkvextract,
-      cancel_mkvmerge,
-      capture_ffmpeg_frame,
-      get_about,
-      get_batchmkvextract_status,
-      get_bd_status,
-      get_bdmaster_status,
-      get_config,
-      get_ffmpeg_status,
-      get_files,
-      get_launch_args,
-      get_mkv_tracks,
-      get_mkvtoolnix_status,
-      get_mpchc_status,
-      get_parameters,
-      get_properties,
-      get_stream_count,
-      get_update_result,
-      is_folder_context_menu_registered,
-      open_batchmkvextract,
-      open_bdmaster,
-      open_mkvtoolnix_gui,
-      open_mpchc,
-      register_extensions_context_menu,
-      register_folder_context_menu,
-      run_ffmpeg_capture,
-      run_mkvextract,
-      run_mkvmerge,
-      set_config,
-      skip_version,
-      suggest_merge_output_path,
-      unregister_extensions_context_menu,
-      unregister_folder_context_menu,
-      write_binary_file,
-      write_text_file
-    ])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
 }

@@ -23,12 +23,31 @@ use crate::protocol::BDMasterStatus;
 
 const TOOL_STEM: &str = "BDMaster";
 
-fn process_name() -> &'static str {
-  if cfg!(target_os = "windows") {
-    "BDMaster.exe"
-  } else {
-    TOOL_STEM
+fn binary_path(dir: &Path) -> Option<PathBuf> {
+  let direct = dir.join(TOOL_STEM);
+  if direct.exists() && direct.is_file() {
+    return Some(direct);
   }
+  #[cfg(target_os = "windows")]
+  {
+    let exe = dir.join(format!("{}.exe", TOOL_STEM));
+    if exe.exists() && exe.is_file() {
+      return Some(exe);
+    }
+  }
+  None
+}
+
+#[cfg(target_os = "macos")]
+fn find_macos_app_bundle(bin: &Path) -> Option<PathBuf> {
+  let mut current = bin.parent()?;
+  for _ in 0..4 {
+    if current.extension().and_then(|s| s.to_str()) == Some("app") {
+      return Some(current.to_path_buf());
+    }
+    current = current.parent()?;
+  }
+  None
 }
 
 fn find_running_process_dir() -> Option<PathBuf> {
@@ -46,45 +65,6 @@ fn find_running_process_dir() -> Option<PathBuf> {
     }
   }
   None
-}
-
-fn binary_path(dir: &Path) -> Option<PathBuf> {
-  let direct = dir.join(TOOL_STEM);
-  if direct.exists() && direct.is_file() {
-    return Some(direct);
-  }
-  #[cfg(target_os = "windows")]
-  {
-    let exe = dir.join(format!("{}.exe", TOOL_STEM));
-    if exe.exists() && exe.is_file() {
-      return Some(exe);
-    }
-  }
-  None
-}
-
-fn has_executable(path: &Path) -> bool {
-  binary_path(path).is_some()
-}
-
-fn resolve(path: &str) -> (PathBuf, bool) {
-  let trimmed = path.trim();
-  let configured = PathBuf::from(trimmed);
-  if has_executable(&configured) {
-    return (configured, true);
-  }
-  (configured, false)
-}
-
-fn persist_path(path: &Path) -> Result<()> {
-  let new_path = path.to_string_lossy().to_string();
-  let mut cfg = config::get_config();
-  if cfg.bd_master.path == new_path {
-    return Ok(());
-  }
-  cfg.bd_master.path = new_path;
-  config::set_config(cfg)?;
-  Ok(())
 }
 
 pub async fn get_bdmaster_status(path: String, check_running: bool) -> Result<BDMasterStatus> {
@@ -116,16 +96,36 @@ pub async fn get_bdmaster_status(path: String, check_running: bool) -> Result<BD
   })
 }
 
-#[cfg(target_os = "macos")]
-fn find_macos_app_bundle(bin: &Path) -> Option<PathBuf> {
-  let mut current = bin.parent()?;
-  for _ in 0..4 {
-    if current.extension().and_then(|s| s.to_str()) == Some("app") {
-      return Some(current.to_path_buf());
-    }
-    current = current.parent()?;
+fn has_executable(path: &Path) -> bool {
+  binary_path(path).is_some()
+}
+
+fn persist_path(path: &Path) -> Result<()> {
+  let new_path = path.to_string_lossy().to_string();
+  let mut cfg = config::get_config();
+  if cfg.bd_master.path == new_path {
+    return Ok(());
   }
-  None
+  cfg.bd_master.path = new_path;
+  config::set_config(cfg)?;
+  Ok(())
+}
+
+fn process_name() -> &'static str {
+  if cfg!(target_os = "windows") {
+    "BDMaster.exe"
+  } else {
+    TOOL_STEM
+  }
+}
+
+fn resolve(path: &str) -> (PathBuf, bool) {
+  let trimmed = path.trim();
+  let configured = PathBuf::from(trimmed);
+  if has_executable(&configured) {
+    return (configured, true);
+  }
+  (configured, false)
 }
 
 pub fn spawn_bdmaster(file: &str) -> Result<()> {

@@ -116,34 +116,8 @@ pub struct ConfigTemplateGroup {
   pub properties: Vec<String>,
 }
 
-// Accepts both the new format (array of strings) and the legacy format
-// (array of `{ property, enabled }` objects) so existing config files
-// load without manual migration.
-fn deserialize_template_properties<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-  D: serde::Deserializer<'de>,
-{
-  #[derive(Deserialize)]
-  #[serde(untagged)]
-  enum Item {
-    Name(String),
-    Legacy {
-      property: String,
-      #[serde(default)]
-      #[allow(dead_code)]
-      enabled: Option<bool>,
-    },
-  }
-  let items = Vec::<Item>::deserialize(deserializer)?;
-  Ok(
-    items
-      .into_iter()
-      .map(|item| match item {
-        Item::Name(s) => s,
-        Item::Legacy { property, .. } => property,
-      })
-      .collect(),
-  )
+fn default_false() -> bool {
+  false
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -556,8 +530,34 @@ fn default_true() -> bool {
   true
 }
 
-fn default_false() -> bool {
-  false
+// Accepts both the new format (array of strings) and the legacy format
+// (array of `{ property, enabled }` objects) so existing config files
+// load without manual migration.
+fn deserialize_template_properties<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+  D: serde::Deserializer<'de>,
+{
+  #[derive(Deserialize)]
+  #[serde(untagged)]
+  enum Item {
+    Name(String),
+    Legacy {
+      property: String,
+      #[serde(default)]
+      #[allow(dead_code)]
+      enabled: Option<bool>,
+    },
+  }
+  let items = Vec::<Item>::deserialize(deserializer)?;
+  Ok(
+    items
+      .into_iter()
+      .map(|item| match item {
+        Item::Name(s) => s,
+        Item::Legacy { property, .. } => property,
+      })
+      .collect(),
+  )
 }
 
 impl Default for ConfigCardView {
@@ -680,28 +680,13 @@ impl Language {
   }
 }
 
-fn normalize_locale_tag(locale: &str) -> Option<String> {
-  let locale = locale
-    .split(':')
-    .find(|part| !part.trim().is_empty())
-    .unwrap_or(locale)
-    .trim();
-  if locale.eq_ignore_ascii_case("c") || locale.eq_ignore_ascii_case("posix") {
-    return None;
-  }
-  let locale = locale
-    .split('.')
-    .next()
-    .unwrap_or(locale)
-    .split('@')
-    .next()
-    .unwrap_or(locale)
-    .replace('_', "-")
-    .to_ascii_lowercase();
-  if locale.is_empty() || locale == "c" || locale == "posix" {
-    None
-  } else {
-    Some(locale)
+pub fn get_active_file_extensions() -> Vec<String> {
+  let config = get_config();
+  match config.directory_mode {
+    ConfigDirectoryMode::Audio => config.file_extensions.audio.clone(),
+    ConfigDirectoryMode::Image => config.file_extensions.image.clone(),
+    ConfigDirectoryMode::Video => config.file_extensions.video.clone(),
+    _ => vec![],
   }
 }
 
@@ -768,34 +753,6 @@ impl Default for ConfigSize {
 }
 
 impl Config {
-  fn new() -> Self {
-    let config_path_buf = Self::get_path_buf();
-    if config_path_buf.exists() {
-      Self::load(config_path_buf)
-    } else {
-      log::debug!("Loading default config.");
-      let config = Self::default();
-      if let Err(err) = config.save(config_path_buf) {
-        log::error!("Couldn't save the default config because {}", err);
-      }
-      config
-    }
-  }
-
-  fn get_path_buf() -> PathBuf {
-    let config_dir = Self::get_config_dir();
-    if !config_dir.exists() {
-      if let Err(err) = std::fs::create_dir_all(&config_dir) {
-        log::warn!("Couldn't create config dir {}: {}", config_dir.display(), err);
-      }
-    }
-    config_dir.join(format!("{}.json", APP_NAME))
-  }
-
-  fn get_exe_dir() -> PathBuf {
-    std::env::current_exe().unwrap().parent().unwrap().to_path_buf()
-  }
-
   #[cfg(target_os = "linux")]
   fn get_config_dir() -> PathBuf {
     if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
@@ -842,6 +799,20 @@ impl Config {
     exe_dir
   }
 
+  fn get_exe_dir() -> PathBuf {
+    std::env::current_exe().unwrap().parent().unwrap().to_path_buf()
+  }
+
+  fn get_path_buf() -> PathBuf {
+    let config_dir = Self::get_config_dir();
+    if !config_dir.exists() {
+      if let Err(err) = std::fs::create_dir_all(&config_dir) {
+        log::warn!("Couldn't create config dir {}: {}", config_dir.display(), err);
+      }
+    }
+    config_dir.join(format!("{}.json", APP_NAME))
+  }
+
   fn load(path: PathBuf) -> Self {
     let path_string = path.to_str().unwrap();
     log::debug!("Loading config from {}.", path_string);
@@ -862,6 +833,20 @@ impl Config {
       }
     }
     config
+  }
+
+  fn new() -> Self {
+    let config_path_buf = Self::get_path_buf();
+    if config_path_buf.exists() {
+      Self::load(config_path_buf)
+    } else {
+      log::debug!("Loading default config.");
+      let config = Self::default();
+      if let Err(err) = config.save(config_path_buf) {
+        log::error!("Couldn't save the default config because {}", err);
+      }
+      config
+    }
   }
 
   fn save(&self, path: PathBuf) -> Result<()> {
@@ -978,22 +963,37 @@ impl Default for ConfigFileExtensions {
   }
 }
 
-pub fn get_active_file_extensions() -> Vec<String> {
-  let config = get_config();
-  match config.directory_mode {
-    ConfigDirectoryMode::Audio => config.file_extensions.audio.clone(),
-    ConfigDirectoryMode::Image => config.file_extensions.image.clone(),
-    ConfigDirectoryMode::Video => config.file_extensions.video.clone(),
-    _ => vec![],
-  }
-}
-
 pub fn get_config() -> Config {
   CONFIG
     .get_or_init(|| RwLock::new(Config::new()))
     .read()
     .unwrap()
     .clone()
+}
+
+fn normalize_locale_tag(locale: &str) -> Option<String> {
+  let locale = locale
+    .split(':')
+    .find(|part| !part.trim().is_empty())
+    .unwrap_or(locale)
+    .trim();
+  if locale.eq_ignore_ascii_case("c") || locale.eq_ignore_ascii_case("posix") {
+    return None;
+  }
+  let locale = locale
+    .split('.')
+    .next()
+    .unwrap_or(locale)
+    .split('@')
+    .next()
+    .unwrap_or(locale)
+    .replace('_', "-")
+    .to_ascii_lowercase();
+  if locale.is_empty() || locale == "c" || locale == "posix" {
+    None
+  } else {
+    Some(locale)
+  }
 }
 
 pub fn set_config(config: Config) -> Result<()> {
@@ -1010,29 +1010,6 @@ pub fn set_config(config: Config) -> Result<()> {
 #[cfg(test)]
 mod tests {
   use super::*;
-
-  #[test]
-  fn config_deserialization_uses_defaults_for_missing_nodes() {
-    let config: Config = serde_json::from_str("{}").unwrap();
-
-    assert!(config.append_on_file_drop);
-    assert!(matches!(config.display_mode, DisplayMode::Auto));
-    assert!(matches!(config.directory_mode, ConfigDirectoryMode::All));
-    assert_eq!(config.file_extensions.video, ConfigFileExtensions::default().video);
-    assert_eq!(config.window.position.x, -1);
-    assert_eq!(config.window.position.y, -1);
-    assert_eq!(config.window.size.width, 1200);
-    assert_eq!(config.window.size.height, 900);
-    assert!(matches!(config.video.bit_rate.precision, FormatPrecision::Two));
-    assert!(matches!(config.video.bit_rate.unit, FormatUnit::KMGT));
-    assert_eq!(config.mkv.languages.preferred, ConfigMkvLanguages::default().preferred);
-    assert_eq!(
-      config.mkv.title_autocompletion.titles,
-      ConfigMkvTitleAutocompletion::default().titles
-    );
-    assert!(config.view.card.show_image);
-    assert!(config.view.detail.show_image);
-  }
 
   #[test]
   fn config_deserialization_preserves_present_nodes_while_filling_missing_children() {
@@ -1087,6 +1064,29 @@ mod tests {
     );
     assert!(!config.view.card.show_video);
     assert!(!config.view.detail.show_audio);
+    assert!(config.view.card.show_image);
+    assert!(config.view.detail.show_image);
+  }
+
+  #[test]
+  fn config_deserialization_uses_defaults_for_missing_nodes() {
+    let config: Config = serde_json::from_str("{}").unwrap();
+
+    assert!(config.append_on_file_drop);
+    assert!(matches!(config.display_mode, DisplayMode::Auto));
+    assert!(matches!(config.directory_mode, ConfigDirectoryMode::All));
+    assert_eq!(config.file_extensions.video, ConfigFileExtensions::default().video);
+    assert_eq!(config.window.position.x, -1);
+    assert_eq!(config.window.position.y, -1);
+    assert_eq!(config.window.size.width, 1200);
+    assert_eq!(config.window.size.height, 900);
+    assert!(matches!(config.video.bit_rate.precision, FormatPrecision::Two));
+    assert!(matches!(config.video.bit_rate.unit, FormatUnit::KMGT));
+    assert_eq!(config.mkv.languages.preferred, ConfigMkvLanguages::default().preferred);
+    assert_eq!(
+      config.mkv.title_autocompletion.titles,
+      ConfigMkvTitleAutocompletion::default().titles
+    );
     assert!(config.view.card.show_image);
     assert!(config.view.detail.show_image);
   }

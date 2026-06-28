@@ -67,6 +67,36 @@ static ALL_PROPERTIES_MAP: Lazy<HashMap<MediaInfoStreamKind, Vec<String>>> = Laz
   all_properties_map
 });
 
+pub async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool> {
+  Ok(context_menu::are_extensions_context_menu_registered(extensions))
+}
+
+/// Kill and reap the child process owned by `window`, if any. Shared by the
+/// mkvextract, mkvmerge, and ffmpeg-capture cancel commands.
+pub async fn cancel_child(window: &Window, children: &ChildMap) {
+  let label = window.label().to_owned();
+  let child = children.lock().unwrap().remove(&label);
+  if let Some(mut child) = child {
+    let _ = child.kill();
+    let _ = child.wait();
+  }
+}
+
+/// Cancel a running FFmpeg capture/trim for `window`. The capture pass is stopped
+/// by killing the ffmpeg child; the trim pass has no child process, so it is
+/// stopped by flipping its cancel flag (polled by the trim workers). Only one of
+/// the two is ever actually running when the user cancels.
+pub async fn cancel_ffmpeg_capture(window: &Window, children: &ChildMap, cancels: &CancelMap) {
+  if let Some(flag) = cancels.lock().unwrap().get(window.label()) {
+    flag.store(true, std::sync::atomic::Ordering::SeqCst);
+  }
+  cancel_child(window, children).await;
+}
+
+pub async fn capture_ffmpeg_frame(file: String, position_seconds: f64, max_width: u32) -> Result<Vec<u8>> {
+  tokio::task::spawn_blocking(move || ffmpeg::capture_frame(file, position_seconds, max_width)).await?
+}
+
 pub fn check_for_updates() -> Result<UpdateCheckResult> {
   let app_version = get_app_version();
   log::info!("Checking for updates. Current version: {}", app_version);
@@ -108,8 +138,24 @@ pub fn get_app_version() -> &'static str {
   env!("CARGO_PKG_VERSION")
 }
 
+pub async fn get_batchmkvextract_status(path: String, check_running: bool) -> Result<BatchMkvExtractStatus> {
+  batchmkvextract::get_batchmkvextract_status(path, check_running).await
+}
+
+pub async fn get_bd_status(path: String) -> Result<BDStatus> {
+  bd::get_bd_status(path).await
+}
+
+pub async fn get_bdmaster_status(path: String, check_running: bool) -> Result<BDMasterStatus> {
+  bdmaster::get_bdmaster_status(path, check_running).await
+}
+
 pub async fn get_config() -> Result<config::Config> {
   Ok(config::get_config())
+}
+
+pub async fn get_ffmpeg_status(path: String) -> Result<FfmpegStatus> {
+  ffmpeg::get_ffmpeg_status(path).await
 }
 
 pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
@@ -156,19 +202,20 @@ pub async fn get_files(files: Vec<String>) -> Result<Vec<String>> {
   })
 }
 
-pub async fn get_stream_count(file: String) -> Result<Vec<StreamCount>> {
-  let path = Path::new(file.as_str());
-  validate_path_as_file(path)?;
-  let media_info_file = MediaInfoFile::new(path);
-  let mut stream_counts = Vec::new();
-  for stream_kind in MediaInfoStreamKind::values() {
-    let stream_count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
-    stream_counts.push(StreamCount {
-      stream: *stream_kind,
-      count: stream_count,
-    });
-  }
-  Ok(stream_counts)
+pub async fn get_launch_args() -> Result<Vec<String>> {
+  Ok(std::env::args().skip(1).collect())
+}
+
+pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
+  mkvtoolnix::get_mkv_tracks(file).await
+}
+
+pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
+  mkvtoolnix::get_mkvtoolnix_status(path, check_running).await
+}
+
+pub async fn get_mpchc_status(path: String, check_running: bool) -> Result<MpcHcStatus> {
+  mpchc::get_mpchc_status(path, check_running).await
 }
 
 pub async fn get_parameters() -> Result<Vec<Parameter>> {
@@ -241,6 +288,29 @@ pub async fn get_properties(file: String, properties: Option<Vec<StreamProperty>
   Ok(stream_property_maps)
 }
 
+pub async fn get_stream_count(file: String) -> Result<Vec<StreamCount>> {
+  let path = Path::new(file.as_str());
+  validate_path_as_file(path)?;
+  let media_info_file = MediaInfoFile::new(path);
+  let mut stream_counts = Vec::new();
+  for stream_kind in MediaInfoStreamKind::values() {
+    let stream_count = media_info_file.media_info.getCountByStreamKind(*stream_kind) as i32;
+    stream_counts.push(StreamCount {
+      stream: *stream_kind,
+      count: stream_count,
+    });
+  }
+  Ok(stream_counts)
+}
+
+pub async fn get_update_result(result: &Arc<Mutex<Option<UpdateCheckResult>>>) -> Option<UpdateCheckResult> {
+  result.lock().unwrap().clone()
+}
+
+pub async fn is_folder_context_menu_registered() -> Result<bool> {
+  Ok(context_menu::is_folder_context_menu_registered())
+}
+
 pub fn is_newer_version(latest: &str, current: &str) -> bool {
   let latest = latest.trim_start_matches('v');
   let current = current.trim_start_matches('v');
@@ -260,148 +330,6 @@ pub fn is_newer_version(latest: &str, current: &str) -> bool {
   false
 }
 
-pub async fn set_config(config: config::Config) -> Result<config::Config> {
-  config::set_config(config)?;
-  Ok(config::get_config())
-}
-
-fn validate_path_as_file(path: &Path) -> Result<()> {
-  if !path.exists() {
-    Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
-  } else if !path.is_file() {
-    Err(anyhow::anyhow!("Path {} is not a file.", path.display()))
-  } else {
-    Ok(())
-  }
-}
-
-pub async fn suggest_merge_output_path(source_file: String) -> String {
-  let source = Path::new(source_file.as_str());
-  let parent = source.parent().unwrap_or_else(|| Path::new(""));
-  let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-  let is_mkv = source
-    .extension()
-    .and_then(|e| e.to_str())
-    .map(|e| e.eq_ignore_ascii_case("mkv"))
-    .unwrap_or(false);
-  let mut counter: u32 = if is_mkv { 1 } else { 0 };
-  loop {
-    let name = if counter == 0 {
-      format!("{stem}.mkv")
-    } else {
-      format!("{stem} ({counter}).mkv")
-    };
-    let candidate = parent.join(&name);
-    if !candidate.exists() {
-      return candidate.to_string_lossy().into_owned();
-    }
-    counter = if counter == 0 { 2 } else { counter + 1 };
-  }
-}
-
-pub async fn write_text_file(file: String, text: String) -> Result<()> {
-  let path = Path::new(file.as_str());
-  let mut file = File::create(path)?;
-  file.write_all(text.as_bytes())?;
-  Ok(())
-}
-
-pub async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<()> {
-  let path = Path::new(file.as_str());
-  let mut file = File::create(path)?;
-  file.write_all(&bytes)?;
-  Ok(())
-}
-
-pub async fn get_launch_args() -> Result<Vec<String>> {
-  Ok(std::env::args().skip(1).collect())
-}
-
-pub async fn get_update_result(result: &Arc<Mutex<Option<UpdateCheckResult>>>) -> Option<UpdateCheckResult> {
-  result.lock().unwrap().clone()
-}
-
-pub async fn skip_version(version: String) -> Result<()> {
-  let mut cfg = config::get_config();
-  cfg.update.ignore_version = version;
-  config::set_config(cfg)?;
-  Ok(())
-}
-
-/// Kill and reap the child process owned by `window`, if any. Shared by the
-/// mkvextract, mkvmerge, and ffmpeg-capture cancel commands.
-pub async fn cancel_child(window: &Window, children: &ChildMap) {
-  let label = window.label().to_owned();
-  let child = children.lock().unwrap().remove(&label);
-  if let Some(mut child) = child {
-    let _ = child.kill();
-    let _ = child.wait();
-  }
-}
-
-/// Cancel a running FFmpeg capture/trim for `window`. The capture pass is stopped
-/// by killing the ffmpeg child; the trim pass has no child process, so it is
-/// stopped by flipping its cancel flag (polled by the trim workers). Only one of
-/// the two is ever actually running when the user cancels.
-pub async fn cancel_ffmpeg_capture(window: &Window, children: &ChildMap, cancels: &CancelMap) {
-  if let Some(flag) = cancels.lock().unwrap().get(window.label()) {
-    flag.store(true, std::sync::atomic::Ordering::SeqCst);
-  }
-  cancel_child(window, children).await;
-}
-
-pub async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool> {
-  Ok(context_menu::are_extensions_context_menu_registered(extensions))
-}
-
-pub async fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
-  context_menu::register_extensions_context_menu(extensions)
-}
-
-pub async fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
-  context_menu::unregister_extensions_context_menu(extensions)
-}
-
-pub async fn register_folder_context_menu() -> Result<()> {
-  context_menu::register_folder_context_menu()
-}
-
-pub async fn unregister_folder_context_menu() -> Result<()> {
-  context_menu::unregister_folder_context_menu()
-}
-
-pub async fn is_folder_context_menu_registered() -> Result<bool> {
-  Ok(context_menu::is_folder_context_menu_registered())
-}
-
-pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
-  mkvtoolnix::get_mkv_tracks(file).await
-}
-
-pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
-  mkvtoolnix::get_mkvtoolnix_status(path, check_running).await
-}
-
-pub async fn get_batchmkvextract_status(path: String, check_running: bool) -> Result<BatchMkvExtractStatus> {
-  batchmkvextract::get_batchmkvextract_status(path, check_running).await
-}
-
-pub async fn get_bdmaster_status(path: String, check_running: bool) -> Result<BDMasterStatus> {
-  bdmaster::get_bdmaster_status(path, check_running).await
-}
-
-pub async fn get_mpchc_status(path: String, check_running: bool) -> Result<MpcHcStatus> {
-  mpchc::get_mpchc_status(path, check_running).await
-}
-
-pub async fn get_ffmpeg_status(path: String) -> Result<FfmpegStatus> {
-  ffmpeg::get_ffmpeg_status(path).await
-}
-
-pub async fn get_bd_status(path: String) -> Result<BDStatus> {
-  bd::get_bd_status(path).await
-}
-
 pub async fn open_batchmkvextract(file: String) -> Result<()> {
   batchmkvextract::spawn_batchmkvextract(&file)
 }
@@ -418,150 +346,12 @@ pub async fn open_mpchc(file: String) -> Result<()> {
   mpchc::spawn_mpchc(&file)
 }
 
-pub async fn capture_ffmpeg_frame(file: String, position_seconds: f64, max_width: u32) -> Result<Vec<u8>> {
-  tokio::task::spawn_blocking(move || ffmpeg::capture_frame(file, position_seconds, max_width)).await?
+pub async fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+  context_menu::register_extensions_context_menu(extensions)
 }
 
-pub async fn run_mkvextract(window: Window, file: String, args: Vec<String>, children: ChildMap) -> Result<()> {
-  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args)?;
-  let stdout = child
-    .stdout
-    .take()
-    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
-  let label = window.label().to_owned();
-  children.lock().unwrap().insert(label.clone(), child);
-  let children_arc = children.clone();
-  let window_clone = window.clone();
-  #[cfg(target_os = "windows")]
-  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-  tokio::task::spawn_blocking(move || {
-    let target = EventTarget::webview_window(&label);
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      taskbar::set_progress(hwnd, 0);
-    }
-    mkvtoolnix::read_mkvextract_output(stdout, |line| {
-      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
-        #[cfg(target_os = "windows")]
-        if let Some(hwnd) = hwnd_raw {
-          taskbar::set_progress(hwnd, percent);
-        }
-        let _ = window_clone.emit_to(
-          target.clone(),
-          "mkvextract-progress",
-          MkvextractProgressEvent {
-            percent,
-            done: false,
-            cancelled: false,
-            error: None,
-          },
-        );
-      }
-    });
-    let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, error) = match child {
-      Some(mut c) => match c.wait() {
-        Ok(status) if status.success() => (false, None),
-        Ok(status) => (
-          false,
-          Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1))),
-        ),
-        Err(e) => (false, Some(e.to_string())),
-      },
-      None => (true, None),
-    };
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      if error.is_some() {
-        taskbar::set_error(hwnd);
-      } else {
-        taskbar::clear_progress(hwnd);
-      }
-    }
-    let _ = window_clone.emit_to(
-      target,
-      "mkvextract-progress",
-      MkvextractProgressEvent {
-        percent: 100,
-        done: true,
-        cancelled,
-        error,
-      },
-    );
-  })
-  .await?;
-  Ok(())
-}
-
-pub async fn run_mkvmerge(window: Window, args: Vec<String>, children: ChildMap) -> Result<()> {
-  let mut child = mkvtoolnix::spawn_mkvmerge(&args)?;
-  let stdout = child
-    .stdout
-    .take()
-    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
-  let label = window.label().to_owned();
-  children.lock().unwrap().insert(label.clone(), child);
-  let children_arc = children.clone();
-  let window_clone = window.clone();
-  #[cfg(target_os = "windows")]
-  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-  tokio::task::spawn_blocking(move || {
-    let target = EventTarget::webview_window(&label);
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      taskbar::set_progress(hwnd, 0);
-    }
-    mkvtoolnix::read_mkvmerge_output(stdout, |line| {
-      if let Some(percent) = mkvtoolnix::parse_mkvmerge_progress(line) {
-        #[cfg(target_os = "windows")]
-        if let Some(hwnd) = hwnd_raw {
-          taskbar::set_progress(hwnd, percent);
-        }
-        let _ = window_clone.emit_to(
-          target.clone(),
-          "mkvmerge-progress",
-          MkvmergeProgressEvent {
-            percent,
-            done: false,
-            cancelled: false,
-            error: None,
-          },
-        );
-      }
-    });
-    let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, error) = match child {
-      Some(mut c) => match c.wait() {
-        Ok(status) if status.success() => (false, None),
-        Ok(status) => (
-          false,
-          Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1))),
-        ),
-        Err(e) => (false, Some(e.to_string())),
-      },
-      None => (true, None),
-    };
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = hwnd_raw {
-      if error.is_some() {
-        taskbar::set_error(hwnd);
-      } else {
-        taskbar::clear_progress(hwnd);
-      }
-    }
-    let _ = window_clone.emit_to(
-      target,
-      "mkvmerge-progress",
-      MkvmergeProgressEvent {
-        percent: 100,
-        done: true,
-        cancelled,
-        error,
-      },
-    );
-  })
-  .await?;
-  Ok(())
+pub async fn register_folder_context_menu() -> Result<()> {
+  context_menu::register_folder_context_menu()
 }
 
 pub async fn run_ffmpeg_capture(
@@ -817,5 +607,215 @@ pub async fn run_ffmpeg_capture(
     );
   })
   .await?;
+  Ok(())
+}
+
+pub async fn run_mkvextract(window: Window, file: String, args: Vec<String>, children: ChildMap) -> Result<()> {
+  let mut child = mkvtoolnix::spawn_mkvextract(&file, &args)?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
+  let label = window.label().to_owned();
+  children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = children.clone();
+  let window_clone = window.clone();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+  tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
+    mkvtoolnix::read_mkvextract_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvextract_progress(line) {
+        #[cfg(target_os = "windows")]
+        if let Some(hwnd) = hwnd_raw {
+          taskbar::set_progress(hwnd, percent);
+        }
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvextract-progress",
+          MkvextractProgressEvent {
+            percent,
+            done: false,
+            cancelled: false,
+            error: None,
+          },
+        );
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("mkvextract exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
+      None => (true, None),
+    };
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
+    let _ = window_clone.emit_to(
+      target,
+      "mkvextract-progress",
+      MkvextractProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await?;
+  Ok(())
+}
+
+pub async fn run_mkvmerge(window: Window, args: Vec<String>, children: ChildMap) -> Result<()> {
+  let mut child = mkvtoolnix::spawn_mkvmerge(&args)?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
+  let label = window.label().to_owned();
+  children.lock().unwrap().insert(label.clone(), child);
+  let children_arc = children.clone();
+  let window_clone = window.clone();
+  #[cfg(target_os = "windows")]
+  let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+  tokio::task::spawn_blocking(move || {
+    let target = EventTarget::webview_window(&label);
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      taskbar::set_progress(hwnd, 0);
+    }
+    mkvtoolnix::read_mkvmerge_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvmerge_progress(line) {
+        #[cfg(target_os = "windows")]
+        if let Some(hwnd) = hwnd_raw {
+          taskbar::set_progress(hwnd, percent);
+        }
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvmerge-progress",
+          MkvmergeProgressEvent {
+            percent,
+            done: false,
+            cancelled: false,
+            error: None,
+          },
+        );
+      }
+    });
+    let child = children_arc.lock().unwrap().remove(&label);
+    let (cancelled, error) = match child {
+      Some(mut c) => match c.wait() {
+        Ok(status) if status.success() => (false, None),
+        Ok(status) => (
+          false,
+          Some(format!("mkvmerge exited with code {}", status.code().unwrap_or(-1))),
+        ),
+        Err(e) => (false, Some(e.to_string())),
+      },
+      None => (true, None),
+    };
+    #[cfg(target_os = "windows")]
+    if let Some(hwnd) = hwnd_raw {
+      if error.is_some() {
+        taskbar::set_error(hwnd);
+      } else {
+        taskbar::clear_progress(hwnd);
+      }
+    }
+    let _ = window_clone.emit_to(
+      target,
+      "mkvmerge-progress",
+      MkvmergeProgressEvent {
+        percent: 100,
+        done: true,
+        cancelled,
+        error,
+      },
+    );
+  })
+  .await?;
+  Ok(())
+}
+
+pub async fn set_config(config: config::Config) -> Result<config::Config> {
+  config::set_config(config)?;
+  Ok(config::get_config())
+}
+
+pub async fn skip_version(version: String) -> Result<()> {
+  let mut cfg = config::get_config();
+  cfg.update.ignore_version = version;
+  config::set_config(cfg)?;
+  Ok(())
+}
+
+pub async fn suggest_merge_output_path(source_file: String) -> String {
+  let source = Path::new(source_file.as_str());
+  let parent = source.parent().unwrap_or_else(|| Path::new(""));
+  let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+  let is_mkv = source
+    .extension()
+    .and_then(|e| e.to_str())
+    .map(|e| e.eq_ignore_ascii_case("mkv"))
+    .unwrap_or(false);
+  let mut counter: u32 = if is_mkv { 1 } else { 0 };
+  loop {
+    let name = if counter == 0 {
+      format!("{stem}.mkv")
+    } else {
+      format!("{stem} ({counter}).mkv")
+    };
+    let candidate = parent.join(&name);
+    if !candidate.exists() {
+      return candidate.to_string_lossy().into_owned();
+    }
+    counter = if counter == 0 { 2 } else { counter + 1 };
+  }
+}
+
+pub async fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+  context_menu::unregister_extensions_context_menu(extensions)
+}
+
+pub async fn unregister_folder_context_menu() -> Result<()> {
+  context_menu::unregister_folder_context_menu()
+}
+
+fn validate_path_as_file(path: &Path) -> Result<()> {
+  if !path.exists() {
+    Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
+  } else if !path.is_file() {
+    Err(anyhow::anyhow!("Path {} is not a file.", path.display()))
+  } else {
+    Ok(())
+  }
+}
+
+pub async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<()> {
+  let path = Path::new(file.as_str());
+  let mut file = File::create(path)?;
+  file.write_all(&bytes)?;
+  Ok(())
+}
+
+pub async fn write_text_file(file: String, text: String) -> Result<()> {
+  let path = Path::new(file.as_str());
+  let mut file = File::create(path)?;
+  file.write_all(text.as_bytes())?;
   Ok(())
 }

@@ -24,9 +24,41 @@ use crate::constants::APP_NAME;
 const MENU_LABEL: &str = "Open with BetterMediaInfo";
 
 #[cfg(target_os = "windows")]
-fn normalize_ext(ext: &str) -> String {
-  let trimmed = ext.trim().trim_start_matches('.');
-  trimmed.to_ascii_lowercase()
+pub fn are_extensions_context_menu_registered(extensions: Vec<String>) -> bool {
+  let filtered: Vec<String> = extensions.into_iter().filter(|e| !e.trim().is_empty()).collect();
+  if filtered.is_empty() {
+    return false;
+  }
+  filtered.iter().all(|e| shell_entry_exists(&extension_shell_path(e)))
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn are_extensions_context_menu_registered(_extensions: Vec<String>) -> bool {
+  false
+}
+
+#[cfg(target_os = "windows")]
+fn build_command() -> Result<String> {
+  let exe = std::env::current_exe()?;
+  let exe_str = exe.to_string_lossy().to_string();
+  Ok(format!("\"{}\" \"%1\"", exe_str))
+}
+
+#[cfg(target_os = "windows")]
+fn current_exe_string() -> Result<String> {
+  Ok(std::env::current_exe()?.to_string_lossy().to_string())
+}
+
+#[cfg(target_os = "windows")]
+fn delete_shell_entry(shell_path: &str) -> Result<()> {
+  use winreg::RegKey;
+  use winreg::enums::HKEY_CURRENT_USER;
+  let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+  match hkcu.delete_subkey_all(shell_path) {
+    Ok(_) => Ok(()),
+    Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+    Err(e) => Err(e.into()),
+  }
 }
 
 #[cfg(target_os = "windows")]
@@ -47,49 +79,19 @@ fn folder_shell_paths() -> [String; 2] {
 }
 
 #[cfg(target_os = "windows")]
-fn write_shell_entry(shell_path: &str, command: &str, exe: &str) -> Result<()> {
-  use winreg::RegKey;
-  use winreg::enums::HKEY_CURRENT_USER;
-  let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-  let (key, _) = hkcu.create_subkey(shell_path)?;
-  key.set_value("", &MENU_LABEL)?;
-  key.set_value("Icon", &exe)?;
-  let command_path = format!("{}\\command", shell_path);
-  let (cmd_key, _) = hkcu.create_subkey(&command_path)?;
-  cmd_key.set_value("", &command)?;
-  Ok(())
+pub fn is_folder_context_menu_registered() -> bool {
+  folder_shell_paths().iter().all(|p| shell_entry_exists(p))
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn is_folder_context_menu_registered() -> bool {
+  false
 }
 
 #[cfg(target_os = "windows")]
-fn delete_shell_entry(shell_path: &str) -> Result<()> {
-  use winreg::RegKey;
-  use winreg::enums::HKEY_CURRENT_USER;
-  let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-  match hkcu.delete_subkey_all(shell_path) {
-    Ok(_) => Ok(()),
-    Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-    Err(e) => Err(e.into()),
-  }
-}
-
-#[cfg(target_os = "windows")]
-fn shell_entry_exists(shell_path: &str) -> bool {
-  use winreg::RegKey;
-  use winreg::enums::{HKEY_CURRENT_USER, KEY_READ};
-  let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-  hkcu.open_subkey_with_flags(shell_path, KEY_READ).is_ok()
-}
-
-#[cfg(target_os = "windows")]
-fn build_command() -> Result<String> {
-  let exe = std::env::current_exe()?;
-  let exe_str = exe.to_string_lossy().to_string();
-  Ok(format!("\"{}\" \"%1\"", exe_str))
-}
-
-#[cfg(target_os = "windows")]
-fn current_exe_string() -> Result<String> {
-  Ok(std::env::current_exe()?.to_string_lossy().to_string())
+fn normalize_ext(ext: &str) -> String {
+  let trimmed = ext.trim().trim_start_matches('.');
+  trimmed.to_ascii_lowercase()
 }
 
 #[cfg(target_os = "windows")]
@@ -105,24 +107,11 @@ pub fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
   Ok(())
 }
 
-#[cfg(target_os = "windows")]
-pub fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
-  for ext in extensions {
-    if ext.trim().is_empty() {
-      continue;
-    }
-    delete_shell_entry(&extension_shell_path(&ext))?;
-  }
-  Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn are_extensions_context_menu_registered(extensions: Vec<String>) -> bool {
-  let filtered: Vec<String> = extensions.into_iter().filter(|e| !e.trim().is_empty()).collect();
-  if filtered.is_empty() {
-    return false;
-  }
-  filtered.iter().all(|e| shell_entry_exists(&extension_shell_path(e)))
+#[cfg(not(target_os = "windows"))]
+pub fn register_extensions_context_menu(_extensions: Vec<String>) -> Result<()> {
+  Err(anyhow::anyhow!(
+    "Context menu registration is only supported on Windows."
+  ))
 }
 
 #[cfg(target_os = "windows")]
@@ -135,24 +124,30 @@ pub fn register_folder_context_menu() -> Result<()> {
   Ok(())
 }
 
-#[cfg(target_os = "windows")]
-pub fn unregister_folder_context_menu() -> Result<()> {
-  for path in folder_shell_paths() {
-    delete_shell_entry(&path)?;
-  }
-  Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn is_folder_context_menu_registered() -> bool {
-  folder_shell_paths().iter().all(|p| shell_entry_exists(p))
-}
-
 #[cfg(not(target_os = "windows"))]
-pub fn register_extensions_context_menu(_extensions: Vec<String>) -> Result<()> {
+pub fn register_folder_context_menu() -> Result<()> {
   Err(anyhow::anyhow!(
     "Context menu registration is only supported on Windows."
   ))
+}
+
+#[cfg(target_os = "windows")]
+fn shell_entry_exists(shell_path: &str) -> bool {
+  use winreg::RegKey;
+  use winreg::enums::{HKEY_CURRENT_USER, KEY_READ};
+  let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+  hkcu.open_subkey_with_flags(shell_path, KEY_READ).is_ok()
+}
+
+#[cfg(target_os = "windows")]
+pub fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+  for ext in extensions {
+    if ext.trim().is_empty() {
+      continue;
+    }
+    delete_shell_entry(&extension_shell_path(&ext))?;
+  }
+  Ok(())
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -162,16 +157,12 @@ pub fn unregister_extensions_context_menu(_extensions: Vec<String>) -> Result<()
   ))
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn are_extensions_context_menu_registered(_extensions: Vec<String>) -> bool {
-  false
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn register_folder_context_menu() -> Result<()> {
-  Err(anyhow::anyhow!(
-    "Context menu registration is only supported on Windows."
-  ))
+#[cfg(target_os = "windows")]
+pub fn unregister_folder_context_menu() -> Result<()> {
+  for path in folder_shell_paths() {
+    delete_shell_entry(&path)?;
+  }
+  Ok(())
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -181,7 +172,16 @@ pub fn unregister_folder_context_menu() -> Result<()> {
   ))
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn is_folder_context_menu_registered() -> bool {
-  false
+#[cfg(target_os = "windows")]
+fn write_shell_entry(shell_path: &str, command: &str, exe: &str) -> Result<()> {
+  use winreg::RegKey;
+  use winreg::enums::HKEY_CURRENT_USER;
+  let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+  let (key, _) = hkcu.create_subkey(shell_path)?;
+  key.set_value("", &MENU_LABEL)?;
+  key.set_value("Icon", &exe)?;
+  let command_path = format!("{}\\command", shell_path);
+  let (cmd_key, _) = hkcu.create_subkey(&command_path)?;
+  cmd_key.set_value("", &command)?;
+  Ok(())
 }

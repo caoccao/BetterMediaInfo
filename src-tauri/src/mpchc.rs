@@ -24,6 +24,14 @@ use crate::protocol::MpcHcStatus;
 const TOOL_STEM: &str = "mpc-hc64";
 const PROCESS_NAME: &str = "mpc-hc64.exe";
 
+fn binary_path(dir: &Path) -> Option<PathBuf> {
+  let exe = dir.join(format!("{}.exe", TOOL_STEM));
+  if exe.exists() && exe.is_file() {
+    return Some(exe);
+  }
+  None
+}
+
 fn find_running_process_dir() -> Option<PathBuf> {
   let sys = sysinfo::System::new_all();
   for process in sys.processes().values() {
@@ -38,64 +46,6 @@ fn find_running_process_dir() -> Option<PathBuf> {
     }
   }
   None
-}
-
-fn binary_path(dir: &Path) -> Option<PathBuf> {
-  let exe = dir.join(format!("{}.exe", TOOL_STEM));
-  if exe.exists() && exe.is_file() {
-    return Some(exe);
-  }
-  None
-}
-
-fn has_executable(path: &Path) -> bool {
-  binary_path(path).is_some()
-}
-
-fn resolve(path: &str) -> (PathBuf, bool) {
-  let trimmed = path.trim();
-  let configured = PathBuf::from(trimmed);
-  if has_executable(&configured) {
-    return (configured, true);
-  }
-  (configured, false)
-}
-
-fn persist_path(path: &Path) -> Result<()> {
-  let new_path = path.to_string_lossy().to_string();
-  let mut cfg = config::get_config();
-  if cfg.mpc_hc.path == new_path {
-    return Ok(());
-  }
-  cfg.mpc_hc.path = new_path;
-  config::set_config(cfg)?;
-  Ok(())
-}
-
-pub fn spawn_mpchc(file: &str) -> Result<()> {
-  let file_path = Path::new(file);
-  if !file_path.exists() {
-    return Err(anyhow::anyhow!("File {} does not exist.", file));
-  }
-  let cfg = config::get_config();
-  let dir = PathBuf::from(&cfg.mpc_hc.path);
-  let bin = binary_path(&dir).ok_or_else(|| anyhow::anyhow!("MPC HC executable not found under {}.", dir.display()))?;
-
-  let mut cmd = std::process::Command::new(&bin);
-  cmd
-    .arg(file)
-    .stdin(std::process::Stdio::null())
-    .stdout(std::process::Stdio::null())
-    .stderr(std::process::Stdio::null());
-  #[cfg(target_os = "windows")]
-  {
-    use std::os::windows::process::CommandExt;
-    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-  }
-  cmd
-    .spawn()
-    .map_err(|e| anyhow::anyhow!("Failed to launch MPC HC: {}", e))?;
-  Ok(())
 }
 
 pub async fn get_mpchc_status(path: String, check_running: bool) -> Result<MpcHcStatus> {
@@ -125,4 +75,54 @@ pub async fn get_mpchc_status(path: String, check_running: bool) -> Result<MpcHc
     found,
     path: resolved.to_string_lossy().to_string(),
   })
+}
+
+fn has_executable(path: &Path) -> bool {
+  binary_path(path).is_some()
+}
+
+fn persist_path(path: &Path) -> Result<()> {
+  let new_path = path.to_string_lossy().to_string();
+  let mut cfg = config::get_config();
+  if cfg.mpc_hc.path == new_path {
+    return Ok(());
+  }
+  cfg.mpc_hc.path = new_path;
+  config::set_config(cfg)?;
+  Ok(())
+}
+
+fn resolve(path: &str) -> (PathBuf, bool) {
+  let trimmed = path.trim();
+  let configured = PathBuf::from(trimmed);
+  if has_executable(&configured) {
+    return (configured, true);
+  }
+  (configured, false)
+}
+
+pub fn spawn_mpchc(file: &str) -> Result<()> {
+  let file_path = Path::new(file);
+  if !file_path.exists() {
+    return Err(anyhow::anyhow!("File {} does not exist.", file));
+  }
+  let cfg = config::get_config();
+  let dir = PathBuf::from(&cfg.mpc_hc.path);
+  let bin = binary_path(&dir).ok_or_else(|| anyhow::anyhow!("MPC HC executable not found under {}.", dir.display()))?;
+
+  let mut cmd = std::process::Command::new(&bin);
+  cmd
+    .arg(file)
+    .stdin(std::process::Stdio::null())
+    .stdout(std::process::Stdio::null())
+    .stderr(std::process::Stdio::null());
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  cmd
+    .spawn()
+    .map_err(|e| anyhow::anyhow!("Failed to launch MPC HC: {}", e))?;
+  Ok(())
 }
