@@ -2400,6 +2400,7 @@ export default function Config() {
     batchMkvExtractPath,
     bdMasterPath,
     mpcHcPath,
+    ffmpegPath,
     cardViewShowGeneral,
     cardViewShowVideo,
     cardViewShowAudio,
