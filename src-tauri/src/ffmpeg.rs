@@ -19,7 +19,6 @@ use anyhow::Result;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Command, Stdio};
-use std::time::SystemTime;
 
 use crate::config;
 use crate::protocol::FfmpegStatus;
@@ -188,32 +187,77 @@ pub fn read_capture_progress<F: FnMut(f64)>(stdout: ChildStdout, mut on_time: F)
   }
 }
 
-fn is_image_path(path: &Path) -> bool {
-  path
-    .extension()
-    .and_then(|e| e.to_str())
-    .map(|e| matches!(e.to_ascii_lowercase().as_str(), "png" | "jpg" | "jpeg"))
-    .unwrap_or(false)
+/// Split an ffmpeg image2 output filename pattern around its frame-number token,
+/// returning `(prefix, suffix)`. The token is a printf integer conversion —
+/// `%d`, `%04d`, etc. (digits between `%` and `d` are the zero-pad width). For
+/// `name_shot_%04d.png` this yields `("name_shot_", ".png")`. Returns `None` when
+/// the filename has no such token (the timestamp mode writes one explicit file
+/// name per invocation, with no `%d`).
+fn split_pattern(file_pat: &str) -> Option<(String, String)> {
+  let bytes = file_pat.as_bytes();
+  let mut i = 0;
+  while i < bytes.len() {
+    if bytes[i] == b'%' {
+      let mut j = i + 1;
+      while j < bytes.len() && bytes[j].is_ascii_digit() {
+        j += 1;
+      }
+      if j < bytes.len() && bytes[j] == b'd' {
+        return Some((file_pat[..i].to_string(), file_pat[j + 1..].to_string()));
+      }
+    }
+    i += 1;
+  }
+  None
 }
 
-/// Collect every image file in `dir` written at or after `since`. Used to apply
-/// border trimming to the images a single capture run just produced.
-pub fn images_in_dir_since(dir: &Path, since: SystemTime) -> Vec<PathBuf> {
+/// True when `name` is an instance of the `prefix`+`<digits>`+`suffix` series,
+/// i.e. it starts with `prefix`, ends with `suffix`, and the characters in
+/// between are a non-empty run of ASCII digits (the frame number).
+fn name_matches(name: &str, prefix: &str, suffix: &str) -> bool {
+  name.len() > prefix.len() + suffix.len()
+    && name.starts_with(prefix)
+    && name.ends_with(suffix)
+    && name[prefix.len()..name.len() - suffix.len()].bytes().all(|b| b.is_ascii_digit())
+}
+
+/// Collect every file a capture run produced, identified purely by the ffmpeg
+/// output filename pattern (e.g. `/dir/name_shot_%04d.png`) — not by timestamps.
+/// The pattern's directory is scanned and the numbered series it describes is
+/// returned, sorted by name (zero-padded indices sort in frame order). A pattern
+/// with no `%d` token (timestamp mode) matches its single literal filename.
+///
+/// This is deterministic regardless of filesystem mtime resolution or clock
+/// skew, since we already told ffmpeg exactly what to name the files.
+pub fn images_for_pattern(pattern: &Path) -> Vec<PathBuf> {
+  let Some(dir) = pattern.parent() else {
+    return Vec::new();
+  };
+  let Some(file_pat) = pattern.file_name().and_then(|n| n.to_str()) else {
+    return Vec::new();
+  };
+  let token = split_pattern(file_pat);
   let mut out = Vec::new();
   let Ok(read_dir) = std::fs::read_dir(dir) else {
     return out;
   };
   for entry in read_dir.flatten() {
     let path = entry.path();
-    if !path.is_file() || !is_image_path(&path) {
+    if !path.is_file() {
       continue;
     }
-    if let Ok(modified) = entry.metadata().and_then(|m| m.modified()) {
-      if modified >= since {
-        out.push(path);
-      }
+    let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+      continue;
+    };
+    let matched = match &token {
+      Some((prefix, suffix)) => name_matches(name, prefix, suffix),
+      None => name == file_pat,
+    };
+    if matched {
+      out.push(path);
     }
   }
+  out.sort();
   out
 }
 
@@ -326,7 +370,7 @@ fn content_bounds(rgba: &image::RgbaImage, color: (u8, u8, u8), tolerance_percen
 }
 
 /// Outcome of trimming a single captured image.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrimResult {
   /// Cropped to the content bounding box and rewritten smaller.
   Trimmed,
@@ -385,24 +429,61 @@ pub fn trim_image_file(path: &Path, color: (u8, u8, u8), tolerance_percent: f64)
   Ok(TrimResult::Trimmed)
 }
 
-/// Trim every image in `paths` in place, spreading the work across CPU cores and
-/// containing any per-file error or panic so one bad frame can't abort the whole
-/// batch. Re-encoding the trimmed frames is CPU-bound, so a large capture would
-/// otherwise stall for a long time on a single thread.
-pub fn trim_images(paths: Vec<PathBuf>, color: (u8, u8, u8), tolerance_percent: f64) {
-  if paths.is_empty() {
-    return;
+/// Aggregate counts from a trim pass. Tallied on the single thread that drains the
+/// worker results, so the totals are exact regardless of how many workers ran.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct TrimStats {
+  pub trimmed: usize,
+  pub unchanged: usize,
+  pub removed: usize,
+  pub failed: usize,
+}
+
+/// Trim every image in `paths` in place, spreading the work across `threads`
+/// worker threads and containing any per-file error or panic so one bad frame
+/// can't abort the whole batch. Re-encoding the trimmed frames is CPU-bound, so a
+/// large capture would otherwise stall for a long time on a single thread.
+///
+/// `on_progress(completed, total, last_path, result)` is invoked once per finished
+/// image on the *calling* thread (the workers funnel their results through a
+/// channel), so the caller can drive a progress bar and preview without any
+/// cross-thread synchronization of its own. `result` is `None` when that image
+/// failed or panicked. Returns the aggregate [`TrimStats`].
+///
+/// `cancel` is polled by each worker before it picks up the next image; once set,
+/// the workers stop pulling new work and the pass winds down early (images
+/// already in flight still finish).
+pub fn trim_images<F>(
+  paths: Vec<PathBuf>,
+  color: (u8, u8, u8),
+  tolerance_percent: f64,
+  threads: usize,
+  cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
+  mut on_progress: F,
+) -> TrimStats
+where
+  F: FnMut(usize, usize, &Path, Option<TrimResult>),
+{
+  use std::sync::atomic::Ordering;
+  let total = paths.len();
+  let mut stats = TrimStats::default();
+  if total == 0 {
+    return stats;
   }
-  let workers = std::thread::available_parallelism()
-    .map(|n| n.get())
-    .unwrap_or(4)
-    .clamp(1, 8)
-    .min(paths.len());
+  // The frontend caps the request at the core count; clamp defensively and never
+  // spawn more workers than there are images.
+  let workers = threads.clamp(1, 256).min(total);
   let queue = std::sync::Arc::new(std::sync::Mutex::new(paths));
+  let (tx, rx) = std::sync::mpsc::channel::<(PathBuf, Option<TrimResult>)>();
   let mut handles = Vec::with_capacity(workers);
   for _ in 0..workers {
     let queue = queue.clone();
+    let tx = tx.clone();
+    let cancel = cancel.clone();
     handles.push(std::thread::spawn(move || loop {
+      if cancel.load(Ordering::SeqCst) {
+        break;
+      }
       let path = {
         let mut guard = queue.lock().unwrap();
         guard.pop()
@@ -412,16 +493,40 @@ pub fn trim_images(paths: Vec<PathBuf>, color: (u8, u8, u8), tolerance_percent: 
       };
       let outcome =
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| trim_image_file(&path, color, tolerance_percent)));
-      match outcome {
-        Ok(Ok(_)) => {}
-        Ok(Err(e)) => log::warn!("Failed to trim {}: {}", path.display(), e),
-        Err(_) => log::warn!("Trimming {} panicked; skipping", path.display()),
+      let result = match outcome {
+        Ok(Ok(r)) => Some(r),
+        Ok(Err(e)) => {
+          log::warn!("Failed to trim {}: {}", path.display(), e);
+          None
+        }
+        Err(_) => {
+          log::warn!("Trimming {} panicked; skipping", path.display());
+          None
+        }
+      };
+      // A send error means the receiver hung up (caller dropped); stop working.
+      if tx.send((path, result)).is_err() {
+        break;
       }
     }));
+  }
+  // Drop the original sender so the channel closes once every worker is done.
+  drop(tx);
+  let mut completed = 0usize;
+  while let Ok((path, result)) = rx.recv() {
+    completed += 1;
+    match result {
+      Some(TrimResult::Trimmed) => stats.trimmed += 1,
+      Some(TrimResult::Unchanged) => stats.unchanged += 1,
+      Some(TrimResult::Removed) => stats.removed += 1,
+      None => stats.failed += 1,
+    }
+    on_progress(completed, total, &path, result);
   }
   for handle in handles {
     let _ = handle.join();
   }
+  stats
 }
 
 /// Shrink an encoded image to at most `max_width` (preserving aspect ratio) and
@@ -463,34 +568,25 @@ pub fn downscale_for_preview(bytes: &[u8], ext: &str, max_width: u32) -> Vec<u8>
   }
 }
 
-/// Find the most recently modified image file in `dir` produced at or after
-/// `since`. Used to show the frame currently being captured in the preview.
-pub fn newest_image_in_dir(dir: &Path, since: SystemTime) -> Option<PathBuf> {
-  let mut best: Option<(SystemTime, PathBuf)> = None;
-  for entry in std::fs::read_dir(dir).ok()?.flatten() {
-    let path = entry.path();
-    if !path.is_file() {
-      continue;
-    }
-    let is_image = path
-      .extension()
-      .and_then(|e| e.to_str())
-      .map(|e| matches!(e.to_ascii_lowercase().as_str(), "png" | "jpg" | "jpeg"))
-      .unwrap_or(false);
-    if !is_image {
-      continue;
-    }
-    let Ok(modified) = entry.metadata().and_then(|m| m.modified()) else {
-      continue;
-    };
-    if modified < since {
-      continue;
-    }
-    if best.as_ref().map_or(true, |(t, _)| modified >= *t) {
-      best = Some((modified, path));
-    }
+/// Find the most recently produced file for the capture pattern — the one with
+/// the highest frame number, since ffmpeg writes the numbered series in order.
+/// Used to show the frame currently being captured (and the final frame) in the
+/// preview. Indices are parsed as integers so the choice is correct past the
+/// zero-pad width (e.g. 9999 → 10000). A literal (timestamp) pattern yields its
+/// single file.
+pub fn newest_image_for_pattern(pattern: &Path) -> Option<PathBuf> {
+  let token = pattern.file_name().and_then(|n| n.to_str()).and_then(split_pattern);
+  let images = images_for_pattern(pattern);
+  match token {
+    Some((prefix, suffix)) => images.into_iter().max_by_key(|p| {
+      p.file_name()
+        .and_then(|n| n.to_str())
+        .and_then(|name| name.get(prefix.len()..name.len().saturating_sub(suffix.len())))
+        .and_then(|mid| mid.parse::<u64>().ok())
+        .unwrap_or(0)
+    }),
+    None => images.into_iter().next(),
   }
-  best.map(|(_, p)| p)
 }
 
 #[cfg(test)]
@@ -639,10 +735,113 @@ mod tests {
     image::RgbaImage::from_pixel(10, 10, image::Rgba([16, 16, 16, 255]))
       .save_with_format(&blank, image::ImageFormat::Png)
       .unwrap();
-    trim_images(vec![crop.clone(), blank.clone()], (0, 0, 0), 10.0);
+    let mut progressed = Vec::new();
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let stats = trim_images(
+      vec![crop.clone(), blank.clone()],
+      (0, 0, 0),
+      10.0,
+      2,
+      cancel,
+      |completed, total, _, result| progressed.push((completed, total, result)),
+    );
     assert_eq!(image::open(&crop).unwrap().to_rgba8().dimensions(), (12, 10));
     assert!(!blank.exists(), "blank frame should have been removed");
+    // The callback fires once per image with a monotonically increasing count.
+    assert_eq!(progressed.len(), 2);
+    assert_eq!(progressed[0].0, 1);
+    assert_eq!(progressed[1].0, 2);
+    assert!(progressed.iter().all(|(_, total, _)| *total == 2));
+    assert_eq!(stats.trimmed, 1);
+    assert_eq!(stats.removed, 1);
     let _ = std::fs::remove_file(&crop);
+  }
+
+  #[test]
+  fn trim_images_honors_cancel_flag() {
+    // A flag set before the pass starts means no image is ever picked up: the
+    // file is left untouched, the callback never fires, and the stats stay zero.
+    let crop = temp_path("cancel_crop.png");
+    bordered_rgba(20, 16, (4, 3, 12, 10))
+      .save_with_format(&crop, image::ImageFormat::Png)
+      .unwrap();
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let mut progressed = 0usize;
+    let stats = trim_images(vec![crop.clone()], (0, 0, 0), 10.0, 2, cancel, |_, _, _, _| progressed += 1);
+    assert_eq!(progressed, 0);
+    assert_eq!(stats, TrimStats::default());
+    // Untouched: still the original 20x16 dimensions.
+    assert_eq!(image::open(&crop).unwrap().to_rgba8().dimensions(), (20, 16));
+    let _ = std::fs::remove_file(&crop);
+  }
+
+  #[test]
+  fn split_pattern_parses_frame_token() {
+    assert_eq!(
+      split_pattern("clip_shot_%04d.png"),
+      Some(("clip_shot_".to_string(), ".png".to_string()))
+    );
+    assert_eq!(split_pattern("a_%d.jpg"), Some(("a_".to_string(), ".jpg".to_string())));
+    // Literal name (timestamp mode) — no token.
+    assert_eq!(split_pattern("clip_ts_0001.png"), None);
+  }
+
+  #[test]
+  fn name_matches_only_the_numbered_series() {
+    assert!(name_matches("clip_shot_0001.png", "clip_shot_", ".png"));
+    assert!(name_matches("clip_shot_10000.png", "clip_shot_", ".png"));
+    assert!(!name_matches("clip_shot_.png", "clip_shot_", ".png")); // empty index
+    assert!(!name_matches("clip_shot_xx.png", "clip_shot_", ".png")); // non-digit
+    assert!(!name_matches("other_shot_0001.png", "clip_shot_", ".png")); // wrong prefix
+    assert!(!name_matches("clip_shot_0001.jpg", "clip_shot_", ".png")); // wrong suffix
+  }
+
+  #[test]
+  fn images_for_pattern_collects_numbered_series() {
+    // Discovery is by name, not mtime: every frame the pattern describes is
+    // returned (in frame order), and look-alikes from other series are excluded.
+    let dir = std::env::temp_dir().join(format!("bmi_pat_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let touch = |name: &str| std::fs::write(dir.join(name), b"x").unwrap();
+    touch("clip_shot_0001.png");
+    touch("clip_shot_0002.png");
+    touch("clip_shot_0010.png");
+    touch("clip_shot_0003.png");
+    touch("other_shot_0001.png"); // different prefix
+    touch("clip_shot_0001.jpg"); // different suffix
+    touch("clip_shot_xx.png"); // non-digit middle
+    let pattern = dir.join("clip_shot_%04d.png");
+    let found: Vec<String> = images_for_pattern(&pattern)
+      .iter()
+      .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+      .collect();
+    assert_eq!(
+      found,
+      vec!["clip_shot_0001.png", "clip_shot_0002.png", "clip_shot_0003.png", "clip_shot_0010.png"]
+    );
+    // Newest = highest frame index (not lexicographic, not mtime).
+    assert_eq!(
+      newest_image_for_pattern(&pattern).unwrap().file_name().unwrap().to_string_lossy(),
+      "clip_shot_0010.png"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+  }
+
+  #[test]
+  fn images_for_pattern_literal_matches_single_file() {
+    // Timestamp mode writes one explicit filename per invocation (no `%d`), so a
+    // literal pattern must match exactly that file and not its siblings.
+    let dir = std::env::temp_dir().join(format!("bmi_lit_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("clip_ts_0001.png"), b"x").unwrap();
+    std::fs::write(dir.join("clip_ts_0002.png"), b"x").unwrap();
+    let pattern = dir.join("clip_ts_0001.png");
+    let found = images_for_pattern(&pattern);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].file_name().unwrap().to_string_lossy(), "clip_ts_0001.png");
+    let _ = std::fs::remove_dir_all(&dir);
   }
 
   #[test]

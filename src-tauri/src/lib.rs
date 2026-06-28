@@ -46,27 +46,30 @@ fn convert_error(error: anyhow::Error) -> String {
 
 #[tauri::command]
 async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool, String> {
-  controller::are_extensions_context_menu_registered(extensions).map_err(convert_error)
+  log::debug!("are_extensions_context_menu_registered({:?})", extensions);
+  controller::are_extensions_context_menu_registered(extensions)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
 async fn cancel_ffmpeg_capture(window: tauri::Window, state: tauri::State<'_, FfmpegCaptureState>) -> Result<(), String> {
   log::debug!("cancel_ffmpeg_capture({})", window.label());
-  controller::cancel_child(&window, &state.children);
+  controller::cancel_ffmpeg_capture(&window, &state.children, &state.cancels).await;
   Ok(())
 }
 
 #[tauri::command]
 async fn cancel_mkvextract(window: tauri::Window, state: tauri::State<'_, MkvextractState>) -> Result<(), String> {
   log::debug!("cancel_mkvextract({})", window.label());
-  controller::cancel_child(&window, &state.children);
+  controller::cancel_child(&window, &state.children).await;
   Ok(())
 }
 
 #[tauri::command]
 async fn cancel_mkvmerge(window: tauri::Window, state: tauri::State<'_, MkvmergeState>) -> Result<(), String> {
   log::debug!("cancel_mkvmerge({})", window.label());
-  controller::cancel_child(&window, &state.children);
+  controller::cancel_child(&window, &state.children).await;
   Ok(())
 }
 
@@ -129,7 +132,8 @@ async fn get_files(files: Vec<String>) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 async fn get_launch_args() -> Result<Vec<String>, String> {
-  controller::get_launch_args().map_err(convert_error)
+  log::debug!("get_launch_args");
+  controller::get_launch_args().await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -181,64 +185,77 @@ async fn get_stream_count(file: String) -> Result<Vec<protocol::StreamCount>, St
 async fn get_update_result(
   state: tauri::State<'_, UpdateCheckState>,
 ) -> Result<Option<UpdateCheckResult>, String> {
-  Ok(controller::get_update_result(&state.result))
+  log::debug!("get_update_result");
+  Ok(controller::get_update_result(&state.result).await)
 }
 
 #[tauri::command]
 async fn is_folder_context_menu_registered() -> Result<bool, String> {
-  controller::is_folder_context_menu_registered().map_err(convert_error)
+  log::debug!("is_folder_context_menu_registered");
+  controller::is_folder_context_menu_registered().await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn open_batchmkvextract(file: String) -> Result<(), String> {
   log::debug!("open_batchmkvextract({})", file);
-  controller::open_batchmkvextract(file).map_err(convert_error)
+  controller::open_batchmkvextract(file).await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn open_bdmaster(file: String) -> Result<(), String> {
   log::debug!("open_bdmaster({})", file);
-  controller::open_bdmaster(file).map_err(convert_error)
+  controller::open_bdmaster(file).await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn open_mkvtoolnix_gui(file: String) -> Result<(), String> {
   log::debug!("open_mkvtoolnix_gui({})", file);
-  controller::open_mkvtoolnix_gui(file).map_err(convert_error)
+  controller::open_mkvtoolnix_gui(file).await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn open_mpchc(file: String) -> Result<(), String> {
   log::debug!("open_mpchc({})", file);
-  controller::open_mpchc(file).map_err(convert_error)
+  controller::open_mpchc(file).await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn register_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
   log::debug!("register_extensions_context_menu({:?})", extensions);
-  controller::register_extensions_context_menu(extensions).map_err(convert_error)
+  controller::register_extensions_context_menu(extensions)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
 async fn register_folder_context_menu() -> Result<(), String> {
   log::debug!("register_folder_context_menu");
-  controller::register_folder_context_menu().map_err(convert_error)
+  controller::register_folder_context_menu().await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn run_ffmpeg_capture(
   window: tauri::Window,
   args: Vec<String>,
-  output_dir: String,
+  output_pattern: String,
   duration_seconds: f64,
   trim: Option<TrimOptions>,
   preview_width: u32,
   state: tauri::State<'_, FfmpegCaptureState>,
 ) -> Result<(), String> {
-  log::debug!("run_ffmpeg_capture({:?}, {}, {})", args, output_dir, duration_seconds);
-  controller::run_ffmpeg_capture(window, args, output_dir, duration_seconds, trim, preview_width, state.children.clone())
-    .await
-    .map_err(convert_error)
+  log::debug!("run_ffmpeg_capture({:?}, {}, {})", args, output_pattern, duration_seconds);
+  controller::run_ffmpeg_capture(
+    window,
+    args,
+    output_pattern,
+    duration_seconds,
+    trim,
+    preview_width,
+    state.children.clone(),
+    state.cancels.clone(),
+  )
+  .await
+  .map_err(convert_error)
 }
 
 #[tauri::command]
@@ -275,25 +292,27 @@ async fn set_config(config: config::Config) -> Result<config::Config, String> {
 #[tauri::command]
 async fn skip_version(version: String) -> Result<(), String> {
   log::debug!("skip_version({})", version);
-  controller::skip_version(version).map_err(convert_error)
+  controller::skip_version(version).await.map_err(convert_error)
 }
 
 #[tauri::command]
 async fn suggest_merge_output_path(source_file: String) -> String {
   log::debug!("suggest_merge_output_path({})", source_file);
-  controller::suggest_merge_output_path(source_file)
+  controller::suggest_merge_output_path(source_file).await
 }
 
 #[tauri::command]
 async fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<(), String> {
   log::debug!("unregister_extensions_context_menu({:?})", extensions);
-  controller::unregister_extensions_context_menu(extensions).map_err(convert_error)
+  controller::unregister_extensions_context_menu(extensions)
+    .await
+    .map_err(convert_error)
 }
 
 #[tauri::command]
 async fn unregister_folder_context_menu() -> Result<(), String> {
   log::debug!("unregister_folder_context_menu");
-  controller::unregister_folder_context_menu().map_err(convert_error)
+  controller::unregister_folder_context_menu().await.map_err(convert_error)
 }
 
 #[tauri::command]
@@ -329,6 +348,7 @@ pub fn run() {
     })
     .manage(FfmpegCaptureState {
       children: Arc::new(Mutex::new(HashMap::new())),
+      cancels: Arc::new(Mutex::new(HashMap::new())),
     })
     .manage(UpdateCheckState {
       result: Arc::new(Mutex::new(None)),

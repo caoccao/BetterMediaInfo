@@ -132,12 +132,12 @@ export async function captureFfmpegFrame(file: string, positionSeconds: number, 
 
 export async function runFfmpegCapture(
   args: string[],
-  outputDir: string,
+  outputPattern: string,
   durationSeconds: number,
   trim: Protocol.FfmpegTrimOptions | null = null,
   previewWidth: number = 0
 ): Promise<void> {
-  return await invoke<void>("run_ffmpeg_capture", { args, outputDir, durationSeconds, trim, previewWidth });
+  return await invoke<void>("run_ffmpeg_capture", { args, outputPattern, durationSeconds, trim, previewWidth });
 }
 
 export async function cancelFfmpegCapture(): Promise<void> {

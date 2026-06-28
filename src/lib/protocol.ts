@@ -364,6 +364,11 @@ export interface FfmpegCaptureProgress {
   done: boolean;
   cancelled: boolean;
   error: string | null;
+  // Which pass the progress refers to: "capture" (ffmpeg) or "trim" (post-process).
+  phase: string;
+  // Number of images processed / total to process during the trim pass (0 during capture).
+  current: number;
+  total: number;
 }
 
 export interface FfmpegCaptureFrame {
@@ -374,6 +379,8 @@ export interface FfmpegTrimOptions {
   enabled: boolean;
   color: string;
   tolerance: number;
+  // Number of worker threads for the trim pass (defaults to CPU core count).
+  threads: number;
 }
 
 export enum TabType {

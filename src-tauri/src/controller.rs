@@ -43,6 +43,7 @@ use crate::taskbar;
 
 /// Shared map of running child processes keyed by the owning window label.
 pub type ChildMap = Arc<Mutex<HashMap<String, Child>>>;
+pub type CancelMap = Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>;
 
 static ALL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
   let media_info = MediaInfo::new();
@@ -274,7 +275,7 @@ fn validate_path_as_file(path: &Path) -> Result<()> {
   }
 }
 
-pub fn suggest_merge_output_path(source_file: String) -> String {
+pub async fn suggest_merge_output_path(source_file: String) -> String {
   let source = Path::new(source_file.as_str());
   let parent = source.parent().unwrap_or_else(|| Path::new(""));
   let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("");
@@ -312,15 +313,15 @@ pub async fn write_binary_file(file: String, bytes: Vec<u8>) -> Result<()> {
   Ok(())
 }
 
-pub fn get_launch_args() -> Result<Vec<String>> {
+pub async fn get_launch_args() -> Result<Vec<String>> {
   Ok(std::env::args().skip(1).collect())
 }
 
-pub fn get_update_result(result: &Arc<Mutex<Option<UpdateCheckResult>>>) -> Option<UpdateCheckResult> {
+pub async fn get_update_result(result: &Arc<Mutex<Option<UpdateCheckResult>>>) -> Option<UpdateCheckResult> {
   result.lock().unwrap().clone()
 }
 
-pub fn skip_version(version: String) -> Result<()> {
+pub async fn skip_version(version: String) -> Result<()> {
   let mut cfg = config::get_config();
   cfg.update.ignore_version = version;
   config::set_config(cfg)?;
@@ -329,7 +330,7 @@ pub fn skip_version(version: String) -> Result<()> {
 
 /// Kill and reap the child process owned by `window`, if any. Shared by the
 /// mkvextract, mkvmerge, and ffmpeg-capture cancel commands.
-pub fn cancel_child(window: &Window, children: &ChildMap) {
+pub async fn cancel_child(window: &Window, children: &ChildMap) {
   let label = window.label().to_owned();
   let child = children.lock().unwrap().remove(&label);
   if let Some(mut child) = child {
@@ -338,27 +339,38 @@ pub fn cancel_child(window: &Window, children: &ChildMap) {
   }
 }
 
-pub fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool> {
+/// Cancel a running FFmpeg capture/trim for `window`. The capture pass is stopped
+/// by killing the ffmpeg child; the trim pass has no child process, so it is
+/// stopped by flipping its cancel flag (polled by the trim workers). Only one of
+/// the two is ever actually running when the user cancels.
+pub async fn cancel_ffmpeg_capture(window: &Window, children: &ChildMap, cancels: &CancelMap) {
+  if let Some(flag) = cancels.lock().unwrap().get(window.label()) {
+    flag.store(true, std::sync::atomic::Ordering::SeqCst);
+  }
+  cancel_child(window, children).await;
+}
+
+pub async fn are_extensions_context_menu_registered(extensions: Vec<String>) -> Result<bool> {
   Ok(context_menu::are_extensions_context_menu_registered(extensions))
 }
 
-pub fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+pub async fn register_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
   context_menu::register_extensions_context_menu(extensions)
 }
 
-pub fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
+pub async fn unregister_extensions_context_menu(extensions: Vec<String>) -> Result<()> {
   context_menu::unregister_extensions_context_menu(extensions)
 }
 
-pub fn register_folder_context_menu() -> Result<()> {
+pub async fn register_folder_context_menu() -> Result<()> {
   context_menu::register_folder_context_menu()
 }
 
-pub fn unregister_folder_context_menu() -> Result<()> {
+pub async fn unregister_folder_context_menu() -> Result<()> {
   context_menu::unregister_folder_context_menu()
 }
 
-pub fn is_folder_context_menu_registered() -> Result<bool> {
+pub async fn is_folder_context_menu_registered() -> Result<bool> {
   Ok(context_menu::is_folder_context_menu_registered())
 }
 
@@ -390,19 +402,19 @@ pub async fn get_bd_status(path: String) -> Result<BDStatus> {
   bd::get_bd_status(path).await
 }
 
-pub fn open_batchmkvextract(file: String) -> Result<()> {
+pub async fn open_batchmkvextract(file: String) -> Result<()> {
   batchmkvextract::spawn_batchmkvextract(&file)
 }
 
-pub fn open_bdmaster(file: String) -> Result<()> {
+pub async fn open_bdmaster(file: String) -> Result<()> {
   bdmaster::spawn_bdmaster(&file)
 }
 
-pub fn open_mkvtoolnix_gui(file: String) -> Result<()> {
+pub async fn open_mkvtoolnix_gui(file: String) -> Result<()> {
   mkvtoolnix::spawn_mkvtoolnix_gui(&file)
 }
 
-pub fn open_mpchc(file: String) -> Result<()> {
+pub async fn open_mpchc(file: String) -> Result<()> {
   mpchc::spawn_mpchc(&file)
 }
 
@@ -555,11 +567,12 @@ pub async fn run_mkvmerge(window: Window, args: Vec<String>, children: ChildMap)
 pub async fn run_ffmpeg_capture(
   window: Window,
   args: Vec<String>,
-  output_dir: String,
+  output_pattern: String,
   duration_seconds: f64,
   trim: Option<TrimOptions>,
   preview_width: u32,
   children: ChildMap,
+  cancels: CancelMap,
 ) -> Result<()> {
   // Frames pushed to the preview panel are downscaled to the panel's actual
   // width (the same width the seek preview uses), so high-resolution captures
@@ -586,10 +599,17 @@ pub async fn run_ffmpeg_capture(
   let stderr = child.stderr.take();
   let label = window.label().to_owned();
   children.lock().unwrap().insert(label.clone(), child);
+  // Register a fresh cancellation flag for the trim pass (the capture pass is
+  // cancelled by killing the child above). Replaces any stale flag from a prior run.
+  let cancel_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
+  cancels.lock().unwrap().insert(label.clone(), cancel_flag.clone());
+  let cancels_arc = cancels.clone();
   let children_arc = children.clone();
   let window_clone = window.clone();
-  let dir = std::path::PathBuf::from(&output_dir);
-  let start = std::time::SystemTime::now();
+  // The capture output filename pattern we handed ffmpeg (e.g.
+  // `/dir/name_shot_%04d.png`). The produced frames are discovered by matching
+  // this pattern by name — deterministic, unlike scanning by modification time.
+  let pattern = std::path::PathBuf::from(&output_pattern);
   #[cfg(target_os = "windows")]
   let hwnd_raw: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
 
@@ -627,11 +647,14 @@ pub async fn run_ffmpeg_capture(
           done: false,
           cancelled: false,
           error: None,
+          phase: "capture".to_string(),
+          current: 0,
+          total: 0,
         },
       );
       // Throttle the live-frame preview so we don't re-read large images every tick.
       if last_frame_emit.elapsed() >= std::time::Duration::from_millis(400) {
-        if let Some(path) = ffmpeg::newest_image_in_dir(&dir, start) {
+        if let Some(path) = ffmpeg::newest_image_for_pattern(&pattern) {
           if last_emitted.as_deref() != Some(path.as_path()) {
             if let Ok(bytes) = std::fs::read(&path) {
               if !bytes.is_empty() {
@@ -648,7 +671,7 @@ pub async fn run_ffmpeg_capture(
     });
 
     let child = children_arc.lock().unwrap().remove(&label);
-    let (cancelled, mut error) = match child {
+    let (mut cancelled, mut error) = match child {
       Some(mut c) => match c.wait() {
         Ok(status) if status.success() => (false, None),
         Ok(status) => (
@@ -676,19 +699,100 @@ pub async fn run_ffmpeg_capture(
         taskbar::clear_progress(hwnd);
       }
     }
-    // Trim borders from every image this run produced before emitting the final
-    // frame, so the preview lands on the trimmed result. Runs in parallel and
+    // Second pass: trim borders from every image this run produced. This is its
+    // own pass with its own progress, distinct from the ffmpeg capture above, so
+    // the UI drives the progress bar from the per-image counts reported here and
+    // flips its label to the trim phase. Runs across `threads` workers and
     // contains per-frame panics so one bad frame can't abort the capture.
+    let mut trimmed_pass = false;
     if !cancelled && error.is_none() {
       if let Some(options) = trim.as_ref().filter(|t| t.enabled) {
         if let Some(rgb) = ffmpeg::parse_hex_color(&options.color) {
-          ffmpeg::trim_images(ffmpeg::images_in_dir_since(&dir, start), rgb, options.tolerance);
+          let images = ffmpeg::images_for_pattern(&pattern);
+          let total = images.len();
+          if total > 0 {
+            trimmed_pass = true;
+            // Announce the start of the trim pass so the UI resets the bar (it was
+            // left at 100% by the capture pass) and switches its label.
+            let _ = window_clone.emit_to(
+              target.clone(),
+              "ffmpeg-capture-progress",
+              FfmpegCaptureProgressEvent {
+                percent: 0,
+                done: false,
+                cancelled: false,
+                error: None,
+                phase: "trim".to_string(),
+                current: 0,
+                total: total as u32,
+              },
+            );
+            #[cfg(target_os = "windows")]
+            if let Some(hwnd) = hwnd_raw {
+              taskbar::set_progress(hwnd, 0);
+            }
+            // 0 / missing => fall back to the core count, matching the frontend default.
+            let threads = if options.threads == 0 {
+              std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+            } else {
+              options.threads
+            };
+            let mut last_trim_emit = std::time::Instant::now() - std::time::Duration::from_secs(1);
+            let stats = ffmpeg::trim_images(images, rgb, options.tolerance, threads, cancel_flag.clone(), |completed, total, path, result| {
+              let percent = ((completed as f64 / total as f64) * 100.0).clamp(0.0, 100.0) as u32;
+              #[cfg(target_os = "windows")]
+              if let Some(hwnd) = hwnd_raw {
+                taskbar::set_progress(hwnd, percent);
+              }
+              let _ = window_clone.emit_to(
+                target.clone(),
+                "ffmpeg-capture-progress",
+                FfmpegCaptureProgressEvent {
+                  percent,
+                  done: false,
+                  cancelled: false,
+                  error: None,
+                  phase: "trim".to_string(),
+                  current: completed as u32,
+                  total: total as u32,
+                },
+              );
+              // Show the frame just trimmed in the preview (skip removed blanks).
+              // Throttled so a fast multi-threaded pass doesn't flood the channel.
+              if matches!(result, Some(ffmpeg::TrimResult::Trimmed) | Some(ffmpeg::TrimResult::Unchanged))
+                && last_trim_emit.elapsed() >= std::time::Duration::from_millis(200)
+              {
+                if let Ok(bytes) = std::fs::read(path) {
+                  if !bytes.is_empty() {
+                    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                    let bytes = ffmpeg::downscale_for_preview(&bytes, ext, preview_width);
+                    let _ = window_clone.emit_to(target.clone(), "ffmpeg-capture-frame", FfmpegCaptureFrameEvent { bytes });
+                  }
+                }
+                last_trim_emit = std::time::Instant::now();
+              }
+            });
+            log::debug!(
+              "trim pass: {} trimmed, {} unchanged, {} removed, {} failed",
+              stats.trimmed,
+              stats.unchanged,
+              stats.removed,
+              stats.failed
+            );
+            // If cancel was requested during the trim pass, report the run as
+            // cancelled so the UI suppresses the "complete" notification.
+            if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+              cancelled = true;
+            }
+          }
         }
       }
     }
+    // This run's cancel flag is no longer needed; drop it from the shared map.
+    cancels_arc.lock().unwrap().remove(&label);
     // Emit the last produced frame so the preview lands on the final capture.
     if !cancelled {
-      if let Some(path) = ffmpeg::newest_image_in_dir(&dir, start) {
+      if let Some(path) = ffmpeg::newest_image_for_pattern(&pattern) {
         if let Ok(bytes) = std::fs::read(&path) {
           if !bytes.is_empty() {
             let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
@@ -706,6 +810,9 @@ pub async fn run_ffmpeg_capture(
         done: true,
         cancelled,
         error,
+        phase: if trimmed_pass { "trim".to_string() } else { "capture".to_string() },
+        current: 0,
+        total: 0,
       },
     );
   })

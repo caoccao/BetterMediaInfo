@@ -135,6 +135,10 @@ pub struct MkvmergeProgressEvent {
 
 pub struct FfmpegCaptureState {
   pub children: Arc<Mutex<HashMap<String, std::process::Child>>>,
+  /// Per-window cancellation flags. The capture pass is cancelled by killing the
+  /// ffmpeg child, but the trim pass has no child process, so it is cancelled by
+  /// flipping this flag, which the trim workers poll.
+  pub cancels: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
 }
 
 #[derive(Serialize, Clone)]
@@ -143,6 +147,14 @@ pub struct FfmpegCaptureProgressEvent {
   pub done: bool,
   pub cancelled: bool,
   pub error: Option<String>,
+  /// Which pass the progress refers to: `"capture"` (ffmpeg screenshotting) or
+  /// `"trim"` (the post-process border-trim pass). The frontend uses this to flip
+  /// the label under the progress bar between the two passes.
+  pub phase: String,
+  /// For the trim pass, the number of images processed so far and the total to
+  /// process. Both are 0 during the capture pass (which is time-based instead).
+  pub current: u32,
+  pub total: u32,
 }
 
 #[derive(Serialize, Clone)]
@@ -160,6 +172,11 @@ pub struct TrimOptions {
   pub color: String,
   /// Fuzz tolerance as a percentage (0–100); 0 trims only exact matches.
   pub tolerance: f64,
+  /// Number of worker threads to use for the trim pass. The frontend defaults
+  /// this to the CPU core count; `0` (or a missing field) falls back to the core
+  /// count on the backend.
+  #[serde(default)]
+  pub threads: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
