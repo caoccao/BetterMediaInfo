@@ -329,7 +329,11 @@ fn consistent_corner_color(rgba: &image::RgbaImage) -> Option<(u8, u8, u8)> {
 /// test matches ImageMagick: the squared Euclidean distance between the pixel and
 /// a reference color, with each channel normalized to `0..=1`, is compared
 /// against `(tolerance_percent / 100)^2`.
-fn content_bounds(rgba: &image::RgbaImage, color: (u8, u8, u8), tolerance_percent: f64) -> Option<(u32, u32, u32, u32)> {
+fn content_bounds(
+  rgba: &image::RgbaImage,
+  color: (u8, u8, u8),
+  tolerance_percent: f64,
+) -> Option<(u32, u32, u32, u32)> {
   let (width, height) = rgba.dimensions();
   if width == 0 || height == 0 {
     return None;
@@ -340,33 +344,37 @@ fn content_bounds(rgba: &image::RgbaImage, color: (u8, u8, u8), tolerance_percen
   if let Some(c) = consistent_corner_color(rgba) {
     refs.push((c.0 as f64, c.1 as f64, c.2 as f64));
   }
-  let is_background = |x: u32, y: u32| -> bool {
-    let p = rgba.get_pixel(x, y).0;
+  let is_background = |p: &[u8]| -> bool {
     if p[3] == 0 {
       return true; // fully transparent pixels are border regardless of color
     }
-    refs.iter().any(|&(r, g, b)| color_dist_sq(&p, r, g, b) <= fuzz_sq)
+    refs.iter().any(|&(r, g, b)| color_dist_sq(p, r, g, b) <= fuzz_sq)
   };
-  let mut min_x = width;
-  let mut min_y = height;
-  let mut max_x = 0u32;
-  let mut max_y = 0u32;
-  let mut found = false;
-  for y in 0..height {
-    for x in 0..width {
-      if !is_background(x, y) {
-        found = true;
-        min_x = min_x.min(x);
-        max_x = max_x.max(x);
-        min_y = min_y.min(y);
-        max_y = max_y.max(y);
-      }
-    }
-  }
-  if !found {
-    return None;
-  }
-  Some((min_x, min_y, max_x - min_x + 1, max_y - min_y + 1))
+  let row_stride = width as usize * 4;
+  let pixels = rgba.as_raw();
+  let row_has_content = |y: u32| -> bool {
+    let row_start = y as usize * row_stride;
+    pixels[row_start..row_start + row_stride]
+      .chunks_exact(4)
+      .any(|p| !is_background(p))
+  };
+  let column_has_content = |x: u32, top: u32, bottom: u32| -> bool {
+    let x_offset = x as usize * 4;
+    (top..=bottom).any(|y| {
+      let i = y as usize * row_stride + x_offset;
+      !is_background(&pixels[i..i + 4])
+    })
+  };
+
+  let top = (0..height).find(|&y| row_has_content(y))?;
+  let bottom = (top..height).rev().find(|&y| row_has_content(y)).unwrap_or(top);
+  let left = (0..width).find(|&x| column_has_content(x, top, bottom)).unwrap_or(0);
+  let right = (left..width)
+    .rev()
+    .find(|&x| column_has_content(x, top, bottom))
+    .unwrap_or(left);
+
+  Some((left, top, right - left + 1, bottom - top + 1))
 }
 
 /// Outcome of trimming a single captured image.
@@ -613,6 +621,14 @@ mod tests {
       }
     }
     assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), Some((3, 2, 2, 3)));
+  }
+
+  #[test]
+  fn content_bounds_finds_sparse_extents() {
+    let mut img = image::RgbaImage::from_pixel(12, 10, image::Rgba([0, 0, 0, 255]));
+    img.put_pixel(9, 1, image::Rgba([255, 255, 255, 255]));
+    img.put_pixel(2, 8, image::Rgba([255, 255, 255, 255]));
+    assert_eq!(content_bounds(&img, (0, 0, 0), 0.0), Some((2, 1, 8, 8)));
   }
 
   #[test]
