@@ -119,7 +119,7 @@ fn main() {
       is_static: false,
       file_name: "MediaInfo.dll".to_owned(),
       lib_name: "MediaInfo".to_owned(),
-      source_path: "MediaInfoLib\\Project\\MSVC2022\\x64\\Release".to_owned(),
+      source_path: "MediaInfoLib\\Project\\MSVC2026\\x64\\Release".to_owned(),
     }
   } else {
     ExternalLib {
