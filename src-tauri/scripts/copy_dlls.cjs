@@ -14,7 +14,7 @@ try {
   copy(
     path.join(
       repoRoot,
-      "..\\MediaInfoLib\\Project\\MSVC2022\\x64\\Release\\MediaInfo.dll"
+      "..\\MediaInfoLib\\Project\\MSVC2026\\x64\\Release\\MediaInfo.dll"
     ),
     path.join(repoRoot, "src-tauri\\MediaInfo.dll")
   );

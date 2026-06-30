@@ -113,8 +113,8 @@ del zlib.zip
 
 ```sh
 cd zlib
-cmake -G "Visual Studio 17 2022" -A x64 -S . -B contrib/vstudio/vc17
-cmake --build contrib/vstudio/vc17 --config Release
+cmake -G "Visual Studio 18 2026" -A x64 -S . -B contrib/vstudio/vc18
+cmake --build contrib/vstudio/vc18 --config Release
 ```
 
 * Patch MediaInfoLib to work with cmake-built zlib.
@@ -124,11 +124,11 @@ cd scripts/ts
 deno task patch
 ```
 
-* Build MediaInfoLib in Visual Studio 2022.
+* Build MediaInfoLib in Visual Studio 2026.
 
 ```sh
-cd MediaInfoLib\Project\MSVC2022
-msbuild MediaInfoLib.sln -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
+cd MediaInfoLib\Project\MSVC2026
+msbuild MediaInfoLib.slnx -t:rebuild -verbosity:diag -property:Configuration=Release -property:Platform=x64
 ```
 
 ## Generate bindings.rs on Windows
@@ -145,7 +145,7 @@ cargo install bindgen-cli
 
 ```sh
 cd BetterMediaInfo
-set LIBCLANG_PATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin\libclang.dll
+set LIBCLANG_PATH=C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\Llvm\x64\bin\libclang.dll
 bindgen ^
   --allowlist-item "MediaInfo\w+" ^
   -o src-tauri\src\bindings.rs ^

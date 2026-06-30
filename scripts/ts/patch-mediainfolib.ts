@@ -20,10 +20,13 @@ import * as path from "https://deno.land/std/path/mod.ts";
 
 const rootDirPath = path.join(
   path.dirname(path.fromFileUrl(import.meta.url)),
-  "../../../"
+  "../../../",
 );
 
-function patchFile(filePath: string, replacements: Array<[string | RegExp, string]>) {
+function patchFile(
+  filePath: string,
+  replacements: Array<[string | RegExp, string]>,
+) {
   const fullPath = path.join(rootDirPath, filePath);
   if (!fs.existsSync(fullPath)) {
     console.error(`%c${fullPath} is not found.`, "color: red");
@@ -48,9 +51,16 @@ function patchFile(filePath: string, replacements: Array<[string | RegExp, strin
   }
 }
 
-function patchAllVcxproj(dirPath: string, replacements: Array<[string | RegExp, string]>) {
+function patchAllVcxproj(
+  dirPath: string,
+  replacements: Array<[string | RegExp, string]>,
+) {
   const fullDirPath = path.join(rootDirPath, dirPath);
-  for (const entry of fs.walkSync(fullDirPath, { exts: [".vcxproj", ".sln"] })) {
+  for (
+    const entry of fs.walkSync(fullDirPath, {
+      exts: [".vcxproj", ".sln", ".slnx"],
+    })
+  ) {
     if (entry.isFile) {
       const relativePath = path.relative(rootDirPath, entry.path);
       patchFile(relativePath, replacements);
@@ -59,26 +69,32 @@ function patchAllVcxproj(dirPath: string, replacements: Array<[string | RegExp, 
 }
 
 // Create symlink: zlibstatic.vcxproj -> zlibstat.vcxproj
-const symlinkTarget = path.join(rootDirPath, "zlib/contrib/vstudio/vc17/zlibstat.vcxproj");
+const symlinkTarget = path.join(
+  rootDirPath,
+  "zlib/contrib/vstudio/vc18/zlibstat.vcxproj",
+);
 if (!fs.existsSync(symlinkTarget)) {
   Deno.symlinkSync("zlibstatic.vcxproj", symlinkTarget, { type: "file" });
   console.info(`Created symlink ${symlinkTarget}`);
 }
 
-// Patch ReleaseWithoutAsm -> Release in all sln and vcxproj files
-patchAllVcxproj("MediaInfoLib/Project/MSVC2022", [
+// Patch ReleaseWithoutAsm -> Release in all solution and vcxproj files
+patchAllVcxproj("MediaInfoLib/Project/MSVC2026", [
   ["ReleaseWithoutAsm", "Release"],
 ]);
 
 // Patch _CRT_SECURE_NO_WARNINGS into all vcxproj PreprocessorDefinitions
-patchAllVcxproj("MediaInfoLib/Project/MSVC2022", [
-  ["%(PreprocessorDefinitions)", "_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)"],
+patchAllVcxproj("MediaInfoLib/Project/MSVC2026", [
+  [
+    "%(PreprocessorDefinitions)",
+    "_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)",
+  ],
 ]);
 
 // Patch zlib dependency into MediaInfoDll.vcxproj
-patchFile("MediaInfoLib/Project/MSVC2022/Dll/MediaInfoDll.vcxproj", [
+patchFile("MediaInfoLib/Project/MSVC2026/Dll/MediaInfoDll.vcxproj", [
   [
     "%(AdditionalDependencies)</AdditionalDependencies>",
-    "..\\..\\..\\..\\zlib\\contrib\\vstudio\\vc17\\Release\\zs.lib;%(AdditionalDependencies)</AdditionalDependencies>",
+    "..\\..\\..\\..\\zlib\\contrib\\vstudio\\vc18\\Release\\zs.lib;%(AdditionalDependencies)</AdditionalDependencies>",
   ],
 ]);
