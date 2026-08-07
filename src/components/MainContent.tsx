@@ -202,11 +202,6 @@ export default function MainContent() {
           event.stopPropagation();
           setTabIndex((prev) => (prev > 0 ? prev - 1 : tabControls.length - 1));
         }
-      } else if (!event.ctrlKey && event.altKey && !event.shiftKey) {
-        if (event.key === 'x') {
-          event.stopPropagation();
-          getCurrentWindow().close();
-        }
       }
     };
 
