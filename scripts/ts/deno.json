@@ -1,5 +1,6 @@
 {
   "tasks": {
+    "download-artifacts": "deno run --allow-run --allow-read --allow-write --allow-env download-artifacts.ts",
     "patch": "deno run --allow-read --allow-write --allow-env patch-mediainfolib.ts"
   },
   "imports": {
