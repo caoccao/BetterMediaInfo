@@ -39,6 +39,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { listen } from '@tauri-apps/api/event';
 import { DataGrid, GridColDef, GridRowsProp, useGridApiRef } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -52,6 +53,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PersonIcon from '@mui/icons-material/Person';
 import ClearIcon from '@mui/icons-material/Clear';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import * as Protocol from '../lib/protocol';
 import { AUTHOR_NAME, AUTHOR_URL, GITHUB_URL } from '../lib/constants';
 import { useAppStore } from '../lib/store';
@@ -62,6 +64,7 @@ import { scanFiles } from '../lib/fs';
 import { openExtractWindow } from '../lib/extract';
 import { openMergeWindow } from '../lib/merge';
 import { openFfmpegToolsWindow } from '../lib/ffmpegTools';
+import { MKV_STATISTICS_FIXED_EVENT, openFixStatisticsWindow } from '../lib/fixStatistics';
 import { formatStreamCount } from '../lib/format';
 import {
   buildCommonPropertiesMap,
@@ -334,7 +337,9 @@ export default function List() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [batchMkvExtractAvailable, setBatchMkvExtractAvailable] = useState(false);
   const [bdMasterAvailable, setBdMasterAvailable] = useState(false);
-  const [mkvtoolnixGuiAvailable, setMkvtoolnixGuiAvailable] = useState(false);
+  const [mkvmergeAvailable, setMkvmergeAvailable] = useState(false);
+  const [mkvextractAvailable, setMkvextractAvailable] = useState(false);
+  const [mkvpropeditAvailable, setMkvpropeditAvailable] = useState(false);
   const [mpcHcAvailable, setMpcHcAvailable] = useState(false);
   const [ffmpegAvailable, setFfmpegAvailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -420,16 +425,26 @@ export default function List() {
   useEffect(() => {
     const path = config?.mkv?.mkvToolNixPath?.trim() ?? '';
     if (!path) {
-      setMkvtoolnixGuiAvailable(false);
+      setMkvmergeAvailable(false);
+      setMkvextractAvailable(false);
+      setMkvpropeditAvailable(false);
       return;
     }
     let cancelled = false;
     getMkvtoolnixStatus(path)
       .then((status) => {
-        if (!cancelled) setMkvtoolnixGuiAvailable(status.found);
+        if (!cancelled) {
+          setMkvmergeAvailable(status.mkvmergeFound);
+          setMkvextractAvailable(status.mkvextractFound);
+          setMkvpropeditAvailable(status.mkvpropeditFound);
+        }
       })
       .catch(() => {
-        if (!cancelled) setMkvtoolnixGuiAvailable(false);
+        if (!cancelled) {
+          setMkvmergeAvailable(false);
+          setMkvextractAvailable(false);
+          setMkvpropeditAvailable(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -489,6 +504,60 @@ export default function List() {
     },
     [videoExtensionSet]
   );
+
+  const reloadFileProperties = useCallback(async (file: string) => {
+    try {
+      const streamCountMap = await getStreamCountMap(file);
+      const properties = [...commonPropertiesMap.entries()]
+        .filter(([stream]) => (streamCountMap.get(stream)?.count ?? 0) > 0)
+        .flatMap(([stream, propertyFormats]) =>
+          propertyFormats
+            .filter((property) => !property.virtual)
+            .map((property) => ({ stream, property: property.name }))
+        );
+      const hadAllProperties = useAppStore.getState().mediaFileToAllPropertiesMap.has(file);
+      const [commonProperties, allProperties] = await Promise.all([
+        properties.length > 0 ? getPropertiesMap(file, properties) : Promise.resolve([]),
+        hadAllProperties ? getPropertiesMap(file, null) : Promise.resolve(null),
+      ]);
+
+      setMediaFileStreamCount(file, streamCountMap);
+      setMediaFileCommonProperties(file, commonProperties);
+      if (allProperties) {
+        setMediaFileAllProperties(file, allProperties);
+      }
+    } catch (error) {
+      setDialogNotification({
+        title: t('fixStatistics.error.reloadFailed', { detail: String(error) }),
+        type: Protocol.DialogNotificationType.Error,
+      });
+    }
+  }, [
+    commonPropertiesMap,
+    setDialogNotification,
+    setMediaFileAllProperties,
+    setMediaFileCommonProperties,
+    setMediaFileStreamCount,
+    t,
+  ]);
+
+  useEffect(() => {
+    let disposed = false;
+    let stopListening: (() => void) | undefined;
+    listen<Protocol.MkvStatisticsFixed>(MKV_STATISTICS_FIXED_EVENT, (event) => {
+      void reloadFileProperties(event.payload.file);
+    }).then((unlisten) => {
+      if (disposed) {
+        unlisten();
+      } else {
+        stopListening = unlisten;
+      }
+    });
+    return () => {
+      disposed = true;
+      stopListening?.();
+    };
+  }, [reloadFileProperties]);
 
   // Load file properties on mount and file changes
   useEffect(() => {
@@ -804,12 +873,14 @@ export default function List() {
                 action={(() => {
                   const isMkv = file.toLowerCase().endsWith('.mkv');
                   const isIso = file.toLowerCase().endsWith('.iso');
-                  const showExtract = isMkv;
+                  const showExtract = isMkv && mkvextractAvailable;
+                  const showFixStatistics = isMkv && mkvpropeditAvailable;
                   const videoTrackCount = mediaFileToStreamCountMap.get(file)?.get(Protocol.StreamKind.Video)?.count ?? 0;
-                  const showMerge = mkvtoolnixGuiAvailable && videoTrackCount > 0;
+                  const showMerge = mkvmergeAvailable && videoTrackCount > 0;
                   const showBatchMkvExtract = isMkv && batchMkvExtractAvailable;
                   const showBDMaster = isIso && bdMasterAvailable;
-                  const showMkvToolNixGui = isVideoFile(file) && mkvtoolnixGuiAvailable;
+                  const showMkvToolNixGui = isVideoFile(file) &&
+                    (mkvmergeAvailable || mkvextractAvailable || mkvpropeditAvailable);
                   const showMpcHc = isVideoFile(file) && mpcHcAvailable;
                   const showFfmpegTools = isVideoFile(file) && ffmpegAvailable;
                   const externalToolCount =
@@ -820,6 +891,7 @@ export default function List() {
                   const internalToolCount =
                     (showMerge ? 1 : 0) +
                     (showExtract ? 1 : 0) +
+                    (showFixStatistics ? 1 : 0) +
                     (showFfmpegTools ? 1 : 0);
                   return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -885,6 +957,17 @@ export default function List() {
                       <Tooltip title={t('list.extract')}>
                         <IconButton size="small" onClick={() => openExtractWindow(file)}>
                           <ContentCutIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {showFixStatistics && (
+                      <Tooltip title={t('list.fixStatistics')}>
+                        <IconButton
+                          size="small"
+                          aria-label={t('list.fixStatistics')}
+                          onClick={() => openFixStatisticsWindow(file)}
+                        >
+                          <AutoFixHighIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}

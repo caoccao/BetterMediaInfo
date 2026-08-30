@@ -295,6 +295,7 @@ pub fn run() {
       run_ffmpeg_capture,
       run_mkvextract,
       run_mkvmerge,
+      run_mkvpropedit,
       set_config,
       skip_version,
       suggest_merge_output_path,
@@ -355,6 +356,12 @@ async fn run_mkvmerge(
   controller::run_mkvmerge(window, args, state.children.clone())
     .await
     .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn run_mkvpropedit(window: tauri::Window, file: String) -> Result<(), String> {
+  log::debug!("run_mkvpropedit({})", file);
+  controller::run_mkvpropedit(window, file).await.map_err(convert_error)
 }
 
 #[tauri::command]

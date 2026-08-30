@@ -118,6 +118,10 @@ export async function runMkvmerge(args: string[]): Promise<void> {
   return await invoke<void>("run_mkvmerge", { args });
 }
 
+export async function runMkvpropedit(file: string): Promise<void> {
+  return await invoke<void>("run_mkvpropedit", { file });
+}
+
 export async function cancelMkvmerge(): Promise<void> {
   return await invoke<void>("cancel_mkvmerge");
 }

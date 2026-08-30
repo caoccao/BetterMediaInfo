@@ -2056,8 +2056,9 @@ export default function Config() {
   const handleDetectMkvToolNix = async () => {
     try {
       const status = await getMkvtoolnixStatus(mkvToolNixPath.trim(), true);
-      setMkvtoolnixFound(status.found);
-      if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
+      const anyToolFound = status.mkvmergeFound || status.mkvextractFound || status.mkvpropeditFound;
+      setMkvtoolnixFound(anyToolFound);
+      if (anyToolFound && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
         setMkvToolNixPath(status.mkvToolNixPath);
         if (config && config.mkv?.mkvToolNixPath !== status.mkvToolNixPath) {
           setStoreConfig({
@@ -2166,7 +2167,7 @@ export default function Config() {
     };
   }, [mkvOptionsDialogOpen, mkvOptionsTab, mkvLanguages.length]);
 
-  // Validate MKVToolNix path from backend and show mkvmerge availability.
+  // The path is valid when it contains at least one MKVToolNix command-line tool.
   useEffect(() => {
     if (!isInitializedRef.current) return;
     if (mkvToolNixCheckDebounceRef.current) {
@@ -2177,8 +2178,9 @@ export default function Config() {
       try {
         const status = await getMkvtoolnixStatus(mkvToolNixPath.trim());
         if (!isCancelled) {
-          setMkvtoolnixFound(status.found);
-          if (status.found && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
+          const anyToolFound = status.mkvmergeFound || status.mkvextractFound || status.mkvpropeditFound;
+          setMkvtoolnixFound(anyToolFound);
+          if (anyToolFound && status.mkvToolNixPath && status.mkvToolNixPath !== mkvToolNixPath) {
             setMkvToolNixPath(status.mkvToolNixPath);
             if (config && config.mkv?.mkvToolNixPath !== status.mkvToolNixPath) {
               setStoreConfig({

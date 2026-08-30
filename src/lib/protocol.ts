@@ -311,7 +311,9 @@ export interface MkvTrack {
 }
 
 export interface MkvToolNixStatus {
-  found: boolean;
+  mkvmergeFound: boolean;
+  mkvextractFound: boolean;
+  mkvpropeditFound: boolean;
   mkvToolNixPath: string;
 }
 
@@ -356,6 +358,17 @@ export interface MkvmergeProgress {
   percent: number;
   done: boolean;
   cancelled: boolean;
+  error: string | null;
+}
+
+export interface MkvStatisticsFixed {
+  file: string;
+}
+
+export interface MkvpropeditProgress {
+  file: string;
+  percent: number;
+  done: boolean;
   error: string | null;
 }
 

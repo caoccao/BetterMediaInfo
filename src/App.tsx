@@ -23,6 +23,7 @@ import * as Protocol from './lib/protocol';
 import { changeLanguage } from './i18n';
 import Layout from './components/Layout';
 import Extract from './components/Extract';
+import FixStatistics from './components/FixStatistics';
 import Merge from './components/Merge';
 import FfmpegTools from './components/FfmpegTools';
 import NotificationSnackbar from './components/NotificationSnackbar';
@@ -167,7 +168,7 @@ interface SubWindowParams {
   ffmpegPath: string;
 }
 
-function getSubWindowParams(key: 'extract' | 'merge' | 'ffmpegTools'): SubWindowParams | null {
+function getSubWindowParams(key: 'extract' | 'fixStatistics' | 'merge' | 'ffmpegTools'): SubWindowParams | null {
   const params = new URLSearchParams(window.location.search);
   const file = params.get(key);
   if (!file) return null;
@@ -191,9 +192,10 @@ interface ConfigChangeEvent {
 
 function App() {
   const extractParams = useMemo(() => getSubWindowParams('extract'), []);
+  const fixStatisticsParams = useMemo(() => getSubWindowParams('fixStatistics'), []);
   const mergeParams = useMemo(() => getSubWindowParams('merge'), []);
   const ffmpegToolsParams = useMemo(() => getSubWindowParams('ffmpegTools'), []);
-  const subWindowParams = extractParams ?? mergeParams ?? ffmpegToolsParams;
+  const subWindowParams = extractParams ?? fixStatisticsParams ?? mergeParams ?? ffmpegToolsParams;
   const storeDisplayMode = useAppStore((state) => state.config?.displayMode ?? Protocol.DisplayMode.Auto);
   const storeTheme = useAppStore((state) => state.config?.theme ?? Protocol.Theme.Ocean);
   const storeLanguage = useAppStore((state) => state.config?.language);
@@ -365,6 +367,8 @@ function App() {
       >
         {extractParams ? (
           <Extract file={extractParams.file} mkvToolNixPath={extractParams.mkvToolNixPath} />
+        ) : fixStatisticsParams ? (
+          <FixStatistics file={fixStatisticsParams.file} />
         ) : mergeParams ? (
           <Merge file={mergeParams.file} mkvToolNixPath={mergeParams.mkvToolNixPath} />
         ) : ffmpegToolsParams ? (

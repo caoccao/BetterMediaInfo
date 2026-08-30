@@ -20,7 +20,7 @@ use once_cell::sync::Lazy;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Child;
 use std::sync::{Arc, Mutex};
@@ -750,6 +750,85 @@ pub async fn run_mkvmerge(window: Window, args: Vec<String>, children: ChildMap)
   })
   .await?;
   Ok(())
+}
+
+pub async fn run_mkvpropedit(window: Window, file: String) -> Result<()> {
+  let mut child = mkvtoolnix::spawn_mkvpropedit(&file)?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| anyhow::anyhow!("MKVPROPEDIT_CAPTURE_OUTPUT_FAILED"))?;
+  let stderr = child.stderr.take();
+  let label = window.label().to_owned();
+  let window_clone = window.clone();
+  let progress_file = file.clone();
+
+  let error = tokio::task::spawn_blocking(move || {
+    let stderr_reader = stderr.map(|mut stream| {
+      std::thread::spawn(move || {
+        let mut output = String::new();
+        let _ = stream.read_to_string(&mut output);
+        output
+      })
+    });
+    let target = EventTarget::webview_window(&label);
+    mkvtoolnix::read_mkvpropedit_output(stdout, |line| {
+      if let Some(percent) = mkvtoolnix::parse_mkvpropedit_progress(line) {
+        let _ = window_clone.emit_to(
+          target.clone(),
+          "mkvpropedit-progress",
+          MkvpropeditProgressEvent {
+            file: progress_file.clone(),
+            percent,
+            done: false,
+            error: None,
+          },
+        );
+      }
+    });
+
+    let status = child.wait();
+    let stderr = stderr_reader
+      .and_then(|reader| reader.join().ok())
+      .unwrap_or_default()
+      .trim()
+      .to_owned();
+    match status {
+      // MKVToolNix exit code 1 means the operation completed with warnings.
+      Ok(status) if status.success() || status.code() == Some(1) => None,
+      Ok(_status) if !stderr.is_empty() => Some(stderr),
+      Ok(status) => Some(format!("MKVPROPEDIT_EXIT_CODE:{}", status.code().unwrap_or(-1))),
+      Err(err) => Some(format!("MKVPROPEDIT_WAIT_FAILED:{}", err)),
+    }
+  })
+  .await
+  .map_err(|err| anyhow::anyhow!("MKVPROPEDIT_TASK_FAILED:{}", err))?;
+
+  if error.is_none() {
+    if let Err(err) = window.emit_to(
+      EventTarget::webview_window("main"),
+      "mkv-statistics-fixed",
+      MkvStatisticsFixedEvent { file: file.clone() },
+    ) {
+      log::warn!("Failed to request a reload for {}: {}", file, err);
+    }
+  }
+  if let Err(err) = window.emit_to(
+    EventTarget::webview_window(window.label()),
+    "mkvpropedit-progress",
+    MkvpropeditProgressEvent {
+      file: file.clone(),
+      percent: 100,
+      done: true,
+      error: error.clone(),
+    },
+  ) {
+    log::warn!("Failed to emit final mkvpropedit progress for {}: {}", file, err);
+  }
+  match error {
+    Some(error) => Err(anyhow::anyhow!(error)),
+    None => Ok(()),
+  }
 }
 
 pub async fn set_config(config: config::Config) -> Result<config::Config> {

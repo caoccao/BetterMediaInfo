@@ -32,6 +32,7 @@
     "addFolder": "Ajouter un dossier",
     "json": "Json",
     "extract": "Extraire",
+    "fixStatistics": "Corriger les statistiques",
     "merge": "Fusionner",
     "ffmpegTools": "Outils FFmpeg",
     "openInBatchMkvExtract": "Ouvrir dans BatchMkvExtract",
@@ -181,8 +182,8 @@
     "contextMenuRegistered": "Menu contextuel enregistré.",
     "contextMenuUnregistered": "Menu contextuel supprimé.",
     "contextMenuFailed": "Échec de l'enregistrement du menu contextuel.",
-    "mkvtoolnixFound": "mkvmerge et mkvextract ont été trouvés dans le chemin MKVToolNix.",
-    "mkvtoolnixNotFound": "mkvmerge ou mkvextract n'a pas été trouvé dans le chemin MKVToolNix.",
+    "mkvtoolnixFound": "Au moins un des outils mkvmerge, mkvextract et mkvpropedit a été trouvé dans le chemin MKVToolNix.",
+    "mkvtoolnixNotFound": "Aucun des outils mkvmerge, mkvextract ou mkvpropedit n'a été trouvé dans le chemin MKVToolNix.",
     "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "Chemin de BatchMkvExtract",
     "batchMkvExtractFound": "Exécutable BatchMkvExtract trouvé.",
@@ -393,6 +394,36 @@
     "bdFolderPrompt": "{{path}}\n\nOuvrir ce disque Blu-ray dans BDMaster ?",
     "openInBDMaster": "Ouvrir dans BDMaster",
     "cancel": "Annuler"
+  },
+  "fixStatistics": {
+    "title": "Corriger les statistiques",
+    "defaultQueue": "Par défaut",
+    "header": {
+      "filePath": "Chemin du fichier",
+      "status": "État",
+      "start": "Début",
+      "end": "Fin",
+      "elapsed": "Écoulé",
+      "eta": "Temps restant"
+    },
+    "jobStatus": {
+      "queued": "En attente",
+      "running": "Analyse",
+      "success": "Terminé",
+      "error": "Échec"
+    },
+    "close": "Fermer",
+    "error": {
+      "notAvailable": "mkvpropedit n'est pas disponible. Vérifiez le chemin de MKVToolNix dans les paramètres. {{detail}}",
+      "failed": "Échec de mkvpropedit : {{detail}}",
+      "invalidInput": "Le fichier n'est plus disponible : {{file}}",
+      "captureOutput": "Impossible de lire la sortie de progression de mkvpropedit.",
+      "exitCode": "mkvpropedit s'est terminé avec le code {{code}}.",
+      "waitFailed": "Impossible d'attendre la fin de mkvpropedit : {{detail}}",
+      "taskFailed": "La tâche mkvpropedit a échoué : {{detail}}",
+      "windowOpenFailed": "Impossible d'ouvrir la fenêtre Corriger les statistiques : {{detail}}",
+      "reloadFailed": "Le fichier MKV a été mis à jour, mais n'a pas pu être rechargé : {{detail}}"
+    }
   },
   "fileFilter": {
     "video": "Vidéo",

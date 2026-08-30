@@ -72,7 +72,12 @@ pub struct MkvTrack {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MkvToolNixStatus {
-  pub found: bool,
+  #[serde(rename = "mkvmergeFound")]
+  pub mkvmerge_found: bool,
+  #[serde(rename = "mkvextractFound")]
+  pub mkvextract_found: bool,
+  #[serde(rename = "mkvpropeditFound")]
+  pub mkvpropedit_found: bool,
   #[serde(rename = "mkvToolNixPath")]
   pub mkv_toolnix_path: String,
 }
@@ -130,6 +135,19 @@ pub struct MkvmergeProgressEvent {
   pub percent: u32,
   pub done: bool,
   pub cancelled: bool,
+  pub error: Option<String>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct MkvStatisticsFixedEvent {
+  pub file: String,
+}
+
+#[derive(Serialize, Clone)]
+pub struct MkvpropeditProgressEvent {
+  pub file: String,
+  pub percent: u32,
+  pub done: bool,
   pub error: Option<String>,
 }
 

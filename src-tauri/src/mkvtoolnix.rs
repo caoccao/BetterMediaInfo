@@ -197,8 +197,10 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
 pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<MkvToolNixStatus> {
   if check_running {
     if let Some(dir) = find_running_process_dir(mkvtoolnix_gui_process_name()) {
-      let has_tools = ["mkvmerge", "mkvextract"].iter().all(|t| has_tool(&dir, t));
-      if has_tools {
+      let mkvmerge_found = has_tool(&dir, "mkvmerge");
+      let mkvextract_found = has_tool(&dir, "mkvextract");
+      let mkvpropedit_found = has_tool(&dir, "mkvpropedit");
+      if mkvmerge_found || mkvextract_found || mkvpropedit_found {
         let path_string = dir.to_string_lossy().to_string();
         let mut cfg = config::get_config();
         if cfg.mkv.mkv_toolnix_path != path_string {
@@ -206,7 +208,9 @@ pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<
           config::set_config(cfg)?;
         }
         return Ok(MkvToolNixStatus {
-          found: true,
+          mkvmerge_found,
+          mkvextract_found,
+          mkvpropedit_found,
           mkv_toolnix_path: path_string,
         });
       }
@@ -215,16 +219,29 @@ pub async fn get_mkvtoolnix_status(path: String, check_running: bool) -> Result<
   let trimmed_path = path.trim();
   if trimmed_path.is_empty() {
     return Ok(MkvToolNixStatus {
-      found: false,
+      mkvmerge_found: false,
+      mkvextract_found: false,
+      mkvpropedit_found: false,
       mkv_toolnix_path: String::new(),
     });
   }
-  let resolution = resolve_mkvtoolnix(trimmed_path, &["mkvmerge", "mkvextract"]);
+  let mut resolution = resolve_mkvtoolnix(trimmed_path, &["mkvmerge", "mkvextract", "mkvpropedit"]);
+  if !resolution.found {
+    for tool in ["mkvmerge", "mkvextract", "mkvpropedit"] {
+      let candidate = resolve_mkvtoolnix(trimmed_path, &[tool]);
+      if candidate.found {
+        resolution = candidate;
+        break;
+      }
+    }
+  }
   if resolution.found {
     persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
   }
   Ok(MkvToolNixStatus {
-    found: resolution.found,
+    mkvmerge_found: has_tool(&resolution.path, "mkvmerge"),
+    mkvextract_found: has_tool(&resolution.path, "mkvextract"),
+    mkvpropedit_found: has_tool(&resolution.path, "mkvpropedit"),
     mkv_toolnix_path: resolution.path.to_string_lossy().to_string(),
   })
 }
@@ -284,6 +301,20 @@ pub(crate) fn parse_mkvextract_progress(line: &str) -> Option<u32> {
 
 pub(crate) fn parse_mkvmerge_progress(line: &str) -> Option<u32> {
   parse_mkvextract_progress(line)
+}
+
+pub(crate) fn parse_mkvpropedit_progress(line: &str) -> Option<u32> {
+  let before_percent = line.rsplit_once('%')?.0.trim_end();
+  let digits_reversed: String = before_percent
+    .chars()
+    .rev()
+    .take_while(|character| character.is_ascii_digit())
+    .collect();
+  if digits_reversed.is_empty() {
+    return None;
+  }
+  let digits: String = digits_reversed.chars().rev().collect();
+  digits.parse::<u32>().ok().filter(|percent| *percent <= 100)
 }
 
 #[cfg(target_os = "macos")]
@@ -346,6 +377,13 @@ where
 }
 
 pub(crate) fn read_mkvmerge_output<F>(reader: impl Read, on_line: F)
+where
+  F: FnMut(&str),
+{
+  read_mkvextract_output(reader, on_line)
+}
+
+pub(crate) fn read_mkvpropedit_output<F>(reader: impl Read, on_line: F)
 where
   F: FnMut(&str),
 {
@@ -424,6 +462,29 @@ pub fn spawn_mkvmerge(args: &[String]) -> Result<std::process::Child> {
     .map_err(|e| anyhow::anyhow!("MKVMERGE_NOT_AVAILABLE:{}: {}", mkvmerge_path.display(), e))
 }
 
+pub fn spawn_mkvpropedit(file: &str) -> Result<std::process::Child> {
+  let path = Path::new(file);
+  validate_path_as_file(path).map_err(|_| anyhow::anyhow!("MKVPROPEDIT_INVALID_INPUT:{}", file))?;
+  let cfg = config::get_config();
+  let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, &["mkvpropedit"]);
+  persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
+  let mkvpropedit_path = get_tool_path(&resolution.path, "mkvpropedit");
+  let mut cmd = std::process::Command::new(&mkvpropedit_path);
+  cmd
+    .arg(file)
+    .arg("--add-track-statistics-tags")
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::piped());
+  #[cfg(target_os = "windows")]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+  }
+  cmd
+    .spawn()
+    .map_err(|e| anyhow::anyhow!("MKVPROPEDIT_NOT_AVAILABLE:{}: {}", mkvpropedit_path.display(), e))
+}
+
 pub fn spawn_mkvtoolnix_gui(file: &str) -> Result<()> {
   let path = Path::new(file);
   validate_path_as_file(path)?;
@@ -455,5 +516,19 @@ fn validate_path_as_file(path: &Path) -> Result<()> {
     Err(anyhow::anyhow!("Path {} is not a file.", path.display()))
   } else {
     Ok(())
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parses_mkvpropedit_progress_in_any_ui_language() {
+    assert_eq!(parse_mkvpropedit_progress("Progress: 42%"), Some(42));
+    assert_eq!(parse_mkvpropedit_progress("Fortschritt: 7%"), Some(7));
+    assert_eq!(parse_mkvpropedit_progress("Progress: 100%"), Some(100));
+    assert_eq!(parse_mkvpropedit_progress("Progress: 101%"), None);
+    assert_eq!(parse_mkvpropedit_progress("The file is being analyzed."), None);
   }
 }

@@ -32,6 +32,7 @@
     "addFolder": "新增資料夾",
     "json": "Json",
     "extract": "提取",
+    "fixStatistics": "修復統計資訊",
     "merge": "合併",
     "ffmpegTools": "FFmpeg 工具",
     "openInBatchMkvExtract": "在 BatchMkvExtract 中開啟",
@@ -181,8 +182,8 @@
     "contextMenuRegistered": "右鍵選單已註冊。",
     "contextMenuUnregistered": "右鍵選單已取消。",
     "contextMenuFailed": "右鍵選單註冊失敗。",
-    "mkvtoolnixFound": "已在 MKVToolNix 路徑下找到 mkvmerge 和 mkvextract。",
-    "mkvtoolnixNotFound": "未在 MKVToolNix 路徑下找到 mkvmerge 或 mkvextract。",
+    "mkvtoolnixFound": "已在 MKVToolNix 路徑下找到 mkvmerge、mkvextract 和 mkvpropedit 中的至少一個工具。",
+    "mkvtoolnixNotFound": "未在 MKVToolNix 路徑下找到 mkvmerge、mkvextract 或 mkvpropedit。",
     "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "BatchMkvExtract 路徑",
     "batchMkvExtractFound": "已找到 BatchMkvExtract 執行檔。",
@@ -393,6 +394,36 @@
     "bdFolderPrompt": "{{path}}\n\n是否在 BDMaster 中開啟此藍光光碟？",
     "openInBDMaster": "在 BDMaster 中開啟",
     "cancel": "取消"
+  },
+  "fixStatistics": {
+    "title": "修復統計資訊",
+    "defaultQueue": "預設",
+    "header": {
+      "filePath": "檔案路徑",
+      "status": "狀態",
+      "start": "開始",
+      "end": "結束",
+      "elapsed": "已用時間",
+      "eta": "剩餘時間"
+    },
+    "jobStatus": {
+      "queued": "等候中",
+      "running": "分析中",
+      "success": "已完成",
+      "error": "失敗"
+    },
+    "close": "關閉",
+    "error": {
+      "notAvailable": "mkvpropedit 不可用。請在設定中檢查 MKVToolNix 路徑。{{detail}}",
+      "failed": "mkvpropedit 失敗：{{detail}}",
+      "invalidInput": "檔案已不可用：{{file}}",
+      "captureOutput": "無法讀取 mkvpropedit 進度輸出。",
+      "exitCode": "mkvpropedit 已結束，結束代碼為 {{code}}。",
+      "waitFailed": "無法等待 mkvpropedit 完成：{{detail}}",
+      "taskFailed": "mkvpropedit 工作失敗：{{detail}}",
+      "windowOpenFailed": "無法開啟「修復統計資訊」視窗：{{detail}}",
+      "reloadFailed": "MKV 檔案已更新，但無法重新載入：{{detail}}"
+    }
   },
   "fileFilter": {
     "video": "影片",

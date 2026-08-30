@@ -32,6 +32,7 @@
     "addFolder": "Add Folder",
     "json": "Json",
     "extract": "Extract",
+    "fixStatistics": "Fix Statistics",
     "merge": "Merge",
     "ffmpegTools": "FFmpeg Tools",
     "openInBatchMkvExtract": "Open in BatchMkvExtract",
@@ -181,8 +182,8 @@
     "contextMenuRegistered": "Context menu registered.",
     "contextMenuUnregistered": "Context menu unregistered.",
     "contextMenuFailed": "Context menu registration failed.",
-    "mkvtoolnixFound": "mkvmerge and mkvextract found under MKVToolNix path.",
-    "mkvtoolnixNotFound": "mkvmerge or mkvextract not found under MKVToolNix path.",
+    "mkvtoolnixFound": "At least one of mkvmerge, mkvextract, and mkvpropedit was found under MKVToolNix path.",
+    "mkvtoolnixNotFound": "None of mkvmerge, mkvextract, or mkvpropedit was found under MKVToolNix path.",
     "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "BatchMkvExtract Path",
     "batchMkvExtractFound": "BatchMkvExtract executable found.",
@@ -393,6 +394,36 @@
     "bdFolderPrompt": "{{path}}\n\nOpen this Blu-ray disc in BDMaster?",
     "openInBDMaster": "Open in BDMaster",
     "cancel": "Cancel"
+  },
+  "fixStatistics": {
+    "title": "Fix Statistics",
+    "defaultQueue": "Default",
+    "header": {
+      "filePath": "File Path",
+      "status": "Status",
+      "start": "Start",
+      "end": "End",
+      "elapsed": "Elapsed",
+      "eta": "ETA"
+    },
+    "jobStatus": {
+      "queued": "Waiting",
+      "running": "Probing",
+      "success": "Completed",
+      "error": "Failed"
+    },
+    "close": "Close",
+    "error": {
+      "notAvailable": "mkvpropedit is not available. Please check the MKVToolNix path in Settings. {{detail}}",
+      "failed": "mkvpropedit failed: {{detail}}",
+      "invalidInput": "The file is no longer available: {{file}}",
+      "captureOutput": "Could not read mkvpropedit progress output.",
+      "exitCode": "mkvpropedit exited with code {{code}}.",
+      "waitFailed": "Could not wait for mkvpropedit to finish: {{detail}}",
+      "taskFailed": "The mkvpropedit task failed: {{detail}}",
+      "windowOpenFailed": "Could not open the Fix Statistics window: {{detail}}",
+      "reloadFailed": "The MKV file was updated, but it could not be reloaded: {{detail}}"
+    }
   },
   "fileFilter": {
     "video": "Video",

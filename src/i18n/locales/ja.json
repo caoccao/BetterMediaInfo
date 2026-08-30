@@ -32,6 +32,7 @@
     "addFolder": "フォルダを追加",
     "json": "Json",
     "extract": "抽出",
+    "fixStatistics": "統計情報を修正",
     "merge": "結合",
     "ffmpegTools": "FFmpeg ツール",
     "openInBatchMkvExtract": "BatchMkvExtract で開く",
@@ -181,8 +182,8 @@
     "contextMenuRegistered": "コンテキストメニューを登録しました。",
     "contextMenuUnregistered": "コンテキストメニューを解除しました。",
     "contextMenuFailed": "コンテキストメニューの登録に失敗しました。",
-    "mkvtoolnixFound": "MKVToolNix パスで mkvmerge と mkvextract が見つかりました。",
-    "mkvtoolnixNotFound": "MKVToolNix パスで mkvmerge または mkvextract が見つかりません。",
+    "mkvtoolnixFound": "MKVToolNix パスで mkvmerge、mkvextract、mkvpropedit のうち少なくとも 1 つが見つかりました。",
+    "mkvtoolnixNotFound": "MKVToolNix パスで mkvmerge、mkvextract、mkvpropedit のいずれも見つかりません。",
     "batchMkvExtract": "BatchMkvExtract",
     "batchMkvExtractPath": "BatchMkvExtract のパス",
     "batchMkvExtractFound": "BatchMkvExtract の実行ファイルが見つかりました。",
@@ -393,6 +394,36 @@
     "bdFolderPrompt": "{{path}}\n\nこの Blu-ray ディスクを BDMaster で開きますか？",
     "openInBDMaster": "BDMaster で開く",
     "cancel": "キャンセル"
+  },
+  "fixStatistics": {
+    "title": "統計情報を修正",
+    "defaultQueue": "既定",
+    "header": {
+      "filePath": "ファイルパス",
+      "status": "状態",
+      "start": "開始",
+      "end": "終了",
+      "elapsed": "経過時間",
+      "eta": "残り時間"
+    },
+    "jobStatus": {
+      "queued": "待機中",
+      "running": "解析中",
+      "success": "完了",
+      "error": "失敗"
+    },
+    "close": "閉じる",
+    "error": {
+      "notAvailable": "mkvpropedit を利用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
+      "failed": "mkvpropedit に失敗しました：{{detail}}",
+      "invalidInput": "ファイルは利用できなくなりました：{{file}}",
+      "captureOutput": "mkvpropedit の進行状況を読み取れませんでした。",
+      "exitCode": "mkvpropedit はコード {{code}} で終了しました。",
+      "waitFailed": "mkvpropedit の終了を待機できませんでした：{{detail}}",
+      "taskFailed": "mkvpropedit タスクに失敗しました：{{detail}}",
+      "windowOpenFailed": "「統計情報を修正」ウィンドウを開けませんでした：{{detail}}",
+      "reloadFailed": "MKV ファイルは更新されましたが、再読み込みできませんでした：{{detail}}"
+    }
   },
   "fileFilter": {
     "video": "動画",

@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.2.0
+
+* Added queued MKV track statistics repair with MKVToolNix progress tracking and automatic file reload.
+
 ## 1.1.0
 
 * Added an FFmpeg Tools window for video files with a seekable frame preview and screenshot capture, including capture by frame number, interval, every second, keyframes, scene changes, thumbnails, contact sheets, de-duplicated frames, and optional border trimming of the captured images.
