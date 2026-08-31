@@ -397,7 +397,7 @@
   },
   "fixStatistics": {
     "title": "Correggi statistiche",
-    "defaultQueue": "Predefinito",
+    "defaultQueue": "Predefinita",
     "header": {
       "filePath": "Percorso file",
       "status": "Stato",
@@ -414,14 +414,14 @@
     },
     "close": "Chiudi",
     "error": {
-      "notAvailable": "mkvpropedit non è disponibile. Controlla il percorso di MKVToolNix nelle Impostazioni. {{detail}}",
+      "notAvailable": "mkvpropedit non è disponibile. Controlla nelle Impostazioni il percorso di MKVToolNix. {{detail}}",
       "failed": "mkvpropedit non riuscito: {{detail}}",
       "invalidInput": "Il file non è più disponibile: {{file}}",
       "captureOutput": "Impossibile leggere l'output di avanzamento di mkvpropedit.",
       "exitCode": "mkvpropedit è terminato con il codice {{code}}.",
       "waitFailed": "Impossibile attendere il completamento di mkvpropedit: {{detail}}",
       "taskFailed": "L'attività mkvpropedit non è riuscita: {{detail}}",
-      "windowOpenFailed": "Impossibile aprire la finestra Correggi statistiche: {{detail}}",
+      "windowOpenFailed": "Impossibile aprire la finestra 'Correggi statistiche': {{detail}}",
       "reloadFailed": "Il file MKV è stato aggiornato, ma non è stato possibile ricaricarlo: {{detail}}"
     }
   },
