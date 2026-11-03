@@ -373,20 +373,16 @@ impl MediaInfoFile {
 fn test_ascii_path() {
   let path = Path::new("./icons/icon.png");
   let path = std::path::absolute(path).unwrap();
-  if let Some(path) = path.to_str() {
-    let path = to_wchars(path);
-    let handle = unsafe { MediaInfo_New() };
-    let error_code = unsafe { MediaInfo_Open(handle, path.as_ptr()) };
-    assert_eq!(error_code, 1, "Error code should be 1.");
-    let count = unsafe { MediaInfo_Count_Get(handle, MediaInfoStreamKind::General as mi_kind, usize::MAX) };
-    assert_eq!(count, 1, "General stream count should be 1.");
-  } else {
-    assert!(false, "Failed to convert file path to string in MediaInfo::open().");
-  }
+  // Raw FFI would skip the one-time setup, which can rebuild the global parameter
+  // tables while this test parses the file in a parallel test run.
+  let media_info = MediaInfo::new();
+  let error_code = media_info.open(&path).unwrap();
+  assert_eq!(error_code, 1, "Error code should be 1.");
+  let count = media_info.getCountByStreamKind(MediaInfoStreamKind::General);
+  assert_eq!(count, 1, "General stream count should be 1.");
 }
 
 #[test]
-#[cfg(not(target_os = "linux"))]
 fn test_non_ascii_path() {
   let source_path = Path::new("./icons/icon.png");
   let source_path = std::path::absolute(source_path).unwrap();
@@ -401,7 +397,9 @@ fn test_non_ascii_path() {
     );
   }
   std::fs::copy(source_path, &target_path).unwrap();
-  // `MediaInfo::new()` applies the OS locale, which non-ASCII paths need on macOS.
+  // `MediaInfo::new()` applies a UTF-8 `LC_CTYPE` locale, which non-ASCII paths need
+  // on Linux and macOS. Without it the C runtime starts in the "C" locale, and
+  // `wcstombs` can't convert the path.
   let media_info = MediaInfo::new();
   let error_code = media_info.open(&target_path).unwrap();
   assert_eq!(error_code, 1, "Error code should be 1.");
