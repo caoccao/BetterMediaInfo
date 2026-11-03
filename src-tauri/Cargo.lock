@@ -10,6 +10,7 @@ dependencies = [
  "encoding",
  "env_logger",
  "image",
+ "libc",
  "log",
  "once_cell",
  "serde",
