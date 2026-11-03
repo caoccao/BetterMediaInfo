@@ -42,6 +42,10 @@ sys-locale = "0.3.2"
 # https://crates.io/crates/image — used to trim borders from captured frames.
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
+[target.'cfg(unix)'.dependencies]
+# https://crates.io/crates/libc — used to check which C runtime locales are installed.
+libc = "0.2"
+
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg = "0.56"
 windows = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Com", "Win32_UI_Shell"] }
