@@ -45,13 +45,7 @@ use crate::taskbar;
 pub type ChildMap = Arc<Mutex<HashMap<String, Child>>>;
 pub type CancelMap = Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>;
 
-static ALL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| {
-  let media_info = MediaInfo::new();
-  let info_parameters = media_info
-    .getOption(MediaInfoGetOption::InfoParameters)
-    .expect("Failed to get info parameters.");
-  Stream::parse(info_parameters)
-});
+static ALL_STREAMS: Lazy<Vec<Stream>> = Lazy::new(|| Stream::parse(get_info_parameters()));
 
 static ALL_PROPERTIES_MAP: Lazy<HashMap<MediaInfoStreamKind, Vec<String>>> = Lazy::new(|| {
   let mut all_properties_map = HashMap::new();

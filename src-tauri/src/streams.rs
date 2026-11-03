@@ -63,7 +63,7 @@ impl Stream {
     }
   }
 
-  pub fn parse(info_parameters: String) -> Vec<Stream> {
+  pub fn parse(info_parameters: &str) -> Vec<Stream> {
     let mut streams = Vec::new();
     let mut stream_kind = MediaInfoStreamKind::General;
     let mut parse_stream_kind = true;

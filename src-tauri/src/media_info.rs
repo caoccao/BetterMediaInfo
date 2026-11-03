@@ -25,14 +25,13 @@
 
 use anyhow::{Result, anyhow};
 use encoding::Encoding;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::os::raw;
 use std::path::{Path, PathBuf};
 use std::usize;
 use widestring::WideCString;
-
-use crate::streams::*;
 
 type mi_kind = raw::c_int;
 type mi_void = raw::c_void;
@@ -42,6 +41,37 @@ type mi_wchar = u16;
 type mi_wchar = u32;
 
 const DEFAULT_OPTION_VALUE: &str = "";
+
+/// One-time, process-wide MediaInfoLib setup. `MediaInfo::new()` forces it, so it
+/// finishes before any handle exists that could open or query a file.
+///
+/// Each call here changes MediaInfoLib global state that other handles read without
+/// a lock, so none of them may run while another thread is parsing a file:
+/// - `CharSet` and `setlocale_LC_CTYPE` write a static flag, the C runtime locale,
+///   and an output buffer that all handles share.
+/// - `Info_Parameters` rebuilds the global parameter tables and resets the language
+///   table. `MediaInfo_Open` and `MediaInfo_Get` hold unlocked references into those
+///   tables, so rebuilding them while another file is parsing frees memory that
+///   thread is still reading.
+///
+/// The `Info_Parameters` text is cached here so nothing needs to request it again.
+static INFO_PARAMETERS: Lazy<String> = Lazy::new(|| {
+  let media_info = MediaInfo::new_handle();
+  media_info
+    .setOption(MediaInfoSetOption::CharSet, "UTF-8")
+    .expect("Failed to set charset to utf-8.");
+  media_info
+    .setOption(MediaInfoSetOption::Locale, "zh-CN")
+    .expect("Failed to set locale.");
+  media_info
+    .getOption(MediaInfoGetOption::InfoParameters)
+    .expect("Failed to get info parameters.")
+});
+
+/// The `Info_Parameters` text MediaInfoLib produced during the one-time setup.
+pub fn get_info_parameters() -> &'static str {
+  INFO_PARAMETERS.as_str()
+}
 
 unsafe extern "C" {
   fn MediaInfo_New() -> *mut mi_void;
@@ -280,6 +310,13 @@ impl MediaInfo {
   }
 
   pub fn new() -> Self {
+    Lazy::force(&INFO_PARAMETERS);
+    Self::new_handle()
+  }
+
+  /// Creates a handle without forcing the global setup. Only the setup itself may
+  /// call this; everything else goes through `new()`.
+  fn new_handle() -> Self {
     log::debug!("MediaInfo::new()");
     Self {
       handle: unsafe { MediaInfo_New() },
@@ -327,30 +364,16 @@ impl Drop for MediaInfo {
 pub struct MediaInfoFile {
   pub media_info: MediaInfo,
   pub path: PathBuf,
-  pub streams: Vec<Stream>,
 }
 
 impl MediaInfoFile {
   pub fn new(path: &Path) -> Self {
+    // Charset, locale, and parameter tables are global to MediaInfoLib. `MediaInfo::new()`
+    // sets them up once; changing them here for each file raced with parses on other threads.
     let media_info = MediaInfo::new();
-    media_info
-      .setOption(MediaInfoSetOption::CharSet, "UTF-8")
-      .expect("Failed to set charset to utf-8.");
-    media_info
-      .setOption(MediaInfoSetOption::Locale, "zh-CN")
-      .expect("Failed to set locale.");
     media_info.open(&path).expect("Failed to open video file.");
-    let streams = Stream::parse(
-      media_info
-        .getOption(MediaInfoGetOption::InfoParameters)
-        .expect(format!("Failed to get {:?}.", MediaInfoGetOption::InfoParameters).as_str()),
-    );
     let path = path.to_path_buf();
-    Self {
-      media_info,
-      path,
-      streams,
-    }
+    Self { media_info, path }
   }
 }
 
