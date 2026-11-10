@@ -34,13 +34,16 @@ anyhow = "1.0.102"
 once_cell = "1.21.4"
 env_logger = "0.11.10"
 widestring = "1.2.1"
-encoding = "0.2.33"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 ureq = { version = "2", features = ["json"] }
 sysinfo = { version = "0.32", default-features = false, features = ["system"] }
 sys-locale = "0.3.2"
 # https://crates.io/crates/image — used to trim borders from captured frames.
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[target.'cfg(unix)'.dependencies]
+# https://crates.io/crates/libc — used to check which C runtime locales are installed.
+libc = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg = "0.56"

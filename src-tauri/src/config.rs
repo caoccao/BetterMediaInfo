@@ -971,7 +971,7 @@ pub fn get_config() -> Config {
     .clone()
 }
 
-fn normalize_locale_tag(locale: &str) -> Option<String> {
+pub(crate) fn normalize_locale_tag(locale: &str) -> Option<String> {
   let locale = locale
     .split(':')
     .find(|part| !part.trim().is_empty())

@@ -24,7 +24,6 @@
 )]
 
 use anyhow::{Result, anyhow};
-use encoding::Encoding;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -32,6 +31,8 @@ use std::os::raw;
 use std::path::{Path, PathBuf};
 use std::usize;
 use widestring::WideCString;
+
+use crate::locale;
 
 type mi_kind = raw::c_int;
 type mi_void = raw::c_void;
@@ -54,15 +55,18 @@ const DEFAULT_OPTION_VALUE: &str = "";
 ///   tables, so rebuilding them while another file is parsing frees memory that
 ///   thread is still reading.
 ///
-/// The `Info_Parameters` text is cached here so nothing needs to request it again.
+/// The locale comes from the OS (see `locale::detect_ctype_locale`). The
+/// `Info_Parameters` text is cached here so nothing needs to request it again.
 static INFO_PARAMETERS: Lazy<String> = Lazy::new(|| {
   let media_info = MediaInfo::new_handle();
   media_info
     .setOption(MediaInfoSetOption::CharSet, "UTF-8")
     .expect("Failed to set charset to utf-8.");
-  media_info
-    .setOption(MediaInfoSetOption::Locale, "zh-CN")
-    .expect("Failed to set locale.");
+  if let Some(locale) = locale::detect_ctype_locale() {
+    media_info
+      .setOption(MediaInfoSetOption::Locale, &locale)
+      .expect("Failed to set locale.");
+  }
   media_info
     .getOption(MediaInfoGetOption::InfoParameters)
     .expect("Failed to get info parameters.")
@@ -103,23 +107,11 @@ fn from_wchars(pointer: *const mi_wchar) -> String {
   unsafe { WideCString::from_ptr_truncate(pointer, length) }.to_string_lossy()
 }
 
+/// Converts `s` to the NUL-terminated wide string MediaInfoLib expects. On Linux and
+/// macOS, MediaInfoLib turns paths back into bytes with the C runtime locale, which
+/// `INFO_PARAMETERS` sets to a UTF-8 one, so no per-OS re-encoding is needed here.
 fn to_wchars(s: &str) -> Vec<mi_wchar> {
-  let wchars = WideCString::from_str_truncate(s).into_vec();
-  #[cfg(not(target_os = "macos"))]
-  {
-    wchars
-  }
-  #[cfg(target_os = "macos")]
-  if wchars.len() > 0 && wchars.iter().any(|&c| c >= 0x100) {
-    encoding::all::UTF_8
-      .encode(s, encoding::EncoderTrap::Strict)
-      .unwrap()
-      .into_iter()
-      .map(|c| c as mi_wchar)
-      .collect::<Vec<mi_wchar>>()
-  } else {
-    wchars
-  }
+  WideCString::from_str_truncate(s).into_vec_with_nul()
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -381,20 +373,16 @@ impl MediaInfoFile {
 fn test_ascii_path() {
   let path = Path::new("./icons/icon.png");
   let path = std::path::absolute(path).unwrap();
-  if let Some(path) = path.to_str() {
-    let path = to_wchars(path);
-    let handle = unsafe { MediaInfo_New() };
-    let error_code = unsafe { MediaInfo_Open(handle, path.as_ptr()) };
-    assert_eq!(error_code, 1, "Error code should be 1.");
-    let count = unsafe { MediaInfo_Count_Get(handle, MediaInfoStreamKind::General as mi_kind, usize::MAX) };
-    assert_eq!(count, 1, "General stream count should be 1.");
-  } else {
-    assert!(false, "Failed to convert file path to string in MediaInfo::open().");
-  }
+  // Raw FFI would skip the one-time setup, which can rebuild the global parameter
+  // tables while this test parses the file in a parallel test run.
+  let media_info = MediaInfo::new();
+  let error_code = media_info.open(&path).unwrap();
+  assert_eq!(error_code, 1, "Error code should be 1.");
+  let count = media_info.getCountByStreamKind(MediaInfoStreamKind::General);
+  assert_eq!(count, 1, "General stream count should be 1.");
 }
 
 #[test]
-#[cfg(not(target_os = "linux"))]
 fn test_non_ascii_path() {
   let source_path = Path::new("./icons/icon.png");
   let source_path = std::path::absolute(source_path).unwrap();
@@ -409,11 +397,14 @@ fn test_non_ascii_path() {
     );
   }
   std::fs::copy(source_path, &target_path).unwrap();
-  let path = to_wchars(target_path.to_str().unwrap());
-  let handle = unsafe { MediaInfo_New() };
-  let error_code = unsafe { MediaInfo_Open(handle, path.as_ptr()) };
+  // `MediaInfo::new()` applies a UTF-8 `LC_CTYPE` locale, which non-ASCII paths need
+  // on Linux and macOS. Without it the C runtime starts in the "C" locale, and
+  // `wcstombs` can't convert the path.
+  let media_info = MediaInfo::new();
+  let error_code = media_info.open(&target_path).unwrap();
   assert_eq!(error_code, 1, "Error code should be 1.");
-  let count = unsafe { MediaInfo_Count_Get(handle, MediaInfoStreamKind::General as mi_kind, usize::MAX) };
+  let count = media_info.getCountByStreamKind(MediaInfoStreamKind::General);
+  drop(media_info);
   let result = std::fs::remove_file(&target_path);
   assert!(
     result.is_ok(),

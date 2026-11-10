@@ -26,6 +26,7 @@ mod constants;
 mod context_menu;
 mod controller;
 mod ffmpeg;
+mod locale;
 mod media_info;
 mod mkvtoolnix;
 mod mpchc;
