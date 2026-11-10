@@ -42,7 +42,6 @@ cd src-tauri && cargo test
 
 # Build NSIS installer (Windows)
 node src-tauri/scripts/copy_dlls.cjs
-node src-tauri/scripts/patch_tauri_conf.cjs
 ```
 
 ### Build System Notes

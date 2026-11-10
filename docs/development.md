@@ -182,7 +182,6 @@ pnpm tauri build
 
 ```sh
 node BetterMediaInfo\src-tauri\scripts\copy_dlls.cjs
-node BetterMediaInfo\src-tauri\scripts\patch_tauri_conf.cjs
 ```
 
 ## Config File Location
