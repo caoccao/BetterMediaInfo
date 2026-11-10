@@ -2,6 +2,7 @@
 
 ## 1.2.0
 
+* Upgraded MediaInfoLib to v26.10
 * Added queued MKV track statistics repair with MKVToolNix progress tracking and automatic file reload.
 * Fixed a crash that could occur when analyzing multiple media files at the same time.
 
