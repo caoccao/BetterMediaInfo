@@ -22,7 +22,7 @@ sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2g
 * Download zlib.
 
 ```sh
-curl -o zlib.tar.gz https://www.zlib.net/zlib-1.3.2.tar.gz
+curl -fL -o zlib.tar.gz https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz
 tar -xzvf zlib.tar.gz
 mv zlib-1.3.2 zlib
 rm zlib.tar.gz
@@ -66,7 +66,7 @@ brew install autoconf automake libtool pkg-config zlib wxwidgets
 * Download zlib.
 
 ```sh
-curl -o zlib.tar.gz https://www.zlib.net/zlib-1.3.2.tar.gz
+curl -fL -o zlib.tar.gz https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz
 tar -xzvf zlib.tar.gz
 mv zlib-1.3.2 zlib
 rm zlib.tar.gz
@@ -103,7 +103,7 @@ make -j `nproc`
 * Download zlib.
 
 ```sh
-curl -o zlib.zip https://zlib.net/zlib132.zip
+curl -fL -o zlib.zip https://github.com/madler/zlib/releases/download/v1.3.2/zlib132.zip
 7z x zlib.zip
 move zlib-1.3.2 zlib
 del zlib.zip
